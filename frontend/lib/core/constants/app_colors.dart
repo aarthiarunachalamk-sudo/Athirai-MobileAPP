@@ -1,0 +1,68 @@
+import 'package:flutter/material.dart';
+
+/// Centralized luxury color palette for Athirai Timeless Jewels
+class AppColors {
+  AppColors._();
+
+  // Dark Foundations
+  static const Color backgroundBlack = Color(0xFF030303);
+  static const Color surfaceBlack = Color(0xFF11100D);
+  static const Color cardBlack = Color(0xFF14110D);
+  static const Color overlayBlack = Color(0x33000000);
+
+  // Metallic Golds
+  static const Color goldPrimary = Color(0xFFE7B653);
+  static const Color goldBright = Color(0xFFFFD978);
+  static const Color goldDark = Color(0xFFA87524);
+  static const Color goldMuted = Color(0xFFC9902E);
+  static const Color goldChampagne = Color(0xFFFFF0B8);
+  static const Color champagne = Color(0xFFF5E8C8);
+
+  // Border & Glows
+  static const Color borderGold = Color(0xFFE7B653);
+  static const Color borderGoldSubtle = Color(0x55E7B653);
+  static const Color borderWhiteGold = Color(0x77EAD8A7);
+  static const Color goldGlow = Color(0x40FFD978);
+  static const Color goldGlowStrong = Color(0x80E7B653);
+
+  // Typography
+  static const Color textPrimary = Color(0xFFF6F1E8);
+  static const Color textSecondary = Color(0xFFB9B3AA);
+  static const Color textMuted = Color(0xFF7E7870);
+  static const Color textDark = Color(0xFF0B0A08);
+
+  // Status & Utility
+  static const Color error = Color(0xFFFF6B6B);
+  static const Color successGreen = Color(0xFF4EBE7E);
+  static const Color idpBlue = Color(0xFF0067B8);
+
+  // Gradients
+  static const LinearGradient primaryGoldGradient = LinearGradient(
+    colors: [
+      Color(0xFFFFD978),
+      Color(0xFFE8B44B),
+      Color(0xFFF4C35C),
+    ],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+
+  static const LinearGradient cardGlowGradient = LinearGradient(
+    colors: [
+      Color(0x28FFD978),
+      Color(0x0C14110D),
+    ],
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+  );
+
+  static const LinearGradient borderGoldGradient = LinearGradient(
+    colors: [
+      Color(0xFFFFD978),
+      Color(0xFFE7B653),
+      Color(0xFFA87524),
+    ],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+}

@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -23,8 +25,8 @@ class _AthiraiEntryScreenState extends ConsumerState<AthiraiEntryScreen>
     with TickerProviderStateMixin {
   late final AnimationController _portraitMotion = AnimationController(
     vsync: this,
-    duration: const Duration(seconds: 5),
-  )..repeat(reverse: true);
+    duration: const Duration(seconds: 7),
+  )..repeat();
   late final AnimationController _celestialMotion = AnimationController(
     vsync: this,
     duration: const Duration(seconds: 16),
@@ -153,16 +155,19 @@ class _AthiraiEntryScreenState extends ConsumerState<AthiraiEntryScreen>
                     AnimatedBuilder(
                       animation: _portraitMotion,
                       builder: (context, child) {
-                        final phase = Curves.easeInOutSine.transform(
-                          _portraitMotion.value,
-                        );
+                        final phase = _portraitMotion.value;
+                        final loop = phase * math.pi * 2;
+                        final breathe = (math.sin(loop) + 1) / 2;
                         return Transform.scale(
-                          scale: 0.97 + phase * 0.06,
+                          scale: 0.94 + breathe * 0.12,
                           child: Transform.rotate(
-                            angle: -0.012 + phase * 0.024,
+                            angle: math.sin(loop) * 0.025,
                             child: Transform.translate(
-                              // The blue-blazer portrait sweeps diagonally, then reverses.
-                              offset: Offset(18 - phase * 36, -26 + phase * 52),
+                              // Move the entire portrait through a smooth figure-eight.
+                              offset: Offset(
+                                math.sin(loop) * 24,
+                                math.sin(loop * 2) * 48,
+                              ),
                               child: Center(
                                 child: Container(
                                   width:
@@ -177,8 +182,8 @@ class _AthiraiEntryScreenState extends ConsumerState<AthiraiEntryScreen>
                                     boxShadow: [
                                       BoxShadow(
                                         color: AppColors.goldPrimary
-                                            .withOpacity(0.12 + phase * 0.12),
-                                        blurRadius: 28 + phase * 16,
+                                            .withOpacity(0.12 + breathe * 0.12),
+                                        blurRadius: 28 + breathe * 16,
                                         spreadRadius: 1,
                                       ),
                                     ],
@@ -198,7 +203,7 @@ class _AthiraiEntryScreenState extends ConsumerState<AthiraiEntryScreen>
                                               border: Border.all(
                                                 color: AppColors.goldPrimary
                                                     .withOpacity(
-                                                      0.48 + phase * 0.3,
+                                                      0.48 + breathe * 0.3,
                                                     ),
                                                 width: 1.2,
                                               ),

@@ -12,6 +12,7 @@ import '../widgets/athirai_logo.dart';
 import '../widgets/celestial_accents.dart';
 import '../widgets/cosmic_background.dart';
 import '../widgets/gold_primary_button.dart';
+import 'selfie_capture_screen.dart';
 import 'sign_in_screen.dart';
 
 class AthiraiEntryScreen extends ConsumerStatefulWidget {
@@ -52,7 +53,7 @@ class _AthiraiEntryScreenState extends ConsumerState<AthiraiEntryScreen>
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         side: BorderSide(color: AppColors.borderGoldSubtle, width: 1.2),
       ),
-      builder: (context) {
+      builder: (sheetContext) {
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 30),
           child: Column(
@@ -90,7 +91,14 @@ class _AthiraiEntryScreenState extends ConsumerState<AthiraiEntryScreen>
               GoldPrimaryButton(
                 text: 'Explore High Jewelry Atelier',
                 showArrow: true,
-                onPressed: () => Navigator.pop(context),
+                onPressed: () {
+                  Navigator.pop(sheetContext);
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const SelfieCaptureScreen(),
+                    ),
+                  );
+                },
               ),
               const SizedBox(height: 12),
             ],

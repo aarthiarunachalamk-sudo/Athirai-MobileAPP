@@ -26,6 +26,10 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>Athirai uses the camera to capture a selfie for your avatar.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Athirai uses selected photos to create your avatar.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

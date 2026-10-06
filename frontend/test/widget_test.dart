@@ -16,11 +16,11 @@ void main() {
 
     await tester.pump();
 
-    expect(find.text('Sign in to Athirai'), findsOneWidget);
-    expect(find.text('Email, Phone or ID'), findsOneWidget);
+    expect(find.text('Welcome Back'), findsOneWidget);
+    expect(find.text('Email / Mobile Number'), findsOneWidget);
     expect(find.text('Password'), findsOneWidget);
-    expect(find.text('ENTER YOUR WORKSPACE'), findsOneWidget);
-    expect(find.text('Forgot password?'), findsOneWidget);
+    expect(find.text('Log In'), findsOneWidget);
+    expect(find.text('Forgot Password?'), findsOneWidget);
   });
 
   testWidgets('registration starts with personal details', (tester) async {

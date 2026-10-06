@@ -60,4 +60,6 @@ class AppAssets {
       'assets/images/athirai_heritage_dial.jpg';
   static const String vaultMannequin =
       'assets/images/athirai_vault_mannequin.jpg';
+  static const String emeraldCrest =
+      'assets/images/athirai_emerald_crest.png';
 }

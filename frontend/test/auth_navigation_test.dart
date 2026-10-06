@@ -41,21 +41,21 @@ void main() {
     await tester.pump();
 
     // 1. Submit with empty inputs
-    await tester.tap(find.text('ENTER YOUR WORKSPACE'));
+    await tester.tap(find.text('Log In'));
     await tester.pump();
     expect(find.text('Please enter your email, phone or ID.'), findsOneWidget);
 
     // 2. Submit with invalid email format
     await tester.enterText(find.byType(TextField).first, 'bad@email');
     await tester.enterText(find.byType(TextField).last, 'pass123');
-    await tester.tap(find.text('ENTER YOUR WORKSPACE'));
+    await tester.tap(find.text('Log In'));
     await tester.pump();
     expect(find.text('Please enter a valid email address.'), findsOneWidget);
 
     // 3. Submit with short password
     await tester.enterText(find.byType(TextField).first, 'test@athirai.com');
     await tester.enterText(find.byType(TextField).last, '123');
-    await tester.tap(find.text('ENTER YOUR WORKSPACE'));
+    await tester.tap(find.text('Log In'));
     await tester.pump();
     expect(find.text('Password must be at least 6 characters.'), findsOneWidget);
   });
@@ -71,8 +71,8 @@ void main() {
 
     await tester.pump();
 
-    await tester.ensureVisible(find.text('New to Athirai? Register / Create Account'));
-    await tester.tap(find.text('New to Athirai? Register / Create Account'));
+    await tester.ensureVisible(find.text('Register'));
+    await tester.tap(find.text('Register'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
 
@@ -80,7 +80,7 @@ void main() {
     expect(find.text('Register User'), findsOneWidget);
   });
 
-  testWidgets('Login Screen navigates to Dashboard on Explore as Guest', (tester) async {
+  testWidgets('Login Screen navigates to Dashboard on Skip', (tester) async {
     await tester.pumpWidget(
       const ProviderScope(
         child: MaterialApp(
@@ -91,8 +91,8 @@ void main() {
 
     await tester.pump();
 
-    await tester.ensureVisible(find.text('Explore Dashboard as Guest'));
-    await tester.tap(find.text('Explore Dashboard as Guest'));
+    await tester.ensureVisible(find.text('Skip'));
+    await tester.tap(find.text('Skip'));
     await tester.pumpAndSettle();
 
     expect(find.byType(AthiraiFlowContainer), findsOneWidget);

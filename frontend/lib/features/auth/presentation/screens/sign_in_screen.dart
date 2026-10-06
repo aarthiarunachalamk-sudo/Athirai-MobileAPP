@@ -1,4 +1,3 @@
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -7,15 +6,22 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_assets.dart';
 import '../controllers/auth_controller.dart';
 import '../../data/services/secure_storage_service.dart';
-import '../widgets/athirai_logo.dart';
-import '../widgets/cosmic_background.dart';
 import '../../../shop/presentation/screens/athirai_flow_container.dart';
 import 'complete_profile_screen.dart';
 import 'register_screen.dart';
+import 'sso_email_screen.dart';
 
-/// Login screen — matches infisq.com/login exactly:
-/// "WELCOME BACK / Sign in to Athirai"
-/// Identifier field (email, phone or ID) + password field + ENTER YOUR WORKSPACE CTA
+/// Screen-accurate luxury login screen matching Screen 2 of the Athirai reference:
+/// - Dark emerald temple courtyard architecture background
+/// - Top bar with right-aligned "Skip" action
+/// - Athirai emerald drop jewel crest + "ATHIRAI / TIMELESS JEWELS"
+/// - "Welcome Back" serif headline & luxury journey subtitle
+/// - Translucent dark emerald pill capsule fields for Email/Mobile & Password
+/// - "Remember me" checkbox & "Forgot Password?" link
+/// - Golden gradient pill button "Log In →"
+/// - "OR" divider & "Login with SSO" capsule button
+/// - "Don't have an account? Register" footer
+/// - Golden geometric lotus ornament at bottom
 class SignInScreen extends ConsumerStatefulWidget {
   const SignInScreen({super.key});
 
@@ -150,10 +156,10 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   void _showForgotPassword() {
     showModalBottomSheet<void>(
       context: context,
-      backgroundColor: AppColors.surfaceBlack,
+      backgroundColor: const Color(0xFF04120E),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        side: BorderSide(color: AppColors.borderGoldSubtle),
+        side: BorderSide(color: Color(0x66C5A059)),
       ),
       builder: (_) => Padding(
         padding: const EdgeInsets.fromLTRB(24, 28, 24, 36),
@@ -161,25 +167,55 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Reset Your Password',
-              style: GoogleFonts.cormorantGaramond(
-                fontSize: 24,
-                fontWeight: FontWeight.w600,
-                color: AppColors.goldBright,
-              ),
+            Row(
+              children: [
+                const Icon(
+                  Icons.lock_reset_rounded,
+                  color: Color(0xFFD4AF37),
+                  size: 22,
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  'Reset Your Password',
+                  style: GoogleFonts.cormorantGaramond(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w600,
+                    color: const Color(0xFFF7F2E8),
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 14),
             Text(
-              'For help recovering access, contact concierge@athirai.com. '
-              'Include the email address linked to your account.',
+              'For assistance recovering your account or resetting your credentials, please connect with our Athirai Concierge at concierge@athirai.com with your registered contact details.',
               style: GoogleFonts.inter(
-                fontSize: 14,
-                color: AppColors.textSecondary,
+                fontSize: 13.5,
+                color: const Color(0xFF8E9E94),
                 height: 1.55,
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: OutlinedButton(
+                onPressed: () => Navigator.of(context).pop(),
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: Color(0xFFC5A059)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(24),
+                  ),
+                ),
+                child: Text(
+                  'Close',
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    color: const Color(0xFFD4AF37),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
           ],
         ),
       ),
@@ -193,412 +229,413 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
     return PopScope(
       canPop: true,
       child: Scaffold(
-        backgroundColor: AppColors.backgroundBlack,
+        backgroundColor: const Color(0xFF030D0A),
         resizeToAvoidBottomInset: true,
-        body: CosmicBackground(
-          imageAsset: AppAssets.signInReferenceBg,
-          showFrame: false,
-          overlayOpacity: 0.04,
-          child: SafeArea(
-            child: LayoutBuilder(
-              builder: (context, constraints) => SingleChildScrollView(
-                physics: const ClampingScrollPhysics(),
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(minHeight: constraints.maxHeight),
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: (constraints.maxWidth * 0.08).clamp(20.0, 40.0),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        if (Navigator.of(context).canPop()) ...[
-                          const SizedBox(height: 8),
-                          Align(
-                            alignment: Alignment.centerLeft,
-                            child: IconButton(
-                              tooltip: 'Back to Splash',
-                              onPressed: () => Navigator.of(context).maybePop(),
-                              icon: const Icon(
-                                Icons.arrow_back_ios_new_rounded,
-                                color: AppColors.goldBright,
-                                size: 18,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                        ] else
-                          const SizedBox(height: 28),
+        body: Stack(
+          children: [
+            // ── Background: Temple courtyard with ambient diya glow ──────
+            Positioned.fill(
+              child: Image.asset(
+                AppAssets.templeArchChandelier,
+                fit: BoxFit.cover,
+                alignment: Alignment.topCenter,
+              ),
+            ),
 
-                        // ── Logo ──────────────────────────────────────────────
-                        AthiraiLogo(
-                          width: (constraints.maxWidth * 0.50).clamp(
-                            160.0,
-                            230.0,
-                          ),
-                          imageAsset: AppAssets.referenceLogo,
-                          showGlow: false,
-                        ),
-
-                        const SizedBox(height: 28),
-
-                        // ── "WELCOME BACK" eyebrow ────────────────────────────
-                        Text(
-                          'WELCOME BACK',
-                          style: GoogleFonts.inter(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 3.2,
-                            color: AppColors.goldPrimary,
-                          ),
-                        ),
-
-                        const SizedBox(height: 8),
-
-                        // ── Main heading ──────────────────────────────────────
-                        Text(
-                          'Sign in to Athirai',
-                          textAlign: TextAlign.center,
-                          style: GoogleFonts.cormorantGaramond(
-                            fontSize: 32,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.textPrimary,
-                            letterSpacing: 0.4,
-                          ),
-                        ),
-
-                        const SizedBox(height: 8),
-
-                        Text(
-                          'Enter your credentials to continue to your workspace.',
-                          textAlign: TextAlign.center,
-                          style: GoogleFonts.inter(
-                            fontSize: 13.5,
-                            color: AppColors.champagne.withOpacity(0.8),
-                            height: 1.45,
-                          ),
-                        ),
-
-                        const SizedBox(height: 32),
-
-                        // ── Identifier field ──────────────────────────────────
-                        _AuthField(
-                          controller: _identifierCtrl,
-                          focusNode: _idFocus,
-                          label: 'Email, Phone or ID',
-                          hint: 'name@example.com or +91 98765 43210',
-                          prefixIcon: Icons.person_outline_rounded,
-                          keyboardType: TextInputType.emailAddress,
-                          textInputAction: TextInputAction.next,
-                          onSubmitted: (_) => _pwFocus.requestFocus(),
-                          onChanged: (_) => _clearErrors(),
-                          errorText: _idError,
-                        ),
-
-                        const SizedBox(height: 14),
-
-                        // ── Password field ────────────────────────────────────
-                        _AuthField(
-                          controller: _passwordCtrl,
-                          focusNode: _pwFocus,
-                          label: 'Password',
-                          hint: 'Enter your password',
-                          prefixIcon: Icons.lock_outline_rounded,
-                          obscureText: _obscurePassword,
-                          textInputAction: TextInputAction.done,
-                          onSubmitted: (_) => _submit(),
-                          onChanged: (_) => _clearErrors(),
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              _obscurePassword
-                                  ? Icons.visibility_off_outlined
-                                  : Icons.visibility_outlined,
-                              size: 20,
-                              color: AppColors.textSecondary,
-                            ),
-                            onPressed: () => setState(
-                              () => _obscurePassword = !_obscurePassword,
-                            ),
-                          ),
-                          errorText: _pwError,
-                        ),
-
-                        // ── Remember me + Forgot password ─────────────────────
-                        const SizedBox(height: 4),
-                        Row(
-                          children: [
-                            SizedBox(
-                              width: 24,
-                              height: 24,
-                              child: Checkbox(
-                                value: _rememberMe,
-                                activeColor: AppColors.goldPrimary,
-                                checkColor: AppColors.backgroundBlack,
-                                side: const BorderSide(
-                                  color: AppColors.goldPrimary,
-                                  width: 1.2,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                                onChanged: (v) =>
-                                    setState(() => _rememberMe = v ?? false),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            GestureDetector(
-                              onTap: () =>
-                                  setState(() => _rememberMe = !_rememberMe),
-                              child: Text(
-                                'Remember me',
-                                style: GoogleFonts.inter(
-                                  fontSize: 12.5,
-                                  color: AppColors.textSecondary,
-                                ),
-                              ),
-                            ),
-                            const Spacer(),
-                            TextButton(
-                              onPressed: _showForgotPassword,
-                              style: TextButton.styleFrom(
-                                foregroundColor: AppColors.goldPrimary,
-                                padding: EdgeInsets.zero,
-                                minimumSize: Size.zero,
-                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                              ),
-                              child: Text(
-                                'Forgot password?',
-                                style: GoogleFonts.inter(
-                                  fontSize: 12.5,
-                                  color: AppColors.goldPrimary,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-
-                        if (_error != null &&
-                            _error != _idError &&
-                            _error != _pwError) ...[
-                          const SizedBox(height: 14),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 14,
-                              vertical: 10,
-                            ),
-                            decoration: BoxDecoration(
-                              color: AppColors.error.withOpacity(0.12),
-                              borderRadius: BorderRadius.circular(10),
-                              border: Border.all(
-                                color: AppColors.error.withOpacity(0.5),
-                              ),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    const Icon(
-                                      Icons.error_outline_rounded,
-                                      size: 16,
-                                      color: AppColors.error,
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Expanded(
-                                      child: Text(
-                                        _error!,
-                                        style: GoogleFonts.inter(
-                                          color: AppColors.error,
-                                          fontSize: 12,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                if (_error!.contains('connect') ||
-                                    _error!.contains('server') ||
-                                    _error!.contains('taking too long') ||
-                                    _error!.contains('Unable to sign in')) ...[
-                                  const SizedBox(height: 8),
-                                  Align(
-                                    alignment: Alignment.centerRight,
-                                    child: TextButton(
-                                      onPressed: _navigateToDashboard,
-                                      style: TextButton.styleFrom(
-                                        foregroundColor: AppColors.goldBright,
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 8,
-                                          vertical: 2,
-                                        ),
-                                        minimumSize: Size.zero,
-                                        tapTargetSize:
-                                            MaterialTapTargetSize.shrinkWrap,
-                                      ),
-                                      child: const Text(
-                                        'Continue in Demo Mode →',
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w700,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ],
-                            ),
-                          ),
-                        ],
-
-                        const SizedBox(height: 26),
-
-                        // ── ENTER YOUR WORKSPACE button ───────────────────────
-                        _WorkspaceButton(
-                          label: 'ENTER YOUR WORKSPACE',
-                          isLoading: auth.isLoading,
-                          onPressed: _submit,
-                        ),
-
-                        const SizedBox(height: 22),
-
-                        // ── Encrypted & secure badge ──────────────────────────
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(
-                              Icons.lock_rounded,
-                              size: 12,
-                              color: AppColors.goldPrimary,
-                            ),
-                            const SizedBox(width: 5),
-                            Text(
-                              'Encrypted & secure',
-                              style: GoogleFonts.inter(
-                                fontSize: 11.5,
-                                color: AppColors.textSecondary,
-                                letterSpacing: 0.3,
-                              ),
-                            ),
-                          ],
-                        ),
-
-                        const SizedBox(height: 28),
-
-                        // ── Divider ───────────────────────────────────────────
-                        _GoldDivider(label: 'OR'),
-
-                        const SizedBox(height: 24),
-
-                        // ── Register CTA ──────────────────────────────────────
-                        _OutlineButton(
-                          label: 'New to Athirai? Register / Create Account',
-                          onPressed: () => Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) => const RegisterScreen(),
-                            ),
-                          ),
-                        ),
-
-                        const SizedBox(height: 14),
-
-                        // ── Explore as Guest ──────────────────────────────────
-                        TextButton(
-                          onPressed: _navigateToDashboard,
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                'Explore Dashboard as Guest',
-                                style: GoogleFonts.inter(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.champagne.withOpacity(0.85),
-                                ),
-                              ),
-                              const SizedBox(width: 6),
-                              const Icon(
-                                Icons.arrow_forward_rounded,
-                                size: 14,
-                                color: AppColors.goldPrimary,
-                              ),
-                            ],
-                          ),
-                        ),
-
-                      const SizedBox(height: 24),
-
-                      // ── Legal ─────────────────────────────────────────────
-                      RichText(
-                        textAlign: TextAlign.center,
-                        text: TextSpan(
-                          style: GoogleFonts.inter(
-                            fontSize: 11.5,
-                            color: AppColors.textSecondary,
-                            height: 1.5,
-                          ),
-                          children: [
-                            const TextSpan(
-                              text: 'By continuing, you agree to Athirai\'s ',
-                            ),
-                            TextSpan(
-                              text: 'Terms & Conditions',
-                              style: const TextStyle(
-                                color: AppColors.goldPrimary,
-                                fontWeight: FontWeight.w600,
-                                decoration: TextDecoration.underline,
-                                decorationColor: AppColors.goldPrimary,
-                              ),
-                              recognizer: TapGestureRecognizer()..onTap = () {},
-                            ),
-                            const TextSpan(text: ' and '),
-                            TextSpan(
-                              text: 'Privacy Notice',
-                              style: const TextStyle(
-                                color: AppColors.goldPrimary,
-                                fontWeight: FontWeight.w600,
-                                decoration: TextDecoration.underline,
-                                decorationColor: AppColors.goldPrimary,
-                              ),
-                              recognizer: TapGestureRecognizer()..onTap = () {},
-                            ),
-                            const TextSpan(text: '.'),
-                          ],
-                        ),
-                      ),
-
-                      // ── Copyright ─────────────────────────────────────────
-                      const SizedBox(height: 20),
-                      Text(
-                        '© 2026 Athirai',
-                        style: GoogleFonts.inter(
-                          fontSize: 11,
-                          color: AppColors.textMuted,
-                        ),
-                      ),
-
-                      const SizedBox(height: 36),
+            // ── Atmospheric Dark Emerald Gradient Vignette ─────────────
+            Positioned.fill(
+              child: Container(
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Color(0xCC030E0B),
+                      Color(0xEE020907),
+                      Color(0xFC010605),
                     ],
+                    stops: [0.0, 0.45, 1.0],
                   ),
                 ),
               ),
             ),
-          ),
+
+            // ── Bottom Foliage Botanical Vines ──────────────────────────
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              height: 120,
+              child: IgnorePointer(
+                child: CustomPaint(
+                  painter: _BottomFoliagePainter(),
+                ),
+              ),
+            ),
+
+            // ── Main Content Scroll ──────────────────────────────────────
+            SafeArea(
+              child: LayoutBuilder(
+                builder: (context, constraints) => SingleChildScrollView(
+                  physics: const ClampingScrollPhysics(),
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: (constraints.maxWidth * 0.08).clamp(20.0, 38.0),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          // ── Top Navigation Row: Back (if canPop) + Skip ───
+                          Padding(
+                            padding: const EdgeInsets.only(top: 8.0, bottom: 4.0),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                if (Navigator.of(context).canPop())
+                                  IconButton(
+                                    tooltip: 'Back',
+                                    onPressed: () => Navigator.of(context).maybePop(),
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(),
+                                    icon: const Icon(
+                                      Icons.arrow_back_ios_new_rounded,
+                                      color: Color(0xFFC5A059),
+                                      size: 18,
+                                    ),
+                                  )
+                                else
+                                  const SizedBox(width: 24),
+
+                                TextButton(
+                                  onPressed: _navigateToDashboard,
+                                  style: TextButton.styleFrom(
+                                    foregroundColor: const Color(0xFFD4AF37),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 4,
+                                    ),
+                                    minimumSize: Size.zero,
+                                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                  ),
+                                  child: Text(
+                                    'Skip',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w500,
+                                      color: const Color(0xFFD4AF37),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          const SizedBox(height: 6),
+
+                          // ── Brand Crest: Emerald Drop Jewel Emblem ─────────
+                          Image.asset(
+                            AppAssets.emeraldCrest,
+                            height: 64,
+                            fit: BoxFit.contain,
+                            filterQuality: FilterQuality.high,
+                          ),
+
+                          const SizedBox(height: 12),
+
+                          // ── ATHIRAI Brand Typography ───────────────────────
+                          Text(
+                            'ATHIRAI',
+                            textAlign: TextAlign.center,
+                            style: GoogleFonts.cormorantGaramond(
+                              fontSize: 22,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 6.0,
+                              color: const Color(0xFFE2C479),
+                            ),
+                          ),
+
+                          const SizedBox(height: 3),
+
+                          Text(
+                            'TIMELESS JEWELS',
+                            textAlign: TextAlign.center,
+                            style: GoogleFonts.inter(
+                              fontSize: 9.5,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 4.5,
+                              color: const Color(0xFFC5A059),
+                            ),
+                          ),
+
+                          const SizedBox(height: 28),
+
+                          // ── Welcome Heading ────────────────────────────────
+                          Text(
+                            'Welcome Back',
+                            textAlign: TextAlign.center,
+                            style: GoogleFonts.cormorantGaramond(
+                              fontSize: 29,
+                              fontWeight: FontWeight.w600,
+                              color: const Color(0xFFF7F2E8),
+                              letterSpacing: 0.4,
+                            ),
+                          ),
+
+                          const SizedBox(height: 8),
+
+                          Text(
+                            'Log in to continue your journey\ninto the world of timeless jewels.',
+                            textAlign: TextAlign.center,
+                            style: GoogleFonts.inter(
+                              fontSize: 12.5,
+                              color: const Color(0xFF8E9E94),
+                              height: 1.45,
+                            ),
+                          ),
+
+                          const SizedBox(height: 26),
+
+                          // ── Field 1: Email / Mobile Number ─────────────────
+                          _CapsuleAuthField(
+                            controller: _identifierCtrl,
+                            focusNode: _idFocus,
+                            hint: 'Email / Mobile Number',
+                            prefixIcon: Icons.person_outline_rounded,
+                            keyboardType: TextInputType.emailAddress,
+                            textInputAction: TextInputAction.next,
+                            onSubmitted: (_) => _pwFocus.requestFocus(),
+                            onChanged: (_) => _clearErrors(),
+                            errorText: _idError,
+                          ),
+
+                          const SizedBox(height: 14),
+
+                          // ── Field 2: Password ──────────────────────────────
+                          _CapsuleAuthField(
+                            controller: _passwordCtrl,
+                            focusNode: _pwFocus,
+                            hint: 'Password',
+                            prefixIcon: Icons.lock_outline_rounded,
+                            obscureText: _obscurePassword,
+                            textInputAction: TextInputAction.done,
+                            onSubmitted: (_) => _submit(),
+                            onChanged: (_) => _clearErrors(),
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                _obscurePassword
+                                    ? Icons.visibility_outlined
+                                    : Icons.visibility_off_outlined,
+                                size: 19,
+                                color: const Color(0xFF8E9E94),
+                              ),
+                              onPressed: () => setState(
+                                () => _obscurePassword = !_obscurePassword,
+                              ),
+                            ),
+                            errorText: _pwError,
+                          ),
+
+                          const SizedBox(height: 12),
+
+                          // ── Remember me & Forgot Password Row ──────────────
+                          Row(
+                            children: [
+                              SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: Checkbox(
+                                  value: _rememberMe,
+                                  activeColor: const Color(0xFFC5A059),
+                                  checkColor: const Color(0xFF04120F),
+                                  side: const BorderSide(
+                                    color: Color(0xFF6B7E74),
+                                    width: 1.2,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  onChanged: (v) =>
+                                      setState(() => _rememberMe = v ?? false),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              GestureDetector(
+                                onTap: () =>
+                                    setState(() => _rememberMe = !_rememberMe),
+                                child: Text(
+                                  'Remember me',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 12,
+                                    color: const Color(0xFF8E9E94),
+                                  ),
+                                ),
+                              ),
+                              const Spacer(),
+                              GestureDetector(
+                                onTap: _showForgotPassword,
+                                child: Text(
+                                  'Forgot Password?',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 12.5,
+                                    fontWeight: FontWeight.w500,
+                                    color: const Color(0xFFD4AF37),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+
+                          // ── Top-level Auth Error Banner (if any) ────────────
+                          if (_error != null &&
+                              _error != _idError &&
+                              _error != _pwError) ...[
+                            const SizedBox(height: 14),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                                vertical: 10,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppColors.error.withOpacity(0.12),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: AppColors.error.withOpacity(0.5),
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  const Icon(
+                                    Icons.error_outline_rounded,
+                                    size: 16,
+                                    color: AppColors.error,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      _error!,
+                                      style: GoogleFonts.inter(
+                                        color: AppColors.error,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+
+                          const SizedBox(height: 22),
+
+                          // ── Primary Action: Log In → ────────────────────────
+                          _GoldGradientButton(
+                            isLoading: auth.isLoading,
+                            onPressed: _submit,
+                          ),
+
+                          const SizedBox(height: 22),
+
+                          // ── Divider with OR ─────────────────────────────────
+                          Row(
+                            children: const [
+                              Expanded(
+                                child: Divider(
+                                  color: Color(0x3DC5A059),
+                                  thickness: 0.9,
+                                ),
+                              ),
+                              Padding(
+                                padding: EdgeInsets.symmetric(horizontal: 14),
+                                child: Text(
+                                  'OR',
+                                  style: TextStyle(
+                                    fontFamily: 'Inter',
+                                    fontSize: 10.5,
+                                    fontWeight: FontWeight.w600,
+                                    letterSpacing: 1.5,
+                                    color: Color(0xFF7E8F85),
+                                  ),
+                                ),
+                              ),
+                              Expanded(
+                                child: Divider(
+                                  color: Color(0x3DC5A059),
+                                  thickness: 0.9,
+                                ),
+                              ),
+                            ],
+                          ),
+
+                          const SizedBox(height: 20),
+
+                          // ── Secondary Action: Login with SSO ────────────────
+                          _SsoCapsuleButton(
+                            onPressed: () => Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => const SSOEmailScreen(),
+                              ),
+                            ),
+                          ),
+
+                          const SizedBox(height: 22),
+
+                          // ── Footer: Don't have an account? Register ─────────
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                "Don't have an account? ",
+                                style: GoogleFonts.inter(
+                                  fontSize: 12.5,
+                                  color: const Color(0xFF8E9E94),
+                                ),
+                              ),
+                              GestureDetector(
+                                onTap: () => Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) => const RegisterScreen(),
+                                  ),
+                                ),
+                                child: Text(
+                                  'Register',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 12.5,
+                                    fontWeight: FontWeight.w600,
+                                    color: const Color(0xFFD4AF37),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+
+                          const SizedBox(height: 24),
+
+                          // ── Bottom Sacred Lotus Ornament ────────────────────
+                          const CustomPaint(
+                            size: Size(54, 32),
+                            painter: _LotusPainter(color: Color(0xFFC5A059)),
+                          ),
+
+                          const SizedBox(height: 18),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
-    ),
-  );
-}
+    );
+  }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Register screen — matches infisq.com/register exactly:
-// 3-step stepper: Personal Details → Delivery Address → Account Security
-// ─────────────────────────────────────────────────────────────────────────────
-
-// ── Shared input field widget ─────────────────────────────────────────────────
-class _AuthField extends StatefulWidget {
-  const _AuthField({
+// ── Capsule Input Field Matching Screen 2 ─────────────────────────────────────
+class _CapsuleAuthField extends StatefulWidget {
+  const _CapsuleAuthField({
     required this.controller,
-    required this.label,
     required this.hint,
     required this.prefixIcon,
     this.focusNode,
@@ -613,7 +650,6 @@ class _AuthField extends StatefulWidget {
 
   final TextEditingController controller;
   final FocusNode? focusNode;
-  final String label;
   final String hint;
   final IconData prefixIcon;
   final bool obscureText;
@@ -625,10 +661,10 @@ class _AuthField extends StatefulWidget {
   final String? errorText;
 
   @override
-  State<_AuthField> createState() => _AuthFieldState();
+  State<_CapsuleAuthField> createState() => _CapsuleAuthFieldState();
 }
 
-class _AuthFieldState extends State<_AuthField> {
+class _CapsuleAuthFieldState extends State<_CapsuleAuthField> {
   late final FocusNode _focus;
   bool _isFocused = false;
 
@@ -650,61 +686,46 @@ class _AuthFieldState extends State<_AuthField> {
   @override
   Widget build(BuildContext context) {
     final hasError = widget.errorText != null && widget.errorText!.isNotEmpty;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          widget.label,
-          style: GoogleFonts.inter(
-            fontSize: 12.5,
-            fontWeight: FontWeight.w600,
-            color: AppColors.textSecondary,
-            letterSpacing: 0.6,
-          ),
-        ),
-        const SizedBox(height: 7),
         AnimatedContainer(
           duration: const Duration(milliseconds: 200),
-          height: 54,
+          height: 52,
           decoration: BoxDecoration(
-            color: const Color(0xFF14110D),
-            borderRadius: BorderRadius.circular(14),
+            color: const Color(0x38061A14),
+            borderRadius: BorderRadius.circular(26),
             border: Border.all(
               color: hasError
                   ? AppColors.error
                   : (_isFocused
-                        ? AppColors.goldBright
-                        : AppColors.borderGold.withOpacity(0.7)),
-              width: _isFocused ? 1.4 : 1.0,
+                      ? const Color(0xFFE5C170)
+                      : const Color(0x66C5A059)),
+              width: _isFocused ? 1.3 : 1.0,
             ),
             boxShadow: _isFocused
                 ? [
                     BoxShadow(
-                      color: AppColors.goldBright.withOpacity(0.18),
+                      color: const Color(0xFFE5C170).withOpacity(0.18),
                       blurRadius: 10,
                       spreadRadius: 1,
                     ),
                   ]
-                : [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.3),
-                      blurRadius: 6,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
+                : null,
           ),
           child: Row(
             children: [
               Padding(
-                padding: const EdgeInsets.only(left: 14, right: 10),
+                padding: const EdgeInsets.only(left: 18, right: 12),
                 child: Icon(
                   widget.prefixIcon,
                   size: 19,
                   color: hasError
                       ? AppColors.error
                       : (_isFocused
-                            ? AppColors.goldBright
-                            : AppColors.goldPrimary),
+                          ? const Color(0xFFE5C170)
+                          : const Color(0xFFC5A059)),
                 ),
               ),
               Expanded(
@@ -716,16 +737,16 @@ class _AuthFieldState extends State<_AuthField> {
                   textInputAction: widget.textInputAction,
                   onSubmitted: widget.onSubmitted,
                   onChanged: widget.onChanged,
-                  cursorColor: AppColors.goldBright,
+                  cursorColor: const Color(0xFFE5C170),
                   style: GoogleFonts.inter(
-                    fontSize: 15,
-                    color: AppColors.textPrimary,
+                    fontSize: 14.5,
+                    color: const Color(0xFFF7F2E8),
                   ),
                   decoration: InputDecoration(
                     hintText: widget.hint,
                     hintStyle: GoogleFonts.inter(
                       fontSize: 13.5,
-                      color: AppColors.textMuted,
+                      color: const Color(0xFF7A8C82),
                     ),
                     border: InputBorder.none,
                     isDense: true,
@@ -735,7 +756,7 @@ class _AuthFieldState extends State<_AuthField> {
               ),
               if (widget.suffixIcon != null)
                 Padding(
-                  padding: const EdgeInsets.only(right: 10),
+                  padding: const EdgeInsets.only(right: 8),
                   child: widget.suffixIcon!,
                 ),
             ],
@@ -743,7 +764,7 @@ class _AuthFieldState extends State<_AuthField> {
         ),
         if (hasError)
           Padding(
-            padding: const EdgeInsets.only(top: 5, left: 4),
+            padding: const EdgeInsets.only(top: 6, left: 18),
             child: Row(
               children: [
                 const Icon(
@@ -769,28 +790,27 @@ class _AuthFieldState extends State<_AuthField> {
   }
 }
 
-// ── "ENTER YOUR WORKSPACE" primary button ─────────────────────────────────────
-class _WorkspaceButton extends StatefulWidget {
-  const _WorkspaceButton({
-    required this.label,
+// ── Golden Gradient "Log In →" Pill Button ────────────────────────────────────
+class _GoldGradientButton extends StatefulWidget {
+  const _GoldGradientButton({
     required this.onPressed,
     this.isLoading = false,
   });
-  final String label;
+
   final VoidCallback onPressed;
   final bool isLoading;
 
   @override
-  State<_WorkspaceButton> createState() => _WorkspaceButtonState();
+  State<_GoldGradientButton> createState() => _GoldGradientButtonState();
 }
 
-class _WorkspaceButtonState extends State<_WorkspaceButton> {
+class _GoldGradientButtonState extends State<_GoldGradientButton> {
   bool _pressed = false;
 
   @override
   Widget build(BuildContext context) {
     return AnimatedScale(
-      scale: _pressed ? 0.97 : 1.0,
+      scale: _pressed ? 0.98 : 1.0,
       duration: const Duration(milliseconds: 120),
       child: GestureDetector(
         onTapDown: (_) => setState(() => _pressed = true),
@@ -801,24 +821,30 @@ class _WorkspaceButtonState extends State<_WorkspaceButton> {
         onTapCancel: () => setState(() => _pressed = false),
         child: Container(
           width: double.infinity,
-          height: 56,
+          height: 52,
           decoration: BoxDecoration(
             gradient: const LinearGradient(
-              colors: [Color(0xFFFFE9A3), Color(0xFFF3B951), Color(0xFFFFD47A)],
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
+              colors: [
+                Color(0xFFE8C87A),
+                Color(0xFFC59F4E),
+                Color(0xFFDFB75E),
+              ],
+              begin: Alignment.centerLeft,
+              end: Alignment.centerRight,
             ),
-            borderRadius: BorderRadius.circular(28),
-            border: Border.all(color: const Color(0xFFFFF4D1).withOpacity(0.7)),
+            borderRadius: BorderRadius.circular(26),
+            border: Border.all(
+              color: const Color(0xFFFFF0C2).withOpacity(0.6),
+              width: 0.9,
+            ),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFFE8B44B).withOpacity(0.40),
-                blurRadius: 18,
-                spreadRadius: 1,
+                color: const Color(0xFFC59F4E).withOpacity(0.35),
+                blurRadius: 16,
                 offset: const Offset(0, 4),
               ),
               BoxShadow(
-                color: Colors.black.withOpacity(0.45),
+                color: Colors.black.withOpacity(0.40),
                 blurRadius: 8,
                 offset: const Offset(0, 2),
               ),
@@ -830,20 +856,31 @@ class _WorkspaceButtonState extends State<_WorkspaceButton> {
                     width: 22,
                     height: 22,
                     child: CircularProgressIndicator(
-                      strokeWidth: 2.4,
-                      valueColor: AlwaysStoppedAnimation(AppColors.textDark),
+                      strokeWidth: 2.2,
+                      valueColor: AlwaysStoppedAnimation(Color(0xFF161108)),
                     ),
                   ),
                 )
               : Center(
-                  child: Text(
-                    widget.label,
-                    style: GoogleFonts.inter(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 1.6,
-                      color: AppColors.textDark,
-                    ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        'Log In',
+                        style: GoogleFonts.inter(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.6,
+                          color: const Color(0xFF161108),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      const Icon(
+                        Icons.arrow_forward_rounded,
+                        size: 16,
+                        color: Color(0xFF161108),
+                      ),
+                    ],
                   ),
                 ),
         ),
@@ -852,68 +889,198 @@ class _WorkspaceButtonState extends State<_WorkspaceButton> {
   }
 }
 
-// ── Gold divider with label ────────────────────────────────────────────────────
-class _GoldDivider extends StatelessWidget {
-  const _GoldDivider({required this.label});
-  final String label;
+// ── Secondary Capsule "Login with SSO" Button ─────────────────────────────────
+class _SsoCapsuleButton extends StatelessWidget {
+  const _SsoCapsuleButton({required this.onPressed});
 
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: Divider(color: AppColors.borderGoldSubtle, thickness: 1),
-        ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14),
-          child: Text(
-            label,
-            style: GoogleFonts.inter(
-              fontSize: 11.5,
-              color: AppColors.textSecondary,
-              letterSpacing: 1.2,
-            ),
-          ),
-        ),
-        Expanded(
-          child: Divider(color: AppColors.borderGoldSubtle, thickness: 1),
-        ),
-      ],
-    );
-  }
-}
-
-// ── Outline secondary button ───────────────────────────────────────────────────
-class _OutlineButton extends StatelessWidget {
-  const _OutlineButton({required this.label, required this.onPressed});
-  final String label;
   final VoidCallback onPressed;
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
       width: double.infinity,
-      height: 52,
+      height: 48,
       child: OutlinedButton(
         onPressed: onPressed,
         style: OutlinedButton.styleFrom(
-          side: const BorderSide(color: AppColors.borderGold, width: 1.2),
+          side: const BorderSide(color: Color(0x66C5A059), width: 1.0),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(26),
+            borderRadius: BorderRadius.circular(24),
           ),
-          backgroundColor: Colors.transparent,
+          backgroundColor: const Color(0x22051612),
         ),
-        child: Text(
-          label,
-          textAlign: TextAlign.center,
-          style: GoogleFonts.inter(
-            fontSize: 13.5,
-            fontWeight: FontWeight.w600,
-            color: AppColors.champagne,
-            letterSpacing: 0.2,
-          ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(
+              Icons.badge_outlined,
+              size: 17,
+              color: Color(0xFFC5A059),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              'Login with SSO',
+              style: GoogleFonts.inter(
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+                color: const Color(0xFFE6D6B8),
+                letterSpacing: 0.3,
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
+}
+
+// ── Sacred Geometry Lotus Ornament ────────────────────────────────────────────
+class _LotusPainter extends CustomPainter {
+  const _LotusPainter({this.color = const Color(0xFFC5A059)});
+
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.2
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+
+    final fillPaint = Paint()
+      ..color = color
+      ..style = PaintingStyle.fill;
+
+    final cx = size.width / 2;
+    final cy = size.height / 2;
+
+    // Center petal
+    final pCenter = Path();
+    pCenter.moveTo(cx, cy + size.height * 0.42);
+    pCenter.quadraticBezierTo(cx - size.width * 0.12, cy, cx, cy - size.height * 0.45);
+    pCenter.quadraticBezierTo(cx + size.width * 0.12, cy, cx, cy + size.height * 0.42);
+    canvas.drawPath(pCenter, paint);
+
+    // Inner left petal
+    final pInLeft = Path();
+    pInLeft.moveTo(cx - size.width * 0.05, cy + size.height * 0.38);
+    pInLeft.quadraticBezierTo(
+      cx - size.width * 0.28,
+      cy - size.height * 0.05,
+      cx - size.width * 0.22,
+      cy - size.height * 0.35,
+    );
+    pInLeft.quadraticBezierTo(
+      cx - size.width * 0.12,
+      cy - size.height * 0.1,
+      cx,
+      cy + size.height * 0.2,
+    );
+    canvas.drawPath(pInLeft, paint);
+
+    // Inner right petal
+    final pInRight = Path();
+    pInRight.moveTo(cx + size.width * 0.05, cy + size.height * 0.38);
+    pInRight.quadraticBezierTo(
+      cx + size.width * 0.28,
+      cy - size.height * 0.05,
+      cx + size.width * 0.22,
+      cy - size.height * 0.35,
+    );
+    pInRight.quadraticBezierTo(
+      cx + size.width * 0.12,
+      cy - size.height * 0.1,
+      cx,
+      cy + size.height * 0.2,
+    );
+    canvas.drawPath(pInRight, paint);
+
+    // Outer left petal
+    final pOutLeft = Path();
+    pOutLeft.moveTo(cx - size.width * 0.08, cy + size.height * 0.35);
+    pOutLeft.quadraticBezierTo(
+      cx - size.width * 0.45,
+      cy + size.height * 0.1,
+      cx - size.width * 0.42,
+      cy - size.height * 0.18,
+    );
+    pOutLeft.quadraticBezierTo(
+      cx - size.width * 0.25,
+      cy - size.height * 0.02,
+      cx - size.width * 0.06,
+      cy + size.height * 0.25,
+    );
+    canvas.drawPath(pOutLeft, paint);
+
+    // Outer right petal
+    final pOutRight = Path();
+    pOutRight.moveTo(cx + size.width * 0.08, cy + size.height * 0.35);
+    pOutRight.quadraticBezierTo(
+      cx + size.width * 0.45,
+      cy + size.height * 0.1,
+      cx + size.width * 0.42,
+      cy - size.height * 0.18,
+    );
+    pOutRight.quadraticBezierTo(
+      cx + size.width * 0.25,
+      cy - size.height * 0.02,
+      cx + size.width * 0.06,
+      cy + size.height * 0.25,
+    );
+    canvas.drawPath(pOutRight, paint);
+
+    // Central diamond jewel
+    final diamond = Path();
+    diamond.moveTo(cx, cy + size.height * 0.12);
+    diamond.lineTo(cx + 3.2, cy + size.height * 0.22);
+    diamond.lineTo(cx, cy + size.height * 0.32);
+    diamond.lineTo(cx - 3.2, cy + size.height * 0.22);
+    diamond.close();
+    canvas.drawPath(diamond, fillPaint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+// ── Subtle Bottom Filigree Corner Painter ─────────────────────────────────────
+class _BottomFoliagePainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = const Color(0xFFC5A059).withOpacity(0.20)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 0.9;
+
+    // Bottom left vine curve
+    final leftVine = Path();
+    leftVine.moveTo(0, size.height * 0.75);
+    leftVine.cubicTo(
+      size.width * 0.12,
+      size.height * 0.60,
+      size.width * 0.24,
+      size.height * 0.88,
+      size.width * 0.38,
+      size.height * 0.96,
+    );
+    canvas.drawPath(leftVine, paint);
+
+    // Bottom right vine curve
+    final rightVine = Path();
+    rightVine.moveTo(size.width, size.height * 0.75);
+    rightVine.cubicTo(
+      size.width * 0.88,
+      size.height * 0.60,
+      size.width * 0.76,
+      size.height * 0.88,
+      size.width * 0.62,
+      size.height * 0.96,
+    );
+    canvas.drawPath(rightVine, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

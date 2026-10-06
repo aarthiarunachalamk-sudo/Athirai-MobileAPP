@@ -77,7 +77,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 300));
 
     expect(find.byType(RegisterScreen), findsOneWidget);
-    expect(find.text('Register User'), findsOneWidget);
+    expect(find.text('Create Your Account'), findsOneWidget);
   });
 
   testWidgets('Login Screen navigates to Dashboard on Skip', (tester) async {

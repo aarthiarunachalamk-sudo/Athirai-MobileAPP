@@ -326,47 +326,30 @@ class _AthiraiOtpVerificationScreenState
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // Ornate Jewel Pendant Icon
-        Container(
-          width: 52,
-          height: 52,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(color: HeritageTheme.goldBorder, width: 1.2),
-            boxShadow: [
-              BoxShadow(
-                color: HeritageTheme.goldPrimary.withOpacity(0.18),
-                blurRadius: 16,
-                spreadRadius: 2,
-              ),
-            ],
-          ),
-          child: const Center(
-            child: Icon(
-              Icons.diamond_outlined,
-              color: HeritageTheme.goldPrimary,
-              size: 26,
-            ),
-          ),
+        Image.asset(
+          AppAssets.emeraldCrest,
+          height: 56,
+          fit: BoxFit.contain,
+          filterQuality: FilterQuality.high,
         ),
         const SizedBox(height: 10),
         Text(
           'ATHIRAI',
-          style: GoogleFonts.cinzel(
-            fontSize: 20,
+          style: GoogleFonts.cormorantGaramond(
+            fontSize: 22,
             fontWeight: FontWeight.w700,
-            letterSpacing: 4.2,
-            color: HeritageTheme.goldPrimary,
+            letterSpacing: 6.0,
+            color: const Color(0xFFE2C479),
           ),
         ),
-        const SizedBox(height: 2),
+        const SizedBox(height: 3),
         Text(
           'TIMELESS JEWELS',
           style: GoogleFonts.inter(
-            fontSize: 8.5,
+            fontSize: 9.5,
             fontWeight: FontWeight.w600,
-            letterSpacing: 2.8,
-            color: HeritageTheme.textMutedDark,
+            letterSpacing: 4.5,
+            color: const Color(0xFFC5A059),
           ),
         ),
       ],
@@ -379,18 +362,18 @@ class _AthiraiOtpVerificationScreenState
       width: 48,
       height: 54,
       decoration: BoxDecoration(
-        color: const Color(0xCC091E19),
-        borderRadius: BorderRadius.circular(10),
+        color: const Color(0x38061A14),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: isFocused
-              ? HeritageTheme.goldPrimary
-              : HeritageTheme.goldBorderSubtle,
+              ? const Color(0xFFE5C170)
+              : const Color(0x66C5A059),
           width: isFocused ? 1.5 : 1.0,
         ),
         boxShadow: isFocused
             ? [
                 BoxShadow(
-                  color: HeritageTheme.goldPrimary.withOpacity(0.25),
+                  color: const Color(0xFFE5C170).withOpacity(0.22),
                   blurRadius: 10,
                   spreadRadius: 1,
                 ),
@@ -407,9 +390,9 @@ class _AthiraiOtpVerificationScreenState
           style: GoogleFonts.inter(
             fontSize: 20,
             fontWeight: FontWeight.w700,
-            color: HeritageTheme.textLight,
+            color: const Color(0xFFF7F2E8),
           ),
-          cursorColor: HeritageTheme.goldPrimary,
+          cursorColor: const Color(0xFFE5C170),
           decoration: const InputDecoration(
             counterText: '',
             border: InputBorder.none,
@@ -427,11 +410,23 @@ class _AthiraiOtpVerificationScreenState
       width: double.infinity,
       height: 52,
       decoration: BoxDecoration(
-        gradient: HeritageTheme.goldGradient,
+        gradient: const LinearGradient(
+          colors: [
+            Color(0xFFE8C87A),
+            Color(0xFFC59F4E),
+            Color(0xFFDFB75E),
+          ],
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+        ),
         borderRadius: BorderRadius.circular(26),
+        border: Border.all(
+          color: const Color(0xFFFFF0C2).withOpacity(0.6),
+          width: 0.9,
+        ),
         boxShadow: [
           BoxShadow(
-            color: HeritageTheme.goldPrimary.withOpacity(0.35),
+            color: const Color(0xFFC59F4E).withOpacity(0.35),
             blurRadius: 16,
             offset: const Offset(0, 4),
           ),
@@ -449,7 +444,7 @@ class _AthiraiOtpVerificationScreenState
                     height: 20,
                     child: CircularProgressIndicator(
                       strokeWidth: 2.2,
-                      valueColor: AlwaysStoppedAnimation(Color(0xFF1E1405)),
+                      valueColor: AlwaysStoppedAnimation(Color(0xFF161108)),
                     ),
                   )
                 : Text(
@@ -457,8 +452,8 @@ class _AthiraiOtpVerificationScreenState
                     style: GoogleFonts.inter(
                       fontSize: 15,
                       fontWeight: FontWeight.w700,
-                      color: const Color(0xFF1A1203),
                       letterSpacing: 0.6,
+                      color: const Color(0xFF161108),
                     ),
                   ),
           ),

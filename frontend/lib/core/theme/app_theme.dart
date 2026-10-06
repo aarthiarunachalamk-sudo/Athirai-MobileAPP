@@ -33,23 +33,23 @@ class AppTheme {
       ),
       textTheme: TextTheme(
         // Serif Display & Titles (Luxury jewelry aesthetic)
-        displayLarge: GoogleFonts.cinzel(
+        displayLarge: GoogleFonts.cormorantGaramond(
           fontSize: 34,
-          fontWeight: FontWeight.w600,
-          color: AppColors.textPrimary,
-          letterSpacing: 1.5,
-        ),
-        displayMedium: GoogleFonts.cinzel(
-          fontSize: 30,
-          fontWeight: FontWeight.w500,
+          fontWeight: FontWeight.w700,
           color: AppColors.textPrimary,
           letterSpacing: 1.2,
+        ),
+        displayMedium: GoogleFonts.cormorantGaramond(
+          fontSize: 30,
+          fontWeight: FontWeight.w600,
+          color: AppColors.textPrimary,
+          letterSpacing: 1.0,
         ),
         headlineLarge: GoogleFonts.cormorantGaramond(
           fontSize: 32,
           fontWeight: FontWeight.w600,
           color: AppColors.textPrimary,
-          letterSpacing: 0.8,
+          letterSpacing: 0.6,
         ),
         headlineMedium: GoogleFonts.cormorantGaramond(
           fontSize: 26,

@@ -4,26 +4,26 @@ import 'package:flutter/material.dart';
 class AppColors {
   AppColors._();
 
-  // Dark Foundations
-  static const Color backgroundBlack = Color(0xFF030303);
-  static const Color surfaceBlack = Color(0xFF11100D);
-  static const Color cardBlack = Color(0xFF14110D);
-  static const Color overlayBlack = Color(0x33000000);
+  // Dark Emerald Foundations (Exact match for luxury reference screens)
+  static const Color backgroundBlack = Color(0xFF030D0A);
+  static const Color surfaceBlack = Color(0xFF071B16);
+  static const Color cardBlack = Color(0xFF0A221C);
+  static const Color overlayBlack = Color(0x66020705);
 
   // Metallic Golds
-  static const Color goldPrimary = Color(0xFFE7B653);
-  static const Color goldBright = Color(0xFFFFD978);
-  static const Color goldDark = Color(0xFFA87524);
-  static const Color goldMuted = Color(0xFFC9902E);
+  static const Color goldPrimary = Color(0xFFE5C170);
+  static const Color goldBright = Color(0xFFFFDF88);
+  static const Color goldDark = Color(0xFFC59F4E);
+  static const Color goldMuted = Color(0xFFC5A059);
   static const Color goldChampagne = Color(0xFFFFF0B8);
   static const Color champagne = Color(0xFFF5E8C8);
 
   // Border & Glows
-  static const Color borderGold = Color(0xFFE7B653);
-  static const Color borderGoldSubtle = Color(0x55E7B653);
+  static const Color borderGold = Color(0xFFE5C170);
+  static const Color borderGoldSubtle = Color(0x55C5A059);
   static const Color borderWhiteGold = Color(0x77EAD8A7);
-  static const Color goldGlow = Color(0x40FFD978);
-  static const Color goldGlowStrong = Color(0x80E7B653);
+  static const Color goldGlow = Color(0x40E5C170);
+  static const Color goldGlowStrong = Color(0x80E5C170);
 
   // Typography
   static const Color textPrimary = Color(0xFFF6F1E8);

@@ -147,6 +147,68 @@ class AuthController extends Notifier<AuthState> {
     }
   }
 
+  Future<bool> register({
+    required String firstName,
+    required String lastName,
+    required String email,
+    required String mobile,
+    required String password,
+    String confirmPassword = '',
+    String gender = 'Other',
+    String dateOfBirth = '2000-01-01',
+    String doorNo = '',
+    String streetName = '',
+    String pincode = '600001',
+    String town = 'Chennai',
+    String city = 'Chennai',
+    String district = 'Chennai',
+    String stateName = 'Tamil Nadu',
+  }) async {
+    state = state.copyWith(isLoading: true, clearError: true);
+    try {
+      final response = await _repository.register(
+        email: email,
+        password: password,
+        confirmPassword: confirmPassword.isNotEmpty ? confirmPassword : password,
+        firstName: firstName,
+        lastName: lastName,
+        fullName: '$firstName $lastName',
+        mobileNumber: mobile,
+        gender: gender,
+        dateOfBirth: dateOfBirth,
+        doorNo: doorNo,
+        streetName: streetName,
+        pincode: pincode,
+        town: town,
+        city: city,
+        district: district,
+        state: stateName,
+      );
+
+      state = state.copyWith(isLoading: false);
+      if (response.isSuccess && response.data != null) {
+        final userData = response.data!['user'];
+        final user = userData != null ? UserModel.fromJson(userData) : null;
+        state = state.copyWith(
+          isAuthenticated: true,
+          currentUser: user,
+        );
+        return true;
+      } else {
+        state = state.copyWith(
+          errorMessage: response.errorMessage ?? 'Registration failed.',
+        );
+        return false;
+      }
+    } catch (_) {
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: 'Could not connect to registration service.',
+      );
+      return false;
+    }
+  }
+
   Future<bool> discoverSSO(String email) async {
     state = state.copyWith(
       isLoading: true,

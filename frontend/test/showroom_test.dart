@@ -104,7 +104,7 @@ void main() {
     );
 
     expect(find.text('ATHIRAI'), findsOneWidget);
-    expect(find.text('TIMELESSLY YOURS'), findsOneWidget);
+    expect(find.text('TIMELESS JEWELS'), findsOneWidget);
     expect(find.text('Enter the Heritage'), findsOneWidget);
 
     await tester.tap(find.text('Enter the Heritage'));

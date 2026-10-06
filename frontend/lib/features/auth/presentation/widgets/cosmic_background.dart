@@ -14,8 +14,8 @@ class CosmicBackground extends StatefulWidget {
   const CosmicBackground({
     super.key,
     required this.child,
-    this.imageAsset = AppAssets.signInReferenceBg,
-    this.overlayOpacity = 0.04,
+    this.imageAsset = AppAssets.templeArchChandelier,
+    this.overlayOpacity = 0.55,
     this.showGlitter = true,
     this.showFrame = false,
   });

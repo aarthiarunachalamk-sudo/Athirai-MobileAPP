@@ -23,7 +23,7 @@ void main() {
     expect(find.text('Forgot Password?'), findsOneWidget);
   });
 
-  testWidgets('registration starts with personal details', (tester) async {
+  testWidgets('registration shows account creation form and fields', (tester) async {
     await tester.pumpWidget(
       const ProviderScope(
         child: MaterialApp(home: RegisterScreen()),
@@ -32,11 +32,13 @@ void main() {
 
     await tester.pump();
 
-    expect(find.text('Register User'), findsOneWidget);
-    expect(find.text('PERSONAL DETAILS'), findsOneWidget);
-    expect(find.text('FIRST NAME'), findsOneWidget);
-    expect(find.text('PHONE NUMBER'), findsOneWidget);
-    expect(find.text('CONTINUE'), findsOneWidget);
-    expect(find.text('Sign in here'), findsOneWidget);
+    expect(find.text('Create Your Account'), findsOneWidget);
+    expect(find.text('Full Name'), findsOneWidget);
+    expect(find.text('Email Address'), findsOneWidget);
+    expect(find.text('Mobile Number'), findsOneWidget);
+    expect(find.text('Password'), findsOneWidget);
+    expect(find.text('Confirm Password'), findsOneWidget);
+    expect(find.text('Register'), findsOneWidget);
+    expect(find.text('Login'), findsOneWidget);
   });
 }

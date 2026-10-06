@@ -1,0 +1,501 @@
+import 'package:flutter/foundation.dart';
+
+import '../../showroom/data/jewellery_data.dart';
+import '../../showroom/domain/models/jewellery_item.dart';
+
+String rupees(int amount) {
+  final digits = amount.toString();
+  if (digits.length <= 3) return '₹$digits';
+  final tail = digits.substring(digits.length - 3);
+  final head = digits
+      .substring(0, digits.length - 3)
+      .replaceAllMapped(
+        RegExp(r'(\d)(?=(\d{2})+(?!\d))'),
+        (match) => '${match[1]},',
+      );
+  return '₹$head,$tail';
+}
+
+/// Live Daily Metal Rates (per gram in INR)
+class MetalRates {
+  final int gold22k; // e.g. 7450
+  final int gold24k; // e.g. 7980
+  final int gold18k; // e.g. 6100
+  final double silver999; // e.g. 98.50
+  final DateTime lastUpdated;
+
+  const MetalRates({
+    this.gold22k = 7450,
+    this.gold24k = 7980,
+    this.gold18k = 6100,
+    this.silver999 = 98.50,
+    required this.lastUpdated,
+  });
+
+  MetalRates copyWith({
+    int? gold22k,
+    int? gold24k,
+    int? gold18k,
+    double? silver999,
+    DateTime? lastUpdated,
+  }) {
+    return MetalRates(
+      gold22k: gold22k ?? this.gold22k,
+      gold24k: gold24k ?? this.gold24k,
+      gold18k: gold18k ?? this.gold18k,
+      silver999: silver999 ?? this.silver999,
+      lastUpdated: lastUpdated ?? DateTime.now(),
+    );
+  }
+}
+
+/// Dynamic Jewellery Category (e.g. Necklaces, Rings, Bangles, Temple, Custom)
+class JewelCategory {
+  final String id;
+  final String name;
+  final String image;
+  final bool isCustom;
+
+  const JewelCategory({
+    required this.id,
+    required this.name,
+    required this.image,
+    this.isCustom = false,
+  });
+}
+
+/// Complete Dynamic Itemized Price Breakdown for any jewellery piece
+class JewelPriceBreakdown {
+  final String jewelId;
+  final String name;
+  final String category;
+  final String metal;
+  final String purity;
+  final double weightGrams;
+  final double metalRatePerGram;
+  final int goldComponent;
+  final double makingChargePercent;
+  final int makingCharges;
+  final int stonePrice;
+  final int taxableAmount;
+  final int gst;
+  final int finalPrice;
+
+  const JewelPriceBreakdown({
+    required this.jewelId,
+    required this.name,
+    required this.category,
+    required this.metal,
+    required this.purity,
+    required this.weightGrams,
+    required this.metalRatePerGram,
+    required this.goldComponent,
+    required this.makingChargePercent,
+    required this.makingCharges,
+    required this.stonePrice,
+    required this.taxableAmount,
+    required this.gst,
+    required this.finalPrice,
+  });
+}
+
+class ShopProduct {
+  ShopProduct(
+    this.item,
+    this.collection, {
+    this.metal = 'Gold',
+    this.makingChargePercent = 12.0,
+    this.stonePrice = 0,
+    this.isCustom = false,
+    this.customPriceOverride,
+  });
+
+  final JewelleryItem item;
+  final String collection;
+  final String metal;
+  final double makingChargePercent;
+  final int stonePrice;
+  final bool isCustom;
+  final int? customPriceOverride;
+
+  String get materialLabel => '${item.purity} ${metal.toLowerCase()}';
+  String get id => item.id;
+  String get name => item.name;
+  String get category => item.category;
+  String get purity => item.purity;
+  double get weightGrams => item.weightGrams;
+
+  /// Dynamic Price calculated in real-time using live metal rates, weight, making charges & 3% GST
+  int get price {
+    if (customPriceOverride != null) return customPriceOverride!;
+    return calculatePrice(ShopStore.session.rates);
+  }
+
+  int calculatePrice(MetalRates rates) {
+    return getBreakdown(rates).finalPrice;
+  }
+
+  JewelPriceBreakdown getBreakdown([MetalRates? customRates]) {
+    final rates = customRates ?? ShopStore.session.rates;
+    double ratePerGram;
+    if (metal.toLowerCase() == 'silver') {
+      ratePerGram = rates.silver999;
+    } else {
+      switch (item.purity) {
+        case '24K':
+          ratePerGram = rates.gold24k.toDouble();
+          break;
+        case '18K':
+          ratePerGram = rates.gold18k.toDouble();
+          break;
+        case '22K':
+        default:
+          ratePerGram = rates.gold22k.toDouble();
+          break;
+      }
+    }
+
+    final goldVal = (item.weightGrams * ratePerGram).round();
+    final making = (goldVal * (makingChargePercent / 100.0)).round();
+    final taxable = goldVal + making + stonePrice;
+    final gstVal = (taxable * 0.03).round();
+    final total = taxable + gstVal;
+
+    return JewelPriceBreakdown(
+      jewelId: id,
+      name: item.name,
+      category: item.category,
+      metal: metal,
+      purity: item.purity,
+      weightGrams: item.weightGrams,
+      metalRatePerGram: ratePerGram,
+      goldComponent: goldVal,
+      makingChargePercent: makingChargePercent,
+      makingCharges: making,
+      stonePrice: stonePrice,
+      taxableAmount: taxable,
+      gst: gstVal,
+      finalPrice: total > 0 ? total : 1000,
+    );
+  }
+
+  String get image {
+    if (item.assetPreview.isNotEmpty) return item.assetPreview;
+    if (item.category.toLowerCase().contains('necklace') || item.category == 'Temple') {
+      return 'assets/images/heritage_necklace.png';
+    }
+    if (item.category.toLowerCase().contains('coin')) {
+      return metal.toLowerCase() == 'silver'
+          ? 'assets/images/shop_silver_coins.png'
+          : 'assets/images/shop_gold_coins.png';
+    }
+    final cat = switch (item.category) {
+      'Pendant' => 'necklace',
+      'Bracelet' => 'bangle',
+      _ => item.category.toLowerCase(),
+    };
+    return 'assets/images/shop_$cat.png';
+  }
+
+  bool matchesSearch(String query) {
+    String normalize(String text) => text
+        .toLowerCase()
+        .replaceAll(RegExp(r'[^a-z0-9.\s]'), ' ')
+        .replaceAllMapped(RegExp(r'(\d)\s+(mg|g|k)\b'), (m) => '${m[1]}${m[2]}')
+        .replaceAll(RegExp(r'\bcoins\b'), 'coin')
+        .replaceAll(RegExp(r'\brings\b'), 'ring')
+        .replaceAll(RegExp(r'\bnecklaces\b'), 'necklace')
+        .replaceAll(RegExp(r'\bbangles\b'), 'bangle')
+        .replaceAll(RegExp(r'\bchains\b'), 'chain');
+    final searchable = normalize(
+      '${item.name} ${item.category} $collection $metal '
+      '${item.purity} ${item.description} ${item.weightGrams}g '
+      '${item.weightGrams.toStringAsFixed(item.weightGrams == item.weightGrams.roundToDouble() ? 0 : 3)}g '
+      '${(item.weightGrams * 1000).round()}mg',
+    );
+    return normalize(query)
+        .split(RegExp(r'\s+'))
+        .where((t) => t.isNotEmpty)
+        .every(
+          (token) => RegExp(r'^\d').hasMatch(token)
+              ? searchable.split(RegExp(r'\s+')).contains(token)
+              : searchable.contains(token),
+        );
+  }
+}
+
+/// Fully Dynamic Shopping Store with Live Metal Rates, Add Jewel & Add Category capabilities
+class ShopStore extends ChangeNotifier {
+  static final session = ShopStore();
+
+  MetalRates _rates = MetalRates(
+    gold22k: 7450,
+    gold24k: 7980,
+    gold18k: 6100,
+    silver999: 98.50,
+    lastUpdated: DateTime.now(),
+  );
+
+  final List<JewelCategory> _categories = [
+    const JewelCategory(id: 'cat-necklaces', name: 'Necklaces', image: 'assets/images/heritage_necklace.png'),
+    const JewelCategory(id: 'cat-rings', name: 'Rings', image: 'assets/images/shop_ring.png'),
+    const JewelCategory(id: 'cat-bangles', name: 'Bangles', image: 'assets/images/shop_bangle.png'),
+    const JewelCategory(id: 'cat-chains', name: 'Chains', image: 'assets/images/shop_chain.png'),
+    const JewelCategory(id: 'cat-earrings', name: 'Earrings', image: 'assets/images/shop_earrings.png'),
+    const JewelCategory(id: 'cat-pendants', name: 'Pendants', image: 'assets/images/heritage_necklace.png'),
+    const JewelCategory(id: 'cat-mangalsutra', name: 'Mangalsutra', image: 'assets/images/heritage_necklace.png'),
+    const JewelCategory(id: 'cat-temple', name: 'Temple', image: 'assets/images/heritage_home.png'),
+    const JewelCategory(id: 'cat-coins', name: 'Coins', image: 'assets/images/shop_gold_coins.png'),
+  ];
+
+  late final List<ShopProduct> _products;
+
+  final Set<String> _saved = {};
+  final Map<String, int> _quantities = {};
+
+  ShopStore() {
+    _products = [
+      // 1. Signature Temple & Heritage Masterpieces
+      ShopProduct(
+        const JewelleryItem(
+          id: 'rg-1',
+          name: 'Athirai Cosmic Temple Necklace',
+          category: 'Necklaces',
+          purity: '22K',
+          weightGrams: 44.20,
+          priceFormatted: '₹3,79,869',
+          description: 'A majestic temple-inspired necklace with intricate Lakshmi and cosmic motifs, crafted in 22K hallmarked gold with fine filigree.',
+          posX: -3.5,
+          posZ: -3.0,
+          assetPreview: 'assets/images/heritage_necklace.png',
+        ),
+        'Signature',
+        makingChargePercent: 12.0,
+      ),
+      ShopProduct(
+        const JewelleryItem(
+          id: 'th-lakshmi-1',
+          name: 'Lakshmi Temple Necklace',
+          category: 'Temple',
+          purity: '22K',
+          weightGrams: 58.40,
+          priceFormatted: '₹5,26,321',
+          description: 'Intricately handcrafted 22K antique gold choker featuring Goddess Lakshmi motifs and Burmese ruby accents.',
+          posX: -3.5,
+          posZ: -3.0,
+          assetPreview: 'assets/images/heritage_necklace.png',
+        ),
+        'Heritage',
+        makingChargePercent: 14.0,
+        stonePrice: 15000,
+      ),
+      ShopProduct(
+        const JewelleryItem(
+          id: 'royal-heritage-1',
+          name: 'Royal Heritage Necklace',
+          category: 'Necklaces',
+          purity: '22K',
+          weightGrams: 48.00,
+          priceFormatted: '₹4,12,500',
+          description: 'Handcrafted royal heritage bridal necklace in 22K yellow gold with antique jali filigree.',
+          posX: 0.0,
+          posZ: -3.0,
+          assetPreview: 'assets/images/heritage_necklace.png',
+        ),
+        'Signature',
+        makingChargePercent: 12.0,
+      ),
+
+      // 2. Curated collections from JewelleryData (skip any ID collisions)
+      for (final collection in const {
+        'royal_galaxy': 'Signature',
+        'temple_heritage': 'Heritage',
+        'diamond_palace': 'Diamond',
+        'nature_gold': 'Nature',
+      }.entries)
+        for (final item in JewelleryData.getItemsForScene(collection.key))
+          if (item.id != 'rg-1' && item.id != 'th-1')
+            ShopProduct(item, collection.value),
+
+      // 3. 24K and 999 Coin Vault Products
+      ..._coinProducts(),
+    ];
+  }
+
+  // --- Dynamic Getters ---
+  List<ShopProduct> get products => List.unmodifiable(_products);
+  List<JewelCategory> get categories => List.unmodifiable(_categories);
+  MetalRates get rates => _rates;
+
+  /// Dynamic Price List of all jewellery calculated using current live rates
+  List<JewelPriceBreakdown> get priceList =>
+      _products.map((p) => p.getBreakdown(_rates)).toList();
+
+  JewelPriceBreakdown getBreakdown(ShopProduct product) =>
+      product.getBreakdown(_rates);
+
+  // --- Dynamic Mutations: Live Rates ---
+  void updateMetalRates({
+    int? gold22k,
+    int? gold24k,
+    int? gold18k,
+    double? silver999,
+  }) {
+    _rates = _rates.copyWith(
+      gold22k: gold22k,
+      gold24k: gold24k,
+      gold18k: gold18k,
+      silver999: silver999,
+      lastUpdated: DateTime.now(),
+    );
+    notifyListeners();
+  }
+
+  // --- Dynamic Mutations: Add Category ---
+  JewelCategory addCategory(String name, {String? image}) {
+    final cleanName = name.trim();
+    final existing = _categories.where(
+      (c) => c.name.toLowerCase() == cleanName.toLowerCase(),
+    );
+    if (existing.isNotEmpty) {
+      return existing.first;
+    }
+
+    final newCat = JewelCategory(
+      id: 'cat-${DateTime.now().millisecondsSinceEpoch}',
+      name: cleanName,
+      image: image ?? 'assets/images/heritage_necklace.png',
+      isCustom: true,
+    );
+    _categories.add(newCat);
+    notifyListeners();
+    return newCat;
+  }
+
+  // --- Dynamic Mutations: Add New Jewel ---
+  ShopProduct addJewel({
+    required String name,
+    required String category,
+    required String purity,
+    required double weightGrams,
+    String metal = 'Gold',
+    double makingChargePercent = 12.0,
+    int stonePrice = 0,
+    String? image,
+    String? description,
+    String collection = 'Signature',
+    int? customPrice,
+  }) {
+    // 1. Ensure category exists dynamically
+    addCategory(category);
+
+    final id = 'jewel-${DateTime.now().millisecondsSinceEpoch}';
+    final desc = description?.trim().isNotEmpty == true
+        ? description!.trim()
+        : 'Exquisitely handcrafted $purity $metal $category piece from Athirai Artisans.';
+
+    final item = JewelleryItem(
+      id: id,
+      name: name.trim(),
+      category: category.trim(),
+      purity: purity.trim(),
+      weightGrams: weightGrams,
+      priceFormatted: customPrice != null ? rupees(customPrice) : 'Calculating...',
+      description: desc,
+      posX: 0.0,
+      posZ: -3.0,
+      assetPreview: image ?? '',
+    );
+
+    final product = ShopProduct(
+      item,
+      collection,
+      metal: metal,
+      makingChargePercent: makingChargePercent,
+      stonePrice: stonePrice,
+      isCustom: true,
+      customPriceOverride: customPrice,
+    );
+
+    // Prepend to catalog so it appears immediately at the top
+    _products.insert(0, product);
+    notifyListeners();
+    return product;
+  }
+
+  void deleteJewel(String id) {
+    _products.removeWhere((p) => p.id == id);
+    _quantities.remove(id);
+    _saved.remove(id);
+    notifyListeners();
+  }
+
+  // --- Cart & Saved State ---
+  bool isSaved(String id) => _saved.contains(id);
+  int quantity(String id) => _quantities[id] ?? 0;
+  int get count => _quantities.values.fold(0, (sum, qty) => sum + qty);
+  List<ShopProduct> get cart =>
+      _products.where((p) => quantity(p.id) > 0).toList();
+  int get subtotal => cart.fold(0, (sum, p) => sum + p.price * quantity(p.id));
+
+  void clear() {
+    _saved.clear();
+    _quantities.clear();
+    notifyListeners();
+  }
+
+  void toggleSaved(String id) {
+    if (!_products.any((p) => p.id == id)) return;
+    if (!_saved.remove(id)) _saved.add(id);
+    notifyListeners();
+  }
+
+  void addToCart(String id, [int qty = 1]) {
+    setQuantity(id, quantity(id) + qty);
+  }
+
+  void setQuantity(String id, int quantity) {
+    if (!_products.any((p) => p.id == id)) return;
+    if (quantity <= 0) {
+      _quantities.remove(id);
+    } else {
+      _quantities[id] = quantity.clamp(1, 10);
+    }
+    notifyListeners();
+  }
+}
+
+/// Coins catalog dynamically calculated from rates
+List<ShopProduct> _coinProducts() => [
+  for (final metal in ['Gold', 'Silver'])
+    for (final purity in metal == 'Gold' ? ['22K', '24K'] : ['999'])
+      for (final weight
+          in metal == 'Gold' ? [0.1, 0.25, 1.0] : [0.1, 0.25, 0.5, 1.0, 10.0])
+        ShopProduct(
+          JewelleryItem(
+            id: '${metal.toLowerCase()}-coin-$purity-$weight',
+            name:
+                '$purity $metal Coin - ${weight < 1 ? '${(weight * 1000).round()} mg' : '${weight.toInt()} g'}',
+            category: '$metal Coins',
+            purity: purity,
+            weightGrams: weight,
+            priceFormatted: rupees(
+              (weight *
+                      (metal == 'Silver'
+                          ? 100
+                          : purity == '24K'
+                          ? 8200
+                          : 7500))
+                  .round(),
+            ),
+            description:
+                '$metal coin in $purity purity. Certified ${purity == '24K' ? '24K/999' : purity == '22K' ? '22K/916' : '999 Fine'} Assay Packaging with tamper-proof seal.',
+            posX: 0,
+            posZ: 0,
+            assetPreview: 'assets/images/shop_${metal.toLowerCase()}_coins.png',
+          ),
+          '$metal Coins',
+          metal: metal,
+          makingChargePercent: metal == 'Gold' ? 3.0 : 5.0,
+        ),
+];

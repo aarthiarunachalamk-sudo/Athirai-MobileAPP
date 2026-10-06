@@ -28,6 +28,7 @@ class AppColors {
   // Typography
   static const Color textPrimary = Color(0xFFF6F1E8);
   static const Color textSecondary = Color(0xFFB9B3AA);
+  static const Color textTertiary = Color(0xFF8E8880);
   static const Color textMuted = Color(0xFF7E7870);
   static const Color textDark = Color(0xFF0B0A08);
 
@@ -65,4 +66,22 @@ class AppColors {
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
+
+  // Exact Heritage Luxury Palette (from design mockups & infisq brand)
+  static const Color heritageMaroon = Color(0xFF7A1B2E);
+  static const Color heritageMaroonDark = Color(0xFF560D1C);
+  static const Color heritageMaroonLight = Color(0xFF8F2239);
+  static const Color heritageCreamBg = Color(0xFFFAF6F0);
+  static const Color heritageCreamSurface = Color(0xFFFFFFFF);
+  static const Color heritageCreamBorder = Color(0xFFECE3D6);
+  static const Color heritageGold = Color(0xFFC59A42);
+  static const Color heritageGoldLight = Color(0xFFE5C378);
+  static const Color heritageEbony = Color(0xFF1C1917);
+  static const Color heritageMuted = Color(0xFF78716C);
+  static const Color heritageSuccess = Color(0xFF2E7D32);
+
+  // Infisq Athirai Signature Peacock Emerald & Antique Gold
+  static const Color heritageEmerald = Color(0xFF073B3F);
+  static const Color heritageEmeraldLight = Color(0xFF0C4E53);
+  static const Color heritageGoldAntique = Color(0xFFCCA881);
 }

@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../data/models/organization_model.dart';
 import '../../data/models/user_model.dart';
 import '../../data/repositories/auth_repository.dart';
@@ -44,7 +47,8 @@ class AuthState {
       currentSsoState: currentSsoState ?? this.currentSsoState,
       currentSsoEmail: currentSsoEmail ?? this.currentSsoEmail,
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
-      requiresProfileCompletion: requiresProfileCompletion ?? this.requiresProfileCompletion,
+      requiresProfileCompletion:
+          requiresProfileCompletion ?? this.requiresProfileCompletion,
     );
   }
 }
@@ -94,33 +98,61 @@ class AuthController extends Notifier<AuthState> {
     state = state.copyWith(currentSsoEmail: email);
   }
 
-  Future<bool> loginWithIdentifier(String identifier) async {
+  Future<bool> loginWithIdentifier(
+    String identifier, {
+    String password = '',
+  }) async {
     state = state.copyWith(isLoading: true, clearError: true);
-    final response = await _repository.login(identifier);
+    try {
+      final response = await _repository
+          .login(identifier, password: password)
+          .timeout(const Duration(seconds: 25));
 
-    if (response.isSuccess && response.data != null) {
-      final userData = response.data!['user'];
-      final user = userData != null ? UserModel.fromJson(userData) : null;
-      final reqProfile = response.data!['requires_profile_completion'] as bool? ?? false;
+      if (response.isSuccess && response.data != null) {
+        final userData = response.data!['user'];
+        final user = userData != null ? UserModel.fromJson(userData) : null;
+        final reqProfile =
+            response.data!['requires_profile_completion'] as bool? ?? false;
+
+        state = state.copyWith(
+          isLoading: false,
+          isAuthenticated: true,
+          currentUser: user,
+          requiresProfileCompletion: reqProfile,
+        );
+        return true;
+      }
 
       state = state.copyWith(
         isLoading: false,
-        isAuthenticated: true,
-        currentUser: user,
-        requiresProfileCompletion: reqProfile,
+        errorMessage:
+            response.errorMessage ??
+            'Unable to sign in. Please verify your details.',
       );
-      return true;
-    } else {
+      return false;
+    } on TimeoutException {
       state = state.copyWith(
         isLoading: false,
-        errorMessage: response.errorMessage ?? 'Unable to sign in. Please verify your details.',
+        errorMessage:
+            'The server is taking too long to respond. Please try again.',
+      );
+      return false;
+    } catch (_) {
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage:
+            'Could not connect to the sign-in service. Please try again.',
       );
       return false;
     }
   }
 
   Future<bool> discoverSSO(String email) async {
-    state = state.copyWith(isLoading: true, clearError: true, currentSsoEmail: email);
+    state = state.copyWith(
+      isLoading: true,
+      clearError: true,
+      currentSsoEmail: email,
+    );
     final response = await _repository.discoverSSO(email);
 
     if (response.isSuccess && response.data != null) {
@@ -133,13 +165,18 @@ class AuthController extends Notifier<AuthState> {
     } else {
       state = state.copyWith(
         isLoading: false,
-        errorMessage: response.errorMessage ?? 'We couldn’t find an organization for this email.',
+        errorMessage:
+            response.errorMessage ??
+            'We couldn’t find an organization for this email.',
       );
       return false;
     }
   }
 
-  Future<Map<String, dynamic>?> submitIdpCredentials(String email, String password) async {
+  Future<Map<String, dynamic>?> submitIdpCredentials(
+    String email,
+    String password,
+  ) async {
     state = state.copyWith(isLoading: true, clearError: true);
     final ssoState = state.currentSsoState ?? 'athirai_state_default';
 
@@ -177,7 +214,9 @@ class AuthController extends Notifier<AuthState> {
       return response.data!['code'] as String?;
     } else {
       state = state.copyWith(
-        errorMessage: response.errorMessage ?? 'Invalid verification code. Please try again.',
+        errorMessage:
+            response.errorMessage ??
+            'Invalid verification code. Please try again.',
       );
       return null;
     }
@@ -192,7 +231,8 @@ class AuthController extends Notifier<AuthState> {
     if (response.isSuccess && response.data != null) {
       final userData = response.data!['user'];
       final user = userData != null ? UserModel.fromJson(userData) : null;
-      final reqProfile = response.data!['requires_profile_completion'] as bool? ?? false;
+      final reqProfile =
+          response.data!['requires_profile_completion'] as bool? ?? false;
 
       state = state.copyWith(
         isLoading: false,
@@ -204,13 +244,18 @@ class AuthController extends Notifier<AuthState> {
     } else {
       state = state.copyWith(
         isLoading: false,
-        errorMessage: response.errorMessage ?? 'Failed to finalize SSO authentication.',
+        errorMessage:
+            response.errorMessage ?? 'Failed to finalize SSO authentication.',
       );
       return false;
     }
   }
 
-  Future<bool> updateProfile({required String fullName, String? mobileNumber, String? avatarUrl}) async {
+  Future<bool> updateProfile({
+    required String fullName,
+    String? mobileNumber,
+    String? avatarUrl,
+  }) async {
     state = state.copyWith(isLoading: true, clearError: true);
     final response = await _repository.updateProfile(
       fullName: fullName,
@@ -240,4 +285,6 @@ class AuthController extends Notifier<AuthState> {
   }
 }
 
-final authControllerProvider = NotifierProvider<AuthController, AuthState>(AuthController.new);
+final authControllerProvider = NotifierProvider<AuthController, AuthState>(
+  AuthController.new,
+);

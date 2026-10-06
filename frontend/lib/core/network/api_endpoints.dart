@@ -1,25 +1,42 @@
 import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 
 class ApiEndpoints {
   ApiEndpoints._();
 
-  /// Automatically resolves base URL depending on platform:
-  /// - Android emulator: http://10.0.2.2:8000
-  /// - Web / iOS / Windows Desktop: http://127.0.0.1:8000
+  static String? _resolvedBaseUrl;
+
+  /// Candidate backend URLs for Android devices:
+  /// 1. http://127.0.0.1:8000 (USB debugging via adb reverse)
+  /// 2. http://192.168.0.104:8000 (Local Wi-Fi network)
+  /// 3. http://10.0.2.2:8000 (Android Emulator)
+  static const List<String> androidCandidates = [
+    'http://192.168.0.100:8000',
+    'http://127.0.0.1:8000',
+    'http://192.168.0.106:8000',
+    'http://192.168.0.104:8000',
+    'http://192.168.0.105:8000',
+    'http://10.0.2.2:8000',
+  ];
+
   static String get baseUrl {
     const configuredUrl = String.fromEnvironment('API_BASE_URL');
-    if (configuredUrl.isNotEmpty) {
-      return configuredUrl;
-    }
-    if (kIsWeb) {
-      return 'http://127.0.0.1:8000';
-    }
+    if (configuredUrl.isNotEmpty) return configuredUrl;
+    if (_resolvedBaseUrl != null) return _resolvedBaseUrl!;
+
+    if (kIsWeb) return 'http://127.0.0.1:8000';
     if (Platform.isAndroid) {
-      return 'http://10.0.2.2:8000';
+      // Default to active local machine Wi-Fi host IP
+      return 'http://192.168.0.100:8000';
     }
     return 'http://127.0.0.1:8000';
   }
+
+  static void setBaseUrl(String url) {
+    _resolvedBaseUrl = url;
+  }
+
 
   static String get login => '$baseUrl/api/auth/login/';
   static String get register => '$baseUrl/api/auth/register/';
@@ -29,8 +46,18 @@ class ApiEndpoints {
   static String get logout => '$baseUrl/api/auth/logout/';
   static String get me => '$baseUrl/api/auth/me/';
   static String get profile => '$baseUrl/api/auth/profile/';
-
-  // Mock IdP simulation endpoints
   static String get mockIdpAuthorize => '$baseUrl/api/auth/mock-idp/authorize/';
-  static String get mockIdpVerifyMfa => '$baseUrl/api/auth/mock-idp/verify-mfa/';
+  static String get mockIdpVerifyMfa =>
+      '$baseUrl/api/auth/mock-idp/verify-mfa/';
+
+  // Cloudinary Selfie & AI Avatar Endpoints
+  static String get selfieUpload => '$baseUrl/api/auth/selfie/upload/';
+  static String get selfieLatest => '$baseUrl/api/auth/selfie/latest/';
+  static String get selfieList => '$baseUrl/api/auth/selfie/list/';
+
+  // Dynamic Jewellery, Categories & Price List Endpoints
+  static String get rates => '$baseUrl/api/rates/';
+  static String get categories => '$baseUrl/api/categories/';
+  static String get jewels => '$baseUrl/api/jewels/';
+  static String get priceList => '$baseUrl/api/price-list/';
 }

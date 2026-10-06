@@ -9,6 +9,13 @@ from .views import (
     LogoutView,
     MockIdPAuthorizeView,
     MockIdPVerifyMFAView,
+    SelfieUploadView,
+    LatestSelfieView,
+    UserSelfieListView,
+    MetalRateView,
+    JewelCategoryListCreateView,
+    JewelProductListCreateView,
+    JewelPriceListView,
 )
 
 urlpatterns = [
@@ -19,6 +26,17 @@ urlpatterns = [
     path('logout/', LogoutView.as_view(), name='auth_logout'),
     path('me/', UserProfileView.as_view(), name='auth_me'),
     path('profile/', UserProfileView.as_view(), name='auth_profile'),
+
+    # Cloudinary Selfie & AI Avatar Endpoints
+    path('selfie/upload/', SelfieUploadView.as_view(), name='selfie_upload'),
+    path('selfie/latest/', LatestSelfieView.as_view(), name='selfie_latest'),
+    path('selfie/list/', UserSelfieListView.as_view(), name='selfie_list'),
+
+    # Dynamic Metal Rates & Jewellery Endpoints
+    path('rates/', MetalRateView.as_view(), name='live_metal_rates'),
+    path('categories/', JewelCategoryListCreateView.as_view(), name='jewel_categories'),
+    path('jewels/', JewelProductListCreateView.as_view(), name='jewel_products'),
+    path('price-list/', JewelPriceListView.as_view(), name='jewel_price_list'),
 
     # Enterprise SSO Flow
     path('sso/discover/', SSODiscoverView.as_view(), name='sso_discover'),

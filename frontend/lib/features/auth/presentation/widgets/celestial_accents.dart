@@ -26,10 +26,8 @@ class CelestialAccents extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     _paintStars(canvas, size);
-    _paintSaturnRings(canvas, size);
-    _paintSaturn(canvas, size);
-    _paintSaturnFrontRings(canvas, size);
   }
+
 
   void _paintStars(Canvas canvas, Size size) {
     for (final star in _stars) {
@@ -57,94 +55,6 @@ class CelestialAccents extends CustomPainter {
       }
     }
   }
-
-  Offset _saturnCenter(Size size) =>
-      Offset(size.width * 0.965, size.height * 0.255);
-
-  double _saturnRadius(Size size) => size.width * 0.105;
-
-  void _withRingTransform(Canvas canvas, Size size, VoidCallback paint) {
-    final center = _saturnCenter(size);
-    canvas.save();
-    canvas.translate(center.dx, center.dy);
-    canvas.rotate(-0.34 + progress * math.pi * 2);
-    paint();
-    canvas.restore();
-  }
-
-  void _drawRingLines(Canvas canvas, double radius) {
-    for (var i = 0; i < 4; i++) {
-      final inset = i * radius * 0.13;
-      final rect = Rect.fromCenter(
-        center: Offset.zero,
-        width: radius * 3.2 - inset * 2,
-        height: radius * 0.78 - inset * 0.45,
-      );
-      canvas.drawOval(
-        rect,
-        Paint()
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = i == 1 ? 1.7 : 0.85
-          ..color = const Color(0xFFFFC65A).withOpacity(0.24 + i * 0.055),
-      );
-    }
-  }
-
-  void _paintSaturnRings(Canvas canvas, Size size) {
-    // The still image already contains Saturn here; these luminous rings animate over it.
-    _withRingTransform(canvas, size, () => _drawRingLines(canvas, _saturnRadius(size)));
-  }
-
-  void _paintSaturn(Canvas canvas, Size size) {
-    final center = _saturnCenter(size);
-    final radius = _saturnRadius(size);
-    final rect = Rect.fromCircle(center: center, radius: radius);
-    canvas.drawCircle(
-      center,
-      radius,
-      Paint()
-        ..shader = const RadialGradient(
-          center: Alignment(-0.35, -0.25),
-          radius: 1.1,
-          colors: [
-            Color(0xFFFFE8A1),
-            Color(0xFFD99A3F),
-            Color(0xFF754016),
-            Color(0xFF24130B),
-          ],
-          stops: [0, 0.38, 0.78, 1],
-        ).createShader(rect),
-    );
-
-    canvas.save();
-    canvas.clipPath(Path()..addOval(rect));
-    for (var band = 0; band < 7; band++) {
-      final y = center.dy - radius + (band + 1) * radius * 0.27 +
-          math.sin(progress * math.pi * 2 + band) * radius * 0.08;
-      final path = Path()
-        ..moveTo(center.dx - radius, y)
-        ..quadraticBezierTo(center.dx, y + radius * 0.12, center.dx + radius, y - radius * 0.04);
-      canvas.drawPath(
-        path,
-        Paint()
-          ..color = const Color(0xFFFFD77A).withOpacity(0.12 + (band % 3) * 0.035)
-          ..strokeWidth = 1.2 + (band % 2)
-          ..style = PaintingStyle.stroke,
-      );
-    }
-    canvas.restore();
-  }
-
-  void _paintSaturnFrontRings(Canvas canvas, Size size) {
-    _withRingTransform(canvas, size, () {
-      final radius = _saturnRadius(size);
-      canvas.save();
-      canvas.clipRect(Rect.fromLTRB(-radius * 2, 0, radius * 2, radius * 2));
-      _drawRingLines(canvas, radius);
-      canvas.restore();
-    });
-  }
-
   @override
   bool shouldRepaint(covariant CelestialAccents oldDelegate) =>
       oldDelegate.progress != progress;

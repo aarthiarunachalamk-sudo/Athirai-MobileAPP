@@ -12,4 +12,52 @@ class AppAssets {
   static const String saturnBg = 'assets/images/athirai_saturn_bg.png';
   static const String profileAvatar =
       'assets/images/athirai_profile_avatar.png';
+  static const String cinematicAvatar =
+      'assets/images/athirai_cinematic_avatar.png';
+  static const String userAvatar =
+      'assets/images/athirai_user_avatar.jpg';
+  static const String frontModel =
+      'assets/images/athirai_front_model.jpg';
+  static const String aiConstellation =
+      'assets/images/athirai_ai_constellation.png';
+  static const String entryModelVideo =
+      'assets/videos/athirai_model_video.mp4';
+
+  // Heritage Assets
+  static const String heritageOnboarding =
+      'assets/images/heritage_onboarding.png';
+  static const String heritageHome =
+      'assets/images/heritage_home.png';
+  static const String heritageNecklace =
+      'assets/images/heritage_necklace.png';
+  static const String shopRing =
+      'assets/images/shop_ring.png';
+  static const String shopNecklace =
+      'assets/images/shop_necklace.png';
+  static const String shopBangle =
+      'assets/images/shop_bangle.png';
+  static const String shopChain =
+      'assets/images/shop_chain.png';
+  static const String shopEarrings =
+      'assets/images/shop_earrings.png';
+  static const String shopHero =
+      'assets/images/shop_hero.jpg';
+  static const String shopGoldCoins =
+      'assets/images/shop_gold_coins.png';
+  static const String shopSilverCoins =
+      'assets/images/shop_silver_coins.png';
+
+  // Screen-accurate luxury assets
+  static const String templeArchChandelier =
+      'assets/images/athirai_temple_arch_chandelier.jpg';
+  static const String otpDeity =
+      'assets/images/athirai_otp_deity.jpg';
+  static const String heroSphereNecklace =
+      'assets/images/athirai_hero_sphere_necklace.jpg';
+  static const String pedestalNecklace =
+      'assets/images/athirai_pedestal_necklace.jpg';
+  static const String heritageDial =
+      'assets/images/athirai_heritage_dial.jpg';
+  static const String vaultMannequin =
+      'assets/images/athirai_vault_mannequin.jpg';
 }

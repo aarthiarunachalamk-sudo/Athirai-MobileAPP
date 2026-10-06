@@ -13,6 +13,15 @@ class UserSerializer(serializers.ModelSerializer):
             'email',
             'mobile_number',
             'full_name',
+            'gender',
+            'date_of_birth',
+            'door_no',
+            'street_name',
+            'pincode',
+            'town',
+            'city',
+            'district',
+            'state',
             'avatar_url',
             'is_sso_user',
             'sso_provider',
@@ -50,8 +59,26 @@ class LoginRequestSerializer(serializers.Serializer):
 class RegisterRequestSerializer(serializers.Serializer):
     email = serializers.EmailField(required=True)
     password = serializers.CharField(max_length=128, required=True, min_length=6)
+    confirm_password = serializers.CharField(max_length=128, required=False, write_only=True)
     full_name = serializers.CharField(max_length=150, required=False, default='')
+    first_name = serializers.CharField(max_length=150, required=False, default='')
+    last_name = serializers.CharField(max_length=150, required=False, default='')
     mobile_number = serializers.CharField(max_length=25, required=False, allow_blank=True, default='')
+    gender = serializers.CharField(max_length=30, required=False, allow_blank=True, default='')
+    date_of_birth = serializers.DateField(required=False, allow_null=True)
+    door_no = serializers.CharField(max_length=100, required=False, allow_blank=True, default='')
+    street_name = serializers.CharField(max_length=200, required=False, allow_blank=True, default='')
+    pincode = serializers.CharField(max_length=12, required=False, allow_blank=True, default='')
+    town = serializers.CharField(max_length=100, required=False, allow_blank=True, default='')
+    city = serializers.CharField(max_length=100, required=False, allow_blank=True, default='')
+    district = serializers.CharField(max_length=100, required=False, allow_blank=True, default='')
+    state = serializers.CharField(max_length=100, required=False, allow_blank=True, default='')
+
+    def validate(self, attrs):
+        confirmation = attrs.pop('confirm_password', None)
+        if confirmation is not None and confirmation != attrs['password']:
+            raise serializers.ValidationError({'confirm_password': 'Passwords do not match.'})
+        return attrs
 
     def validate_email(self, value):
         if User.objects.filter(email__iexact=value).exists():
@@ -91,3 +118,71 @@ class ProfileUpdateRequestSerializer(serializers.ModelSerializer):
         if not value.strip():
             raise serializers.ValidationError("Full name is required.")
         return value.strip()
+
+
+class SelfieRecordSerializer(serializers.ModelSerializer):
+    class Meta:
+        from .models import SelfieRecord
+        model = SelfieRecord
+        fields = [
+            'id',
+            'session_id',
+            'selfie_url',
+            'selfie_public_id',
+            'avatar_url',
+            'avatar_public_id',
+            'storage_type',
+            'is_latest',
+            'created_at',
+        ]
+        read_only_fields = ['id', 'created_at']
+
+
+class MetalRateSerializer(serializers.ModelSerializer):
+    class Meta:
+        from .models import MetalRate
+        model = MetalRate
+        fields = ['id', 'gold_24k', 'gold_22k', 'gold_18k', 'silver_999', 'is_active', 'updated_at']
+        read_only_fields = ['id', 'updated_at']
+
+
+class JewelCategorySerializer(serializers.ModelSerializer):
+    jewel_count = serializers.IntegerField(source='jewels.count', read_only=True)
+
+    class Meta:
+        from .models import JewelCategory
+        model = JewelCategory
+        fields = ['id', 'name', 'slug', 'image_url', 'display_order', 'jewel_count', 'created_at']
+        read_only_fields = ['id', 'slug', 'created_at']
+
+
+class JewelProductSerializer(serializers.ModelSerializer):
+    category_name = serializers.CharField(source='category.name', read_only=True)
+    dynamic_price = serializers.IntegerField(read_only=True)
+    price_breakdown = serializers.SerializerMethodField()
+
+    class Meta:
+        from .models import JewelProduct
+        model = JewelProduct
+        fields = [
+            'id',
+            'name',
+            'category',
+            'category_name',
+            'metal',
+            'purity',
+            'weight_grams',
+            'making_charge_percent',
+            'stone_price',
+            'description',
+            'image_url',
+            'is_featured',
+            'dynamic_price',
+            'price_breakdown',
+            'created_at',
+            'updated_at',
+        ]
+        read_only_fields = ['id', 'created_at', 'updated_at']
+
+    def get_price_breakdown(self, obj):
+        return obj.calculate_price_breakdown()

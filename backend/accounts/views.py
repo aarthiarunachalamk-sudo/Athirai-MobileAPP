@@ -49,16 +49,21 @@ class LoginView(APIView):
             clean_phone = ''.join(c for c in identifier if c.isdigit() or c == '+')
             user = User.objects.filter(mobile_number__icontains=clean_phone[-10:]).first()
 
-        # If user exists and password is provided, check password
         if user:
-            if password and user.has_usable_password():
-                if not user.check_password(password):
-                    return Response({
-                        'success': False,
-                        'message': 'Invalid credentials. Please verify your password.'
-                    }, status=status.HTTP_401_UNAUTHORIZED)
+            if password and (
+                not user.has_usable_password() or not user.check_password(password)
+            ):
+                return Response({
+                    'success': False,
+                    'message': 'Invalid credentials. Please verify your password.'
+                }, status=status.HTTP_401_UNAUTHORIZED)
         else:
-            # First time user entering identifier on main screen - auto create lightweight Athirai account
+            if password:
+                return Response({
+                    'success': False,
+                    'message': 'Invalid credentials. Please verify your email or phone and password.'
+                }, status=status.HTTP_401_UNAUTHORIZED)
+
             if '@' in identifier:
                 user = User.objects.create_user(email=identifier.lower(), is_profile_completed=False)
             else:
@@ -91,11 +96,25 @@ class RegisterView(APIView):
             }, status=status.HTTP_400_BAD_REQUEST)
 
         data = serializer.validated_data
+        full_name = data.get('full_name') or ' '.join(
+            part for part in (data.get('first_name', ''), data.get('last_name', '')) if part
+        )
         user = User.objects.create_user(
             email=data['email'],
             password=data['password'],
-            full_name=data.get('full_name', ''),
+            full_name=full_name,
+            first_name=data.get('first_name', ''),
+            last_name=data.get('last_name', ''),
             mobile_number=data.get('mobile_number', ''),
+            gender=data.get('gender', ''),
+            date_of_birth=data.get('date_of_birth'),
+            door_no=data.get('door_no', ''),
+            street_name=data.get('street_name', ''),
+            pincode=data.get('pincode', ''),
+            town=data.get('town', ''),
+            city=data.get('city', ''),
+            district=data.get('district', ''),
+            state=data.get('state', ''),
             is_profile_completed=True
         )
 
@@ -316,4 +335,283 @@ class MockIdPVerifyMFAView(APIView):
             'state': state,
             'email': email,
             'message': 'Identity verified successfully'
+        }, status=status.HTTP_200_OK)
+
+
+# =====================================================================
+# CLOUDINARY SELFIE & AI AVATAR VIEWS
+# Handles uploading selfies to Cloudinary, creating AI avatars based
+# on the latest selfie, and querying selfie history.
+# =====================================================================
+
+class SelfieUploadView(APIView):
+    """
+    POST /api/auth/selfie/upload/
+    Accepts a selfie image file (multipart/form-data with key 'selfie' or 'image').
+    1. Saves the selfie to Cloudinary (folder 'athirai/selfies/').
+    2. Synthesizes an Athirai AI avatar based on the selfie image.
+    3. Saves the created avatar to Cloudinary (folder 'athirai/avatars/').
+    4. Records the selfie in database, marking previous as is_latest=False.
+    """
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        selfie_file = request.FILES.get('selfie') or request.FILES.get('image')
+        if not selfie_file:
+            return Response({
+                'success': False,
+                'message': 'Selfie image file is required (form-data field "selfie").'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        user = request.user if request.user and request.user.is_authenticated else None
+        session_id = request.data.get('session_id') or request.headers.get('X-Session-ID', '')
+
+        from .cloudinary_service import CloudinaryAvatarService
+        try:
+            result = CloudinaryAvatarService.process_selfie_and_create_avatar(
+                selfie_file=selfie_file,
+                user=user,
+                session_id=session_id,
+                request=request,
+            )
+            return Response(result, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            return Response({
+                'success': False,
+                'message': f"Failed to process selfie and generate avatar: {str(e)}"
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class LatestSelfieView(APIView):
+    """
+    GET /api/auth/selfie/latest/
+    Returns the latest selfie and synthesized avatar for the authenticated user or session.
+    """
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        from .models import SelfieRecord
+        from .serializers import SelfieRecordSerializer
+
+        user = request.user if request.user and request.user.is_authenticated else None
+        session_id = request.query_params.get('session_id') or request.headers.get('X-Session-ID', '')
+
+        record = None
+        if user:
+            record = SelfieRecord.objects.filter(user=user, is_latest=True).first()
+        elif session_id:
+            record = SelfieRecord.objects.filter(session_id=session_id, is_latest=True).first()
+
+        if not record:
+            return Response({
+                'success': False,
+                'message': 'No selfie found for this account.'
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        return Response({
+            'success': True,
+            'selfie': SelfieRecordSerializer(record).data
+        }, status=status.HTTP_200_OK)
+
+
+class UserSelfieListView(APIView):
+    """
+    GET /api/auth/selfie/list/
+    Retrieves all selfie records for the user ("selfie images ellam").
+    """
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        from .models import SelfieRecord
+        from .serializers import SelfieRecordSerializer
+
+        user = request.user if request.user and request.user.is_authenticated else None
+        session_id = request.query_params.get('session_id') or request.headers.get('X-Session-ID', '')
+
+        if user:
+            qs = SelfieRecord.objects.filter(user=user).order_by('-created_at')
+        elif session_id:
+            qs = SelfieRecord.objects.filter(session_id=session_id).order_by('-created_at')
+        else:
+            qs = SelfieRecord.objects.none()
+
+        return Response({
+            'success': True,
+            'count': qs.count(),
+            'selfies': SelfieRecordSerializer(qs, many=True).data
+        }, status=status.HTTP_200_OK)
+
+
+class MetalRateView(APIView):
+    """
+    GET /api/rates/ - Get current live metal rates
+    POST /api/rates/ - Update live metal rates dynamically
+    """
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        from .models import MetalRate
+        from .serializers import MetalRateSerializer
+        rate = MetalRate.objects.filter(is_active=True).first()
+        if not rate:
+            rate = MetalRate.objects.create(gold_24k=7980, gold_22k=7450, gold_18k=6100, silver_999=98.50)
+        return Response({
+            'success': True,
+            'rates': MetalRateSerializer(rate).data
+        }, status=status.HTTP_200_OK)
+
+    def post(self, request):
+        from .models import MetalRate
+        from .serializers import MetalRateSerializer
+        data = request.data
+        rate = MetalRate.objects.filter(is_active=True).first()
+        if not rate:
+            rate = MetalRate()
+
+        if 'gold_24k' in data:
+            rate.gold_24k = int(data['gold_24k'])
+        if 'gold_22k' in data:
+            rate.gold_22k = int(data['gold_22k'])
+        if 'gold_18k' in data:
+            rate.gold_18k = int(data['gold_18k'])
+        if 'silver_999' in data:
+            rate.silver_999 = float(data['silver_999'])
+        rate.save()
+
+        return Response({
+            'success': True,
+            'message': 'Live metal rates updated successfully',
+            'rates': MetalRateSerializer(rate).data
+        }, status=status.HTTP_200_OK)
+
+
+class JewelCategoryListCreateView(APIView):
+    """
+    GET /api/categories/ - List all jewellery categories
+    POST /api/categories/ - Create a new category dynamically
+    """
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        from .models import JewelCategory
+        from .serializers import JewelCategorySerializer
+        categories = JewelCategory.objects.all().order_by('display_order', 'name')
+        return Response({
+            'success': True,
+            'count': categories.count(),
+            'categories': JewelCategorySerializer(categories, many=True).data
+        }, status=status.HTTP_200_OK)
+
+    def post(self, request):
+        from .models import JewelCategory
+        from .serializers import JewelCategorySerializer
+        name = request.data.get('name', '').strip()
+        if not name:
+            return Response({'success': False, 'message': 'Category name is required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        category, created = JewelCategory.objects.get_or_create(
+            name=name,
+            defaults={
+                'image_url': request.data.get('image_url', ''),
+                'display_order': int(request.data.get('display_order', 0))
+            }
+        )
+        return Response({
+            'success': True,
+            'created': created,
+            'category': JewelCategorySerializer(category).data
+        }, status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)
+
+
+class JewelProductListCreateView(APIView):
+    """
+    GET /api/jewels/ - List all jewels with optional ?category= or ?search= filter
+    POST /api/jewels/ - Add a new jewel piece dynamically
+    """
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        from .models import JewelProduct
+        from .serializers import JewelProductSerializer
+        qs = JewelProduct.objects.all().select_related('category')
+        cat = request.query_params.get('category')
+        search = request.query_params.get('search')
+
+        if cat and cat != 'All':
+            qs = qs.filter(category__name__iexact=cat)
+        if search:
+            from django.db.models import Q
+            qs = qs.filter(Q(name__icontains=search) | Q(description__icontains=search) | Q(purity__icontains=search))
+
+        return Response({
+            'success': True,
+            'count': qs.count(),
+            'jewels': JewelProductSerializer(qs, many=True).data
+        }, status=status.HTTP_200_OK)
+
+    def post(self, request):
+        from .models import JewelProduct, JewelCategory
+        from .serializers import JewelProductSerializer
+        data = request.data
+
+        name = data.get('name', '').strip()
+        category_name = data.get('category', '').strip()
+        weight_grams = data.get('weight_grams')
+
+        if not name or not category_name or not weight_grams:
+            return Response({
+                'success': False,
+                'message': 'Name, category, and weight in grams are required.'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        # Auto-create category if it does not exist
+        category, _ = JewelCategory.objects.get_or_create(name=category_name)
+
+        product = JewelProduct.objects.create(
+            name=name,
+            category=category,
+            metal=data.get('metal', 'Gold'),
+            purity=data.get('purity', '22K'),
+            weight_grams=weight_grams,
+            making_charge_percent=data.get('making_charge_percent', 12.00),
+            stone_price=int(data.get('stone_price', 0)),
+            description=data.get('description', ''),
+            image_url=data.get('image_url', ''),
+            is_featured=bool(data.get('is_featured', False)),
+        )
+
+        return Response({
+            'success': True,
+            'message': 'Jewel added successfully to dynamic catalog',
+            'jewel': JewelProductSerializer(product).data
+        }, status=status.HTTP_201_CREATED)
+
+
+class JewelPriceListView(APIView):
+    """
+    GET /api/price-list/
+    Returns full dynamic price list for all jewellery pieces calculated with live metal rates.
+    """
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        from .models import JewelProduct, MetalRate
+        rates = MetalRate.objects.filter(is_active=True).first()
+        if not rates:
+            rates = MetalRate.objects.create(gold_24k=7980, gold_22k=7450, gold_18k=6100, silver_999=98.50)
+
+        jewels = JewelProduct.objects.all().select_related('category')
+        price_list = [j.calculate_price_breakdown(rates) for j in jewels]
+
+        return Response({
+            'success': True,
+            'rates': {
+                'gold_24k': rates.gold_24k,
+                'gold_22k': rates.gold_22k,
+                'gold_18k': rates.gold_18k,
+                'silver_999': float(rates.silver_999),
+                'updated_at': rates.updated_at.isoformat(),
+            },
+            'count': len(price_list),
+            'price_list': price_list
         }, status=status.HTTP_200_OK)

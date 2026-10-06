@@ -5,3 +5,7 @@ __pycache__/
 *.py[cod]
 *.sqlite3
 *.log
+media/
+backend/media/
+releases/
+*.apk

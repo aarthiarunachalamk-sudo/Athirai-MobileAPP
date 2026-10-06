@@ -9,16 +9,16 @@ class AuthRepository {
   final SecureStorageService _storage;
 
   AuthRepository({ApiClient? apiClient, SecureStorageService? storage})
-      : _apiClient = apiClient ?? ApiClient(),
-        _storage = storage ?? SecureStorageService();
+    : _apiClient = apiClient ?? ApiClient(),
+      _storage = storage ?? SecureStorageService();
 
-  Future<ApiResponse<Map<String, dynamic>>> login(String identifier, {String? password}) async {
+  Future<ApiResponse<Map<String, dynamic>>> login(
+    String identifier, {
+    String? password,
+  }) async {
     final response = await _apiClient.post(
       ApiEndpoints.login,
-      body: {
-        'identifier': identifier,
-        'password': password ?? '',
-      },
+      body: {'identifier': identifier, 'password': password ?? ''},
     );
 
     if (response.isSuccess && response.data != null) {
@@ -29,7 +29,8 @@ class AuthRepository {
           refreshToken: tokens['refresh'] ?? '',
         );
       }
-      if (response.data!['user'] != null && response.data!['user']['email'] != null) {
+      if (response.data!['user'] != null &&
+          response.data!['user']['email'] != null) {
         await _storage.saveUserEmail(response.data!['user']['email']);
       }
     }
@@ -40,6 +41,18 @@ class AuthRepository {
   Future<ApiResponse<Map<String, dynamic>>> register({
     required String email,
     required String password,
+    required String confirmPassword,
+    required String firstName,
+    required String lastName,
+    required String gender,
+    required String dateOfBirth,
+    required String doorNo,
+    required String streetName,
+    required String pincode,
+    required String town,
+    required String city,
+    required String district,
+    required String state,
     String? fullName,
     String? mobileNumber,
   }) async {
@@ -48,8 +61,20 @@ class AuthRepository {
       body: {
         'email': email,
         'password': password,
+        'confirm_password': confirmPassword,
+        'first_name': firstName,
+        'last_name': lastName,
         'full_name': fullName ?? '',
         'mobile_number': mobileNumber ?? '',
+        'gender': gender,
+        'date_of_birth': dateOfBirth,
+        'door_no': doorNo,
+        'street_name': streetName,
+        'pincode': pincode,
+        'town': town,
+        'city': city,
+        'district': district,
+        'state': state,
       },
     );
 
@@ -77,7 +102,11 @@ class AuthRepository {
       final authUrl = response.data!['authorization_url'] as String?;
       final state = response.data!['state'] as String?;
 
-      final org = OrganizationModel.fromJson(orgData, authorizationUrl: authUrl, state: state);
+      final org = OrganizationModel.fromJson(
+        orgData,
+        authorizationUrl: authUrl,
+        state: state,
+      );
       return ApiResponse(
         isSuccess: true,
         statusCode: response.statusCode,
@@ -88,7 +117,9 @@ class AuthRepository {
     return ApiResponse(
       isSuccess: false,
       statusCode: response.statusCode,
-      errorMessage: response.errorMessage ?? 'Unable to find organization for this email domain.',
+      errorMessage:
+          response.errorMessage ??
+          'Unable to find organization for this email domain.',
     );
   }
 
@@ -98,10 +129,7 @@ class AuthRepository {
   }) async {
     final response = await _apiClient.post(
       ApiEndpoints.ssoCallback,
-      body: {
-        'code': code,
-        'state': state,
-      },
+      body: {'code': code, 'state': state},
     );
 
     if (response.isSuccess && response.data != null) {
@@ -112,7 +140,8 @@ class AuthRepository {
           refreshToken: tokens['refresh'] ?? '',
         );
       }
-      if (response.data!['user'] != null && response.data!['user']['email'] != null) {
+      if (response.data!['user'] != null &&
+          response.data!['user']['email'] != null) {
         await _storage.saveUserEmail(response.data!['user']['email']);
       }
     }
@@ -135,7 +164,9 @@ class AuthRepository {
       requireAuth: true,
     );
 
-    if (response.isSuccess && response.data != null && response.data!['user'] != null) {
+    if (response.isSuccess &&
+        response.data != null &&
+        response.data!['user'] != null) {
       return ApiResponse(
         isSuccess: true,
         statusCode: response.statusCode,
@@ -153,7 +184,9 @@ class AuthRepository {
   Future<ApiResponse<UserModel>> getProfile() async {
     final response = await _apiClient.get(ApiEndpoints.me, requireAuth: true);
 
-    if (response.isSuccess && response.data != null && response.data!['user'] != null) {
+    if (response.isSuccess &&
+        response.data != null &&
+        response.data!['user'] != null) {
       return ApiResponse(
         isSuccess: true,
         statusCode: response.statusCode,
@@ -205,11 +238,34 @@ class AuthRepository {
   }) async {
     return await _apiClient.post(
       ApiEndpoints.mockIdpVerifyMfa,
-      body: {
-        'otp': otp,
-        'state': state,
-        'email': email,
-      },
+      body: {'otp': otp, 'state': state, 'email': email},
     );
+  }
+
+  /// Uploads selfie image to Cloudinary and generates an Athirai AI avatar based on it.
+  Future<ApiResponse<Map<String, dynamic>>> uploadSelfieAndCreateAvatar({
+    required String filePath,
+    String? sessionId,
+  }) async {
+    final response = await _apiClient.multipartPost(
+      ApiEndpoints.selfieUpload,
+      fileField: 'selfie',
+      filePath: filePath,
+      fields: sessionId != null ? {'session_id': sessionId} : null,
+      requireAuth: true,
+    );
+    return response;
+  }
+
+  /// Fetches the latest selfie and AI avatar record.
+  Future<ApiResponse<Map<String, dynamic>>> getLatestSelfie({
+    String? sessionId,
+  }) async {
+    final query = sessionId != null ? '?session_id=$sessionId' : '';
+    final response = await _apiClient.get(
+      '${ApiEndpoints.selfieLatest}$query',
+      requireAuth: true,
+    );
+    return response;
   }
 }

@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'core/theme/app_theme.dart';
 import 'core/constants/app_colors.dart';
 import 'features/auth/presentation/controllers/auth_controller.dart';
 import 'features/auth/presentation/screens/athirai_entry_screen.dart';
 import 'features/auth/presentation/screens/complete_profile_screen.dart';
 import 'features/auth/presentation/screens/sign_in_screen.dart';
+import 'features/shop/presentation/screens/athirai_flow_container.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -38,8 +38,16 @@ class AthiraiJewelsApp extends StatelessWidget {
     return MaterialApp(
       title: 'ATHIRAI – TIMELESS JEWELS',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.luxuryDarkTheme,
-      home: const AuthStartupScreen(),
+      theme: ThemeData(
+        useMaterial3: true,
+        scaffoldBackgroundColor: const Color(0xFFFAF6F0),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFF7A1B2E),
+          primary: const Color(0xFF7A1B2E),
+          surface: const Color(0xFFFAF6F0),
+        ),
+      ),
+      home: const AthiraiFlowContainer(initialScreenIndex: 0),
     );
   }
 }

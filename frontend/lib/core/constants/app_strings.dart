@@ -74,7 +74,7 @@ class AppStrings {
   static const String continueToAthirai = 'Continue to Athirai';
 
   // Screen 10: Journey Entry
-  static const String journeyHeading = 'Where Gold Meets You,\nAI, 3D & Imagination';
+  static const String journeyHeading = 'Timeless Jewellery,\nGold & Silver Coins';
   static const String beginJourneyBtn = 'BEGIN JOURNEY';
 
   // Validation Messages

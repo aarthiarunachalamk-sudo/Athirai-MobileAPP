@@ -1,4 +1,3 @@
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../theme/heritage_theme.dart';
 
@@ -533,31 +532,4 @@ class _CardShimmerSweepPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant _CardShimmerSweepPainter oldDelegate) =>
       progress != oldDelegate.progress;
-}
-
-/// Subtle concentric palace arch watermarks on product card image backdrop
-class _SubtleArchWatermarkPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = const Color(0xFFECE3D4).withValues(alpha: 0.6)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 0.8;
-
-    final cx = size.width / 2;
-    final cy = size.height * 0.9;
-
-    for (int r = 25; r <= 85; r += 20) {
-      canvas.drawArc(
-        Rect.fromCircle(center: Offset(cx, cy), radius: r.toDouble()),
-        math.pi,
-        math.pi,
-        false,
-        paint,
-      );
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

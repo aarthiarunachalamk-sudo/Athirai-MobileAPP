@@ -9,7 +9,7 @@ import '../controllers/auth_controller.dart';
 import '../../data/services/secure_storage_service.dart';
 import '../widgets/athirai_logo.dart';
 import '../widgets/cosmic_background.dart';
-import 'athirai_entry_screen.dart';
+import '../../../shop/presentation/screens/athirai_flow_container.dart';
 import 'complete_profile_screen.dart';
 import 'register_screen.dart';
 
@@ -32,6 +32,8 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   bool _obscurePassword = true;
   bool _rememberMe = false;
   String? _error;
+  String? _idError;
+  String? _pwError;
 
   @override
   void initState() {
@@ -55,18 +57,67 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
     super.dispose();
   }
 
-  Future<void> _submit() async {
+  bool _validateInputs() {
     final id = _identifierCtrl.text.trim();
     final password = _passwordCtrl.text;
+    String? idErr;
+    String? pwErr;
+
     if (id.isEmpty) {
-      setState(() => _error = 'Enter your email, phone or ID.');
-      return;
+      idErr = 'Please enter your email, phone or ID.';
+    } else if (id.contains('@')) {
+      final emailRegex = RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$');
+      if (!emailRegex.hasMatch(id)) {
+        idErr = 'Please enter a valid email address.';
+      }
+    } else if (RegExp(r'^[0-9+() -]+$').hasMatch(id)) {
+      final digits = id.replaceAll(RegExp(r'\D'), '');
+      if (digits.length < 10) {
+        idErr = 'Please enter a valid 10-digit phone number.';
+      }
+    } else if (id.length < 3) {
+      idErr = 'Identifier must be at least 3 characters.';
     }
+
     if (password.isEmpty) {
-      setState(() => _error = 'Enter your password.');
-      return;
+      pwErr = 'Please enter your password.';
+    } else if (password.length < 6) {
+      pwErr = 'Password must be at least 6 characters.';
     }
-    setState(() => _error = null);
+
+    setState(() {
+      _idError = idErr;
+      _pwError = pwErr;
+      _error = idErr ?? pwErr;
+    });
+
+    return idErr == null && pwErr == null;
+  }
+
+  void _clearErrors() {
+    if (_error != null || _idError != null || _pwError != null) {
+      setState(() {
+        _error = null;
+        _idError = null;
+        _pwError = null;
+      });
+    }
+  }
+
+  void _navigateToDashboard() {
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(
+        builder: (_) => const AthiraiFlowContainer(initialScreenIndex: 1),
+      ),
+      (route) => false,
+    );
+  }
+
+  Future<void> _submit() async {
+    if (!_validateInputs()) return;
+
+    final id = _identifierCtrl.text.trim();
+    final password = _passwordCtrl.text;
 
     if (_rememberMe) {
       await SecureStorageService().saveRememberedIdentifier(id);
@@ -86,9 +137,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
           MaterialPageRoute(builder: (_) => const CompleteProfileScreen()),
         );
       } else {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const AthiraiEntryScreen()),
-        );
+        _navigateToDashboard();
       }
     } else {
       final err = ref.read(authControllerProvider).errorMessage;
@@ -141,226 +190,339 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   Widget build(BuildContext context) {
     final auth = ref.watch(authControllerProvider);
 
-    return Scaffold(
-      backgroundColor: AppColors.backgroundBlack,
-      resizeToAvoidBottomInset: true,
-      body: CosmicBackground(
-        imageAsset: AppAssets.signInReferenceBg,
-        showFrame: false,
-        overlayOpacity: 0.04,
-        child: SafeArea(
-          child: LayoutBuilder(
-            builder: (context, constraints) => SingleChildScrollView(
-              physics: const ClampingScrollPhysics(),
-              child: ConstrainedBox(
-                constraints: BoxConstraints(minHeight: constraints.maxHeight),
-                child: Padding(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: (constraints.maxWidth * 0.08).clamp(20.0, 40.0),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      const SizedBox(height: 28),
-
-                      // ── Logo ──────────────────────────────────────────────
-                      AthiraiLogo(
-                        width: (constraints.maxWidth * 0.50).clamp(
-                          160.0,
-                          230.0,
-                        ),
-                        imageAsset: AppAssets.referenceLogo,
-                        showGlow: false,
-                      ),
-
-                      const SizedBox(height: 28),
-
-                      // ── "WELCOME BACK" eyebrow ────────────────────────────
-                      Text(
-                        'WELCOME BACK',
-                        style: GoogleFonts.inter(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 3.2,
-                          color: AppColors.goldPrimary,
-                        ),
-                      ),
-
-                      const SizedBox(height: 8),
-
-                      // ── Main heading ──────────────────────────────────────
-                      Text(
-                        'Sign in to Athirai',
-                        textAlign: TextAlign.center,
-                        style: GoogleFonts.cormorantGaramond(
-                          fontSize: 32,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textPrimary,
-                          letterSpacing: 0.4,
-                        ),
-                      ),
-
-                      const SizedBox(height: 8),
-
-                      Text(
-                        'Enter your credentials to continue to your workspace.',
-                        textAlign: TextAlign.center,
-                        style: GoogleFonts.inter(
-                          fontSize: 13.5,
-                          color: AppColors.champagne.withOpacity(0.8),
-                          height: 1.45,
-                        ),
-                      ),
-
-                      const SizedBox(height: 32),
-
-                      // ── Identifier field ──────────────────────────────────
-                      _AuthField(
-                        controller: _identifierCtrl,
-                        focusNode: _idFocus,
-                        label: 'Email, Phone or ID',
-                        hint: 'name@example.com or +91 98765 43210',
-                        prefixIcon: Icons.person_outline_rounded,
-                        keyboardType: TextInputType.emailAddress,
-                        textInputAction: TextInputAction.next,
-                        onSubmitted: (_) => _pwFocus.requestFocus(),
-                        onChanged: (_) {
-                          if (_error != null) setState(() => _error = null);
-                        },
-                      ),
-
-                      const SizedBox(height: 14),
-
-                      // ── Password field ────────────────────────────────────
-                      _AuthField(
-                        controller: _passwordCtrl,
-                        focusNode: _pwFocus,
-                        label: 'Password',
-                        hint: 'Enter your password',
-                        prefixIcon: Icons.lock_outline_rounded,
-                        obscureText: _obscurePassword,
-                        textInputAction: TextInputAction.done,
-                        onSubmitted: (_) => _submit(),
-                        onChanged: (_) {
-                          if (_error != null) setState(() => _error = null);
-                        },
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            _obscurePassword
-                                ? Icons.visibility_off_outlined
-                                : Icons.visibility_outlined,
-                            size: 20,
-                            color: AppColors.textSecondary,
-                          ),
-                          onPressed: () => setState(
-                            () => _obscurePassword = !_obscurePassword,
-                          ),
-                        ),
-                        errorText: _error,
-                      ),
-
-                      // ── Remember me + Forgot password ─────────────────────
-                      const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          SizedBox(
-                            width: 24,
-                            height: 24,
-                            child: Checkbox(
-                              value: _rememberMe,
-                              activeColor: AppColors.goldPrimary,
-                              checkColor: AppColors.backgroundBlack,
-                              side: const BorderSide(
-                                color: AppColors.goldPrimary,
-                                width: 1.2,
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              onChanged: (v) =>
-                                  setState(() => _rememberMe = v ?? false),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          GestureDetector(
-                            onTap: () =>
-                                setState(() => _rememberMe = !_rememberMe),
-                            child: Text(
-                              'Remember me',
-                              style: GoogleFonts.inter(
-                                fontSize: 12.5,
-                                color: AppColors.textSecondary,
+    return PopScope(
+      canPop: true,
+      child: Scaffold(
+        backgroundColor: AppColors.backgroundBlack,
+        resizeToAvoidBottomInset: true,
+        body: CosmicBackground(
+          imageAsset: AppAssets.signInReferenceBg,
+          showFrame: false,
+          overlayOpacity: 0.04,
+          child: SafeArea(
+            child: LayoutBuilder(
+              builder: (context, constraints) => SingleChildScrollView(
+                physics: const ClampingScrollPhysics(),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: (constraints.maxWidth * 0.08).clamp(20.0, 40.0),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        if (Navigator.of(context).canPop()) ...[
+                          const SizedBox(height: 8),
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: IconButton(
+                              tooltip: 'Back to Splash',
+                              onPressed: () => Navigator.of(context).maybePop(),
+                              icon: const Icon(
+                                Icons.arrow_back_ios_new_rounded,
+                                color: AppColors.goldBright,
+                                size: 18,
                               ),
                             ),
                           ),
-                          const Spacer(),
-                          TextButton(
-                            onPressed: _showForgotPassword,
-                            style: TextButton.styleFrom(
-                              foregroundColor: AppColors.goldPrimary,
-                              padding: EdgeInsets.zero,
-                              minimumSize: Size.zero,
-                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                            ),
-                            child: Text(
-                              'Forgot password?',
-                              style: GoogleFonts.inter(
-                                fontSize: 12.5,
-                                color: AppColors.goldPrimary,
-                              ),
-                            ),
+                          const SizedBox(height: 8),
+                        ] else
+                          const SizedBox(height: 28),
+
+                        // ── Logo ──────────────────────────────────────────────
+                        AthiraiLogo(
+                          width: (constraints.maxWidth * 0.50).clamp(
+                            160.0,
+                            230.0,
                           ),
-                        ],
-                      ),
+                          imageAsset: AppAssets.referenceLogo,
+                          showGlow: false,
+                        ),
 
-                      const SizedBox(height: 26),
+                        const SizedBox(height: 28),
 
-                      // ── ENTER YOUR WORKSPACE button ───────────────────────
-                      _WorkspaceButton(
-                        label: 'ENTER YOUR WORKSPACE',
-                        isLoading: auth.isLoading,
-                        onPressed: _submit,
-                      ),
-
-                      const SizedBox(height: 22),
-
-                      // ── Encrypted & secure badge ──────────────────────────
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(
-                            Icons.lock_rounded,
-                            size: 12,
+                        // ── "WELCOME BACK" eyebrow ────────────────────────────
+                        Text(
+                          'WELCOME BACK',
+                          style: GoogleFonts.inter(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 3.2,
                             color: AppColors.goldPrimary,
                           ),
-                          const SizedBox(width: 5),
-                          Text(
-                            'Encrypted & secure',
-                            style: GoogleFonts.inter(
-                              fontSize: 11.5,
+                        ),
+
+                        const SizedBox(height: 8),
+
+                        // ── Main heading ──────────────────────────────────────
+                        Text(
+                          'Sign in to Athirai',
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.cormorantGaramond(
+                            fontSize: 32,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textPrimary,
+                            letterSpacing: 0.4,
+                          ),
+                        ),
+
+                        const SizedBox(height: 8),
+
+                        Text(
+                          'Enter your credentials to continue to your workspace.',
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.inter(
+                            fontSize: 13.5,
+                            color: AppColors.champagne.withOpacity(0.8),
+                            height: 1.45,
+                          ),
+                        ),
+
+                        const SizedBox(height: 32),
+
+                        // ── Identifier field ──────────────────────────────────
+                        _AuthField(
+                          controller: _identifierCtrl,
+                          focusNode: _idFocus,
+                          label: 'Email, Phone or ID',
+                          hint: 'name@example.com or +91 98765 43210',
+                          prefixIcon: Icons.person_outline_rounded,
+                          keyboardType: TextInputType.emailAddress,
+                          textInputAction: TextInputAction.next,
+                          onSubmitted: (_) => _pwFocus.requestFocus(),
+                          onChanged: (_) => _clearErrors(),
+                          errorText: _idError,
+                        ),
+
+                        const SizedBox(height: 14),
+
+                        // ── Password field ────────────────────────────────────
+                        _AuthField(
+                          controller: _passwordCtrl,
+                          focusNode: _pwFocus,
+                          label: 'Password',
+                          hint: 'Enter your password',
+                          prefixIcon: Icons.lock_outline_rounded,
+                          obscureText: _obscurePassword,
+                          textInputAction: TextInputAction.done,
+                          onSubmitted: (_) => _submit(),
+                          onChanged: (_) => _clearErrors(),
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _obscurePassword
+                                  ? Icons.visibility_off_outlined
+                                  : Icons.visibility_outlined,
+                              size: 20,
                               color: AppColors.textSecondary,
-                              letterSpacing: 0.3,
+                            ),
+                            onPressed: () => setState(
+                              () => _obscurePassword = !_obscurePassword,
+                            ),
+                          ),
+                          errorText: _pwError,
+                        ),
+
+                        // ── Remember me + Forgot password ─────────────────────
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: Checkbox(
+                                value: _rememberMe,
+                                activeColor: AppColors.goldPrimary,
+                                checkColor: AppColors.backgroundBlack,
+                                side: const BorderSide(
+                                  color: AppColors.goldPrimary,
+                                  width: 1.2,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                onChanged: (v) =>
+                                    setState(() => _rememberMe = v ?? false),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            GestureDetector(
+                              onTap: () =>
+                                  setState(() => _rememberMe = !_rememberMe),
+                              child: Text(
+                                'Remember me',
+                                style: GoogleFonts.inter(
+                                  fontSize: 12.5,
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                            ),
+                            const Spacer(),
+                            TextButton(
+                              onPressed: _showForgotPassword,
+                              style: TextButton.styleFrom(
+                                foregroundColor: AppColors.goldPrimary,
+                                padding: EdgeInsets.zero,
+                                minimumSize: Size.zero,
+                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              ),
+                              child: Text(
+                                'Forgot password?',
+                                style: GoogleFonts.inter(
+                                  fontSize: 12.5,
+                                  color: AppColors.goldPrimary,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        if (_error != null &&
+                            _error != _idError &&
+                            _error != _pwError) ...[
+                          const SizedBox(height: 14),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 10,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.error.withOpacity(0.12),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(
+                                color: AppColors.error.withOpacity(0.5),
+                              ),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.error_outline_rounded,
+                                      size: 16,
+                                      color: AppColors.error,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        _error!,
+                                        style: GoogleFonts.inter(
+                                          color: AppColors.error,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                if (_error!.contains('connect') ||
+                                    _error!.contains('server') ||
+                                    _error!.contains('taking too long') ||
+                                    _error!.contains('Unable to sign in')) ...[
+                                  const SizedBox(height: 8),
+                                  Align(
+                                    alignment: Alignment.centerRight,
+                                    child: TextButton(
+                                      onPressed: _navigateToDashboard,
+                                      style: TextButton.styleFrom(
+                                        foregroundColor: AppColors.goldBright,
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 2,
+                                        ),
+                                        minimumSize: Size.zero,
+                                        tapTargetSize:
+                                            MaterialTapTargetSize.shrinkWrap,
+                                      ),
+                                      child: const Text(
+                                        'Continue in Demo Mode →',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ],
                             ),
                           ),
                         ],
-                      ),
 
-                      const SizedBox(height: 28),
+                        const SizedBox(height: 26),
 
-                      // ── Divider ───────────────────────────────────────────
-                      _GoldDivider(label: 'OR'),
+                        // ── ENTER YOUR WORKSPACE button ───────────────────────
+                        _WorkspaceButton(
+                          label: 'ENTER YOUR WORKSPACE',
+                          isLoading: auth.isLoading,
+                          onPressed: _submit,
+                        ),
 
-                      const SizedBox(height: 24),
+                        const SizedBox(height: 22),
 
-                      // ── Register CTA ──────────────────────────────────────
-                      _OutlineButton(
-                        label: 'New to Athirai? Register / Create Account',
-                        onPressed: () => Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) => const RegisterScreen(),
+                        // ── Encrypted & secure badge ──────────────────────────
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(
+                              Icons.lock_rounded,
+                              size: 12,
+                              color: AppColors.goldPrimary,
+                            ),
+                            const SizedBox(width: 5),
+                            Text(
+                              'Encrypted & secure',
+                              style: GoogleFonts.inter(
+                                fontSize: 11.5,
+                                color: AppColors.textSecondary,
+                                letterSpacing: 0.3,
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 28),
+
+                        // ── Divider ───────────────────────────────────────────
+                        _GoldDivider(label: 'OR'),
+
+                        const SizedBox(height: 24),
+
+                        // ── Register CTA ──────────────────────────────────────
+                        _OutlineButton(
+                          label: 'New to Athirai? Register / Create Account',
+                          onPressed: () => Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => const RegisterScreen(),
+                            ),
                           ),
                         ),
-                      ),
+
+                        const SizedBox(height: 14),
+
+                        // ── Explore as Guest ──────────────────────────────────
+                        TextButton(
+                          onPressed: _navigateToDashboard,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                'Explore Dashboard as Guest',
+                                style: GoogleFonts.inter(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.champagne.withOpacity(0.85),
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              const Icon(
+                                Icons.arrow_forward_rounded,
+                                size: 14,
+                                color: AppColors.goldPrimary,
+                              ),
+                            ],
+                          ),
+                        ),
 
                       const SizedBox(height: 24),
 
@@ -422,8 +584,9 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -446,7 +609,6 @@ class _AuthField extends StatefulWidget {
     this.onChanged,
     this.suffixIcon,
     this.errorText,
-    this.readOnly = false,
   });
 
   final TextEditingController controller;
@@ -461,7 +623,6 @@ class _AuthField extends StatefulWidget {
   final ValueChanged<String>? onChanged;
   final Widget? suffixIcon;
   final String? errorText;
-  final bool readOnly;
 
   @override
   State<_AuthField> createState() => _AuthFieldState();
@@ -550,7 +711,6 @@ class _AuthFieldState extends State<_AuthField> {
                 child: TextField(
                   controller: widget.controller,
                   focusNode: _focus,
-                  readOnly: widget.readOnly,
                   obscureText: widget.obscureText,
                   keyboardType: widget.keyboardType,
                   textInputAction: widget.textInputAction,

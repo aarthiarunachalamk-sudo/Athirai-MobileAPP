@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/constants/app_assets.dart';
 import '../../domain/shop_store.dart';
 import '../theme/heritage_theme.dart';
+import '../../../auth/presentation/screens/sign_in_screen.dart';
 
 /// Screen 02: Home / Experience Dashboard ("Discover Your Legacy")
 /// Exact match for Mockup Screen 02:
@@ -25,6 +26,7 @@ class AthiraiHomeScreen extends StatelessWidget {
     this.onLotusTap,
     this.onOpenStudio,
     this.onOpenPriceList,
+    this.onSignOut,
   });
 
   final ShopStore store;
@@ -36,6 +38,7 @@ class AthiraiHomeScreen extends StatelessWidget {
   final VoidCallback? onLotusTap;
   final VoidCallback? onOpenStudio;
   final VoidCallback? onOpenPriceList;
+  final VoidCallback? onSignOut;
 
   @override
   Widget build(BuildContext context) {
@@ -179,9 +182,9 @@ class AthiraiHomeScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 20),
-          // Profile / Vault icon
+          // Profile / Account icon
           GestureDetector(
-            onTap: onOpenBag,
+            onTap: () => _showUserProfileModal(context),
             child: const Icon(
               Icons.person_outline_rounded,
               color: HeritageTheme.textMutedDark,
@@ -204,28 +207,31 @@ class AthiraiHomeScreen extends StatelessWidget {
           size: 16,
         ),
         const SizedBox(width: 6),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'Welcome back,',
-              style: GoogleFonts.inter(
-                fontSize: 10.5,
-                color: HeritageTheme.textMutedDark,
-                letterSpacing: 0.2,
+        GestureDetector(
+          onTap: () => _showUserProfileModal(context),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Welcome back,',
+                style: GoogleFonts.inter(
+                  fontSize: 10.5,
+                  color: HeritageTheme.textMutedDark,
+                  letterSpacing: 0.2,
+                ),
               ),
-            ),
-            Text(
-              'Ananya',
-              style: GoogleFonts.cormorantGaramond(
-                fontSize: 17,
-                fontWeight: FontWeight.w600,
-                color: HeritageTheme.textLight,
-                letterSpacing: 0.3,
+              Text(
+                'Ananya',
+                style: GoogleFonts.cormorantGaramond(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w600,
+                  color: HeritageTheme.textLight,
+                  letterSpacing: 0.3,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
         const Spacer(),
         // Notification bell with badge dot
@@ -254,15 +260,18 @@ class AthiraiHomeScreen extends StatelessWidget {
           ],
         ),
         // User Profile Avatar with circular gold ring
-        Container(
-          width: 36,
-          height: 36,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(color: HeritageTheme.goldPrimary, width: 1.4),
-            image: const DecorationImage(
-              image: AssetImage(AppAssets.profileAvatar),
-              fit: BoxFit.cover,
+        GestureDetector(
+          onTap: () => _showUserProfileModal(context),
+          child: Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: HeritageTheme.goldPrimary, width: 1.4),
+              image: const DecorationImage(
+                image: AssetImage(AppAssets.profileAvatar),
+                fit: BoxFit.cover,
+              ),
             ),
           ),
         ),
@@ -608,6 +617,585 @@ class AthiraiHomeScreen extends StatelessWidget {
                 ),
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Profile Details, Settings & Logout Modal Sheet
+  void _showUserProfileModal(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (modalContext) {
+        bool notificationAlerts = true;
+        bool biometricEnabled = true;
+
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Container(
+              height: MediaQuery.of(context).size.height * 0.85,
+              decoration: BoxDecoration(
+                color: const Color(0xF7041410),
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+                border: Border.all(color: HeritageTheme.goldBorderSubtle, width: 1.2),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.8),
+                    blurRadius: 28,
+                    spreadRadius: 4,
+                  ),
+                ],
+              ),
+              child: SafeArea(
+                top: false,
+                child: Column(
+                  children: [
+                    // Handle pill
+                    Container(
+                      margin: const EdgeInsets.only(top: 12, bottom: 8),
+                      width: 44,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: HeritageTheme.goldBorderSubtle,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+
+                    // Top Bar with Title and Close
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.diamond_outlined,
+                            color: HeritageTheme.goldPrimary,
+                            size: 16,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'ROYAL VAULT & SETTINGS',
+                            style: GoogleFonts.inter(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 2.2,
+                              color: HeritageTheme.goldPrimary,
+                            ),
+                          ),
+                          const Spacer(),
+                          IconButton(
+                            icon: const Icon(
+                              Icons.close_rounded,
+                              color: HeritageTheme.textMutedDark,
+                              size: 20,
+                            ),
+                            onPressed: () => Navigator.pop(modalContext),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const Divider(color: HeritageTheme.goldBorderSubtle, height: 1),
+
+                    // Scrollable content
+                    Expanded(
+                      child: SingleChildScrollView(
+                        physics: const BouncingScrollPhysics(),
+                        padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // ── User Profile Header Card ────────────────────────
+                            Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: const Color(0x990A221C),
+                                borderRadius: BorderRadius.circular(18),
+                                border: Border.all(
+                                  color: HeritageTheme.goldBorderSubtle,
+                                  width: 1.0,
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    width: 60,
+                                    height: 60,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                        color: HeritageTheme.goldPrimary,
+                                        width: 1.8,
+                                      ),
+                                      image: const DecorationImage(
+                                        image: AssetImage(AppAssets.profileAvatar),
+                                        fit: BoxFit.cover,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 14),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'Ananya Sharma',
+                                          style: GoogleFonts.cormorantGaramond(
+                                            fontSize: 22,
+                                            fontWeight: FontWeight.w700,
+                                            color: HeritageTheme.textLight,
+                                            letterSpacing: 0.3,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          'ananya@athirai.com  ·  +91 98765 43210',
+                                          style: GoogleFonts.inter(
+                                            fontSize: 11.5,
+                                            color: HeritageTheme.textMutedDark,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 6),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 8,
+                                            vertical: 3,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: HeritageTheme.goldPrimary.withOpacity(0.15),
+                                            borderRadius: BorderRadius.circular(6),
+                                            border: Border.all(
+                                              color: HeritageTheme.goldBorderSubtle,
+                                              width: 0.8,
+                                            ),
+                                          ),
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              const Icon(
+                                                Icons.stars_rounded,
+                                                color: HeritageTheme.goldBright,
+                                                size: 13,
+                                              ),
+                                              const SizedBox(width: 5),
+                                              Text(
+                                                'ROYAL PRIVILEGE MEMBER',
+                                                style: GoogleFonts.inter(
+                                                  fontSize: 9.5,
+                                                  fontWeight: FontWeight.w700,
+                                                  letterSpacing: 1.0,
+                                                  color: HeritageTheme.goldBright,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+
+                            const SizedBox(height: 20),
+
+                            // ── User Details Section ────────────────────────────
+                            Text(
+                              'PROFILE DETAILS',
+                              style: GoogleFonts.inter(
+                                fontSize: 10.5,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 1.8,
+                                color: HeritageTheme.goldPrimary,
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            _buildInfoTile(
+                              icon: Icons.badge_outlined,
+                              title: 'Member Identification',
+                              subtitle: 'ATH-8842-IND (Verified Heirloom Collector)',
+                            ),
+                            _buildInfoTile(
+                              icon: Icons.location_on_outlined,
+                              title: 'Default Delivery Address',
+                              subtitle: 'No. 42, Cathedral Road, Chennai - 600086',
+                            ),
+                            _buildInfoTile(
+                              icon: Icons.lock_outline_rounded,
+                              title: 'Saved in Jewel Vault',
+                              subtitle: '${store.count} heirloom items currently in Bag',
+                            ),
+                            _buildInfoTile(
+                              icon: Icons.verified_outlined,
+                              title: 'Hallmarking Guarantee',
+                              subtitle: '100% Certified 916 Gold & Platinum Authenticated',
+                            ),
+
+                            const SizedBox(height: 22),
+
+                            // ── App Settings Section ────────────────────────────
+                            Text(
+                              'SETTINGS & PREFERENCES',
+                              style: GoogleFonts.inter(
+                                fontSize: 10.5,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 1.8,
+                                color: HeritageTheme.goldPrimary,
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            _buildSettingSwitchTile(
+                              icon: Icons.notifications_none_rounded,
+                              title: 'Rate Alerts & Notifications',
+                              subtitle: 'Instant updates on 22K/24K daily market rates',
+                              value: notificationAlerts,
+                              onChanged: (val) {
+                                setModalState(() => notificationAlerts = val);
+                              },
+                            ),
+                            _buildSettingSwitchTile(
+                              icon: Icons.fingerprint_rounded,
+                              title: 'Biometric & Face ID Unlock',
+                              subtitle: 'Secure express authorization for vault items',
+                              value: biometricEnabled,
+                              onChanged: (val) {
+                                setModalState(() => biometricEnabled = val);
+                              },
+                            ),
+                            _buildActionSettingTile(
+                              icon: Icons.currency_rupee_rounded,
+                              title: 'Preferred Currency',
+                              trailingText: 'INR (₹) - India',
+                              onTap: () {},
+                            ),
+                            _buildActionSettingTile(
+                              icon: Icons.history_edu_rounded,
+                              title: 'Order History & Certificates',
+                              trailingText: 'View Vault History  →',
+                              onTap: () {
+                                Navigator.pop(modalContext);
+                                onOpenBag();
+                              },
+                            ),
+                            _buildActionSettingTile(
+                              icon: Icons.support_agent_rounded,
+                              title: 'Athirai Concierge Service',
+                              trailingText: 'concierge@athirai.com',
+                              onTap: () {},
+                            ),
+
+                            const SizedBox(height: 28),
+
+                            // ── LOGOUT BUTTON ──────────────────────────────────
+                            Container(
+                              width: double.infinity,
+                              height: 52,
+                              decoration: BoxDecoration(
+                                color: const Color(0x2BD32F2F),
+                                borderRadius: BorderRadius.circular(26),
+                                border: Border.all(
+                                  color: const Color(0xFFE57373).withOpacity(0.55),
+                                  width: 1.2,
+                                ),
+                              ),
+                              child: Material(
+                                color: Colors.transparent,
+                                child: InkWell(
+                                  borderRadius: BorderRadius.circular(26),
+                                  onTap: () => _confirmSignOut(context, modalContext),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      const Icon(
+                                        Icons.logout_rounded,
+                                        color: Color(0xFFFF8A80),
+                                        size: 19,
+                                      ),
+                                      const SizedBox(width: 10),
+                                      Text(
+                                        'Sign Out of Athirai',
+                                        style: GoogleFonts.inter(
+                                          fontSize: 13.5,
+                                          fontWeight: FontWeight.w700,
+                                          letterSpacing: 0.8,
+                                          color: const Color(0xFFFFCDD2),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+
+                            const SizedBox(height: 16),
+                            Center(
+                              child: Text(
+                                'ATHIRAI APP v2.4  ·  TIMELESS LUXURY',
+                                style: GoogleFonts.inter(
+                                  fontSize: 10,
+                                  color: HeritageTheme.textMutedDark.withOpacity(0.7),
+                                  letterSpacing: 1.2,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Future<void> _confirmSignOut(
+    BuildContext parentContext,
+    BuildContext modalContext,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: modalContext,
+      builder: (dialogCtx) => AlertDialog(
+        backgroundColor: const Color(0xF7071B16),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: const BorderSide(color: HeritageTheme.goldBorder, width: 1.0),
+        ),
+        title: Row(
+          children: [
+            const Icon(
+              Icons.logout_rounded,
+              color: Color(0xFFFF8A80),
+              size: 22,
+            ),
+            const SizedBox(width: 10),
+            Text(
+              'Sign Out of Athirai?',
+              style: GoogleFonts.cormorantGaramond(
+                fontSize: 22,
+                fontWeight: FontWeight.w700,
+                color: HeritageTheme.textLight,
+              ),
+            ),
+          ],
+        ),
+        content: Text(
+          'Are you sure you want to end your current session? You will be returned to the sign-in screen.',
+          style: GoogleFonts.inter(
+            fontSize: 13,
+            color: HeritageTheme.textMutedDark,
+            height: 1.45,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogCtx, false),
+            child: Text(
+              'Cancel',
+              style: GoogleFonts.inter(
+                color: HeritageTheme.textLight,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(dialogCtx, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFC62828),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            child: Text(
+              'Sign Out',
+              style: GoogleFonts.inter(
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      if (modalContext.mounted) {
+        Navigator.pop(modalContext); // close bottom sheet
+      }
+      if (onSignOut != null) {
+        onSignOut!();
+      } else if (parentContext.mounted) {
+        Navigator.of(parentContext).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => const SignInScreen()),
+          (route) => false,
+        );
+      }
+      if (parentContext.mounted) {
+        ScaffoldMessenger.of(parentContext).showSnackBar(
+          const SnackBar(
+            content: Text('Signed out successfully.'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    }
+  }
+
+  Widget _buildInfoTile({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+  }) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: const Color(0x66061B16),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: HeritageTheme.goldBorderSubtle, width: 0.8),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: HeritageTheme.goldPrimary, size: 18),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: GoogleFonts.inter(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: HeritageTheme.textMutedDark,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: GoogleFonts.inter(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w500,
+                    color: HeritageTheme.textLight,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSettingSwitchTile({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required bool value,
+    required ValueChanged<bool> onChanged,
+  }) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      decoration: BoxDecoration(
+        color: const Color(0x66061B16),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: HeritageTheme.goldBorderSubtle, width: 0.8),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: HeritageTheme.goldPrimary, size: 18),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: HeritageTheme.textLight,
+                  ),
+                ),
+                Text(
+                  subtitle,
+                  style: GoogleFonts.inter(
+                    fontSize: 10.5,
+                    color: HeritageTheme.textMutedDark,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Switch(
+            value: value,
+            activeColor: HeritageTheme.goldBright,
+            activeTrackColor: HeritageTheme.goldPrimary.withOpacity(0.35),
+            inactiveThumbColor: HeritageTheme.textMutedDark,
+            inactiveTrackColor: Colors.black26,
+            onChanged: onChanged,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActionSettingTile({
+    required IconData icon,
+    required String title,
+    required String trailingText,
+    required VoidCallback onTap,
+  }) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        color: const Color(0x66061B16),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: HeritageTheme.goldBorderSubtle, width: 0.8),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            child: Row(
+              children: [
+                Icon(icon, color: HeritageTheme.goldPrimary, size: 18),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: HeritageTheme.textLight,
+                    ),
+                  ),
+                ),
+                Text(
+                  trailingText,
+                  style: GoogleFonts.inter(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                    color: HeritageTheme.goldBright,
+                  ),
+                ),
+                const SizedBox(width: 4),
+                const Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  color: HeritageTheme.goldBorderSubtle,
+                  size: 11,
+                ),
+              ],
+            ),
           ),
         ),
       ),

@@ -8,6 +8,8 @@ import 'athirai_product_detail_screen.dart';
 import 'athirai_splash_screen.dart';
 import '../../../auth/presentation/screens/athirai_otp_verification_screen.dart';
 
+import '../../../auth/presentation/screens/sign_in_screen.dart';
+
 /// Master container providing exact fidelity for all Athirai Screens:
 /// 01 Splash / Onboarding ("Enter the Heritage")
 /// 02 Home Screen ("Discover Your Legacy")
@@ -37,6 +39,7 @@ class _AthiraiFlowContainerState extends State<AthiraiFlowContainer> {
   late final ShopStore store = widget.store ?? ShopStore.session;
   late int _currentScreen; // 0: Splash, 1: Home, 2: Collection, 3: Product, 4: Vault/Checkout, 5: OTP
   ShopProduct? _activeProduct;
+  final List<int> _screenHistory = [];
 
   @override
   void initState() {
@@ -49,28 +52,56 @@ class _AthiraiFlowContainerState extends State<AthiraiFlowContainer> {
   }
 
   void _navigateTo(int screenIndex, {ShopProduct? product}) {
+    if (screenIndex != _currentScreen) {
+      _screenHistory.add(_currentScreen);
+    }
     setState(() {
       _currentScreen = screenIndex;
       if (product != null) _activeProduct = product;
     });
   }
 
+  void _navigateBack() {
+    if (_screenHistory.isNotEmpty) {
+      final prev = _screenHistory.removeLast();
+      setState(() => _currentScreen = prev);
+    } else if (_currentScreen != 1) {
+      setState(() => _currentScreen = 1);
+    }
+  }
+
+  void _handleSignOut() {
+    widget.onSignOut?.call();
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const SignInScreen()),
+      (route) => false,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: HeritageTheme.darkBg,
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          _buildScreenContent(),
+    return PopScope(
+      canPop: _currentScreen == 1 && _screenHistory.isEmpty,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) {
+          _navigateBack();
+        }
+      },
+      child: Scaffold(
+        backgroundColor: HeritageTheme.darkBg,
+        body: Stack(
+          fit: StackFit.expand,
+          children: [
+            _buildScreenContent(),
 
-          // Floating Quick Switcher Pill (discreet at bottom right)
-          Positioned(
-            right: 12,
-            bottom: 12,
-            child: _buildFloatingQuickSwitcher(),
-          ),
-        ],
+            // Floating Quick Switcher Pill (discreet at bottom right)
+            Positioned(
+              right: 12,
+              bottom: 12,
+              child: _buildFloatingQuickSwitcher(),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -79,7 +110,11 @@ class _AthiraiFlowContainerState extends State<AthiraiFlowContainer> {
     switch (_currentScreen) {
       case 0:
         return AthiraiSplashScreen(
-          onBeginJourney: () => _navigateTo(1),
+          onBeginJourney: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const SignInScreen()),
+            );
+          },
         );
       case 1:
         return AthiraiHomeScreen(
@@ -91,11 +126,12 @@ class _AthiraiFlowContainerState extends State<AthiraiFlowContainer> {
           onOpenSearch: () => _navigateTo(2),
           onLotusTap: () => _navigateTo(3),
           onOpenStudio: () => _navigateTo(3),
+          onSignOut: _handleSignOut,
         );
       case 2:
         return AthiraiCollectionScreen(
           store: store,
-          onBack: () => _navigateTo(1),
+          onBack: _navigateBack,
           onOpenProduct: (product) => _navigateTo(3, product: product),
           onOpenBag: () => _navigateTo(4),
         );
@@ -103,14 +139,14 @@ class _AthiraiFlowContainerState extends State<AthiraiFlowContainer> {
         return AthiraiProductDetailScreen(
           store: store,
           product: _activeProduct,
-          onBack: () => _navigateTo(2),
+          onBack: _navigateBack,
           onBuyNow: () => _navigateTo(4),
           onOpenBag: () => _navigateTo(4),
         );
       case 4:
         return AthiraiCartScreen(
           store: store,
-          onBack: () => _navigateTo(1),
+          onBack: _navigateBack,
           onOpenProduct: (product) => _navigateTo(3, product: product),
         );
       case 5:
@@ -128,6 +164,7 @@ class _AthiraiFlowContainerState extends State<AthiraiFlowContainer> {
           onOpenSearch: () => _navigateTo(2),
           onLotusTap: () => _navigateTo(3),
           onOpenStudio: () => _navigateTo(3),
+          onSignOut: _handleSignOut,
         );
     }
   }

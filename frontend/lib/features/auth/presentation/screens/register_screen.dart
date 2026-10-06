@@ -8,6 +8,7 @@ import '../../../../core/constants/app_colors.dart';
 import '../controllers/auth_controller.dart';
 import '../widgets/athirai_logo.dart';
 import '../widgets/cosmic_background.dart';
+import '../../../shop/presentation/screens/athirai_flow_container.dart';
 import 'athirai_otp_verification_screen.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
@@ -68,20 +69,47 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     if (!_formKey.currentState!.validate()) {
       return 'Please check the required details.';
     }
-    if (_step == 0 && _gender == null) {
-      return 'Please select your gender.';
+    if (_step == 0) {
+      if (_firstNameController.text.trim().length < 2) {
+        return 'First name must be at least 2 characters.';
+      }
+      if (_gender == null) {
+        return 'Please select your gender.';
+      }
+      if (_dateOfBirth == null) {
+        return 'Please select your date of birth.';
+      }
     }
-    if (_step == 0 && _dateOfBirth == null) {
-      return 'Please select your date of birth.';
+    if (_step == 1) {
+      if (_pincodeController.text.trim().length != 6) {
+        return 'Pincode must be exactly 6 digits.';
+      }
     }
-    if (_step == 2 && _passwordController.text.length < 6) {
-      return 'Password must be at least 6 characters.';
-    }
-    if (_step == 2 &&
-        _confirmPasswordController.text != _passwordController.text) {
-      return 'Passwords do not match.';
+    if (_step == 2) {
+      final email = _emailController.text.trim();
+      final emailRegex = RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$');
+      if (!emailRegex.hasMatch(email)) {
+        return 'Please enter a valid email address.';
+      }
+      if (_passwordController.text.length < 6) {
+        return 'Password must be at least 6 characters.';
+      }
+      if (_confirmPasswordController.text != _passwordController.text) {
+        return 'Passwords do not match.';
+      }
     }
     return null;
+  }
+
+  void _handleBack() {
+    if (_step > 0) {
+      setState(() {
+        _step--;
+        _error = null;
+      });
+    } else {
+      Navigator.of(context).maybePop();
+    }
   }
 
   void _continue() {
@@ -195,6 +223,14 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       MaterialPageRoute(
         builder: (_) => AthiraiOtpVerificationScreen(
           phoneNumber: phone.isNotEmpty ? '+91 $phone' : '+91 98765 43210',
+          onVerified: () {
+            Navigator.of(context).pushAndRemoveUntil(
+              MaterialPageRoute(
+                builder: (_) => const AthiraiFlowContainer(initialScreenIndex: 1),
+              ),
+              (route) => false,
+            );
+          },
         ),
       ),
       (route) => false,
@@ -203,32 +239,39 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.backgroundBlack,
-      body: CosmicBackground(
-        imageAsset: AppAssets.signInReferenceBg,
-        overlayOpacity: 0.06,
-        child: SafeArea(
-          child: LayoutBuilder(
-            builder: (context, constraints) => SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
-              child: ConstrainedBox(
-                constraints: BoxConstraints(minHeight: constraints.maxHeight),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: IconButton(
-                        tooltip: 'Back',
-                        onPressed: () => Navigator.of(context).maybePop(),
-                        icon: const Icon(
-                          Icons.arrow_back_ios_new_rounded,
-                          color: AppColors.goldBright,
-                          size: 18,
+    return PopScope(
+      canPop: _step == 0,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop && _step > 0) {
+          _handleBack();
+        }
+      },
+      child: Scaffold(
+        backgroundColor: AppColors.backgroundBlack,
+        body: CosmicBackground(
+          imageAsset: AppAssets.signInReferenceBg,
+          overlayOpacity: 0.06,
+          child: SafeArea(
+            child: LayoutBuilder(
+              builder: (context, constraints) => SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: IconButton(
+                          tooltip: _step > 0 ? 'Previous step' : 'Back to Login',
+                          onPressed: _handleBack,
+                          icon: const Icon(
+                            Icons.arrow_back_ios_new_rounded,
+                            color: AppColors.goldBright,
+                            size: 18,
+                          ),
                         ),
                       ),
-                    ),
                     const SizedBox(height: 2),
                     Center(
                       child: AthiraiLogo(
@@ -353,8 +396,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildStepIndicator() {
     const titles = ['PERSONAL DETAILS', 'DELIVERY ADDRESS', 'ACCOUNT SECURITY'];

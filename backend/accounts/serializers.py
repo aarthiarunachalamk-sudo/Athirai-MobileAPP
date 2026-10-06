@@ -156,10 +156,30 @@ class JewelCategorySerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'slug', 'created_at']
 
 
+class JewelCollectionSerializer(serializers.ModelSerializer):
+    product_count = serializers.IntegerField(source='products.count', read_only=True)
+
+    class Meta:
+        from .models import JewelCollection
+        model = JewelCollection
+        fields = ['id', 'name', 'slug', 'description', 'cover_image_url', 'banner_image_url', 'is_featured', 'product_count', 'created_at']
+        read_only_fields = ['id', 'slug', 'created_at']
+
+
+class JewelVariantSerializer(serializers.ModelSerializer):
+    class Meta:
+        from .models import JewelVariant
+        model = JewelVariant
+        fields = ['id', 'product', 'metal', 'size', 'stone', 'sku', 'price', 'stock', 'weight_grams', 'image_url']
+        read_only_fields = ['id']
+
+
 class JewelProductSerializer(serializers.ModelSerializer):
     category_name = serializers.CharField(source='category.name', read_only=True)
+    collection_name = serializers.CharField(source='collection.name', read_only=True)
     dynamic_price = serializers.IntegerField(read_only=True)
     price_breakdown = serializers.SerializerMethodField()
+    variants = JewelVariantSerializer(many=True, read_only=True)
 
     class Meta:
         from .models import JewelProduct
@@ -169,16 +189,42 @@ class JewelProductSerializer(serializers.ModelSerializer):
             'name',
             'category',
             'category_name',
+            'collection',
+            'collection_name',
+            'sku',
+            'short_description',
+            'description',
             'metal',
             'purity',
             'weight_grams',
             'making_charge_percent',
             'stone_price',
-            'description',
+            'gemstones',
+            'gemstone_type',
+            'gemstone_weight',
+            'diamond_carat',
+            'certification',
+            'hallmark',
+            'craftsmanship',
+            'origin',
+            'designer',
+            'crafting_time',
+            'stock_quantity',
+            'low_stock_threshold',
+            'warehouse',
+            'status',
+            'availability',
+            'seo_title',
+            'meta_description',
+            'url_slug',
+            'tags',
             'image_url',
+            'lifestyle_image_url',
             'is_featured',
+            'base_price_override',
             'dynamic_price',
             'price_breakdown',
+            'variants',
             'created_at',
             'updated_at',
         ]
@@ -186,6 +232,27 @@ class JewelProductSerializer(serializers.ModelSerializer):
 
     def get_price_breakdown(self, obj):
         return obj.calculate_price_breakdown()
+
+
+class JewelOrderSerializer(serializers.ModelSerializer):
+    class Meta:
+        from .models import JewelOrder
+        model = JewelOrder
+        fields = '__all__'
+
+
+class JewelCustomerSerializer(serializers.ModelSerializer):
+    class Meta:
+        from .models import JewelCustomer
+        model = JewelCustomer
+        fields = '__all__'
+
+
+class JewelVaultItemSerializer(serializers.ModelSerializer):
+    class Meta:
+        from .models import JewelVaultItem
+        model = JewelVaultItem
+        fields = '__all__'
 
 
 class ForgotPasswordRequestSerializer(serializers.Serializer):

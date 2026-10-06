@@ -182,32 +182,100 @@ class JewelCategory(models.Model):
         return self.name
 
 
+class JewelCollection(models.Model):
+    """
+    Luxury collections (e.g. Heritage Collection, Temple Collection, Chola Dynasty).
+    """
+    name = models.CharField(max_length=150, unique=True)
+    slug = models.SlugField(max_length=150, unique=True, blank=True)
+    description = models.TextField(blank=True, default='')
+    cover_image_url = models.CharField(max_length=500, blank=True, default='')
+    banner_image_url = models.CharField(max_length=500, blank=True, default='')
+    is_featured = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['name']
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            from django.utils.text import slugify
+            self.slug = slugify(self.name)
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return self.name
+
+
 class JewelProduct(models.Model):
     """
-    Dynamic jewellery piece with net weight, purity, making charges, and dynamic price calculation.
+    Dynamic luxury jewellery piece with net weight, purity, making charges, and dynamic price calculation.
     """
     PURITY_CHOICES = (
         ('24K', '24K (999 Fine Gold)'),
         ('22K', '22K (BIS 916 Hallmark)'),
         ('18K', '18K (750 Diamond Gold)'),
         ('999', '999 Fine Silver'),
+        ('950', '950 Platinum'),
     )
     METAL_CHOICES = (
         ('Gold', 'Gold'),
         ('Silver', 'Silver'),
         ('Platinum', 'Platinum'),
     )
+    STATUS_CHOICES = (
+        ('Published', 'Published'),
+        ('Draft', 'Draft'),
+        ('Archived', 'Archived'),
+    )
+    AVAILABILITY_CHOICES = (
+        ('In Stock', 'In Stock'),
+        ('Low Stock', 'Low Stock'),
+        ('Out of Stock', 'Out of Stock'),
+        ('Made to Order', 'Made to Order'),
+        ('Pre Order', 'Pre Order'),
+    )
 
     name = models.CharField(max_length=200)
     category = models.ForeignKey(JewelCategory, on_delete=models.CASCADE, related_name='jewels')
+    collection = models.ForeignKey(JewelCollection, on_delete=models.SET_NULL, null=True, blank=True, related_name='products')
+    sku = models.CharField(max_length=50, blank=True, default='')
+    short_description = models.CharField(max_length=300, blank=True, default='')
+    description = models.TextField(blank=True, default='')
+
     metal = models.CharField(max_length=20, choices=METAL_CHOICES, default='Gold')
     purity = models.CharField(max_length=10, choices=PURITY_CHOICES, default='22K')
-    weight_grams = models.DecimalField(max_digits=8, decimal_places=3, help_text="Net weight in grams")
+    weight_grams = models.DecimalField(max_digits=8, decimal_places=3, help_text="Net weight in grams", default=25.0)
     making_charge_percent = models.DecimalField(max_digits=5, decimal_places=2, default=12.00, help_text="Wastage / Making charge percentage")
     stone_price = models.IntegerField(default=0, help_text="Gemstone / Diamond value in INR")
-    description = models.TextField(blank=True, default='')
+
+    gemstones = models.CharField(max_length=255, blank=True, default='Emerald 4.32 ct, Natural Pearls')
+    gemstone_type = models.CharField(max_length=100, blank=True, default='Emerald')
+    gemstone_weight = models.CharField(max_length=100, blank=True, default='4.32 ct')
+    diamond_carat = models.CharField(max_length=100, blank=True, default='1.20 ct')
+    certification = models.CharField(max_length=100, blank=True, default='IGI & BIS Certified')
+    hallmark = models.CharField(max_length=100, blank=True, default='BIS 916 Hallmark')
+    craftsmanship = models.CharField(max_length=150, blank=True, default='Handcrafted Temple Filigree')
+    origin = models.CharField(max_length=150, blank=True, default='Thanjavur Royal Guild')
+    designer = models.CharField(max_length=150, blank=True, default='Master Artisan Arumugam')
+    crafting_time = models.CharField(max_length=100, blank=True, default='120 Hours')
+
+    stock_quantity = models.IntegerField(default=12)
+    low_stock_threshold = models.IntegerField(default=3)
+    warehouse = models.CharField(max_length=100, blank=True, default='Chennai Vault 01')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Published')
+    availability = models.CharField(max_length=30, choices=AVAILABILITY_CHOICES, default='In Stock')
+
+    seo_title = models.CharField(max_length=200, blank=True, default='')
+    meta_description = models.TextField(blank=True, default='')
+    url_slug = models.CharField(max_length=200, blank=True, default='')
+    tags = models.CharField(max_length=255, blank=True, default='Heritage, Temple, 22K Gold, Emerald')
+
     image_url = models.CharField(max_length=500, blank=True, default='')
+    lifestyle_image_url = models.CharField(max_length=500, blank=True, default='')
     is_featured = models.BooleanField(default=False)
+    base_price_override = models.IntegerField(null=True, blank=True, help_text="Explicit price override if specified")
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -215,6 +283,24 @@ class JewelProduct(models.Model):
         ordering = ['-created_at']
 
     def calculate_price_breakdown(self, rates=None):
+        if self.base_price_override and self.base_price_override > 0:
+            return {
+                'jewel_id': self.id,
+                'name': self.name,
+                'category': self.category.name if self.category else 'Jewellery',
+                'metal': self.metal,
+                'purity': self.purity,
+                'weight_grams': float(self.weight_grams),
+                'metal_rate_per_gram': 7450.0,
+                'metal_value': round(float(self.weight_grams) * 7450.0, 2),
+                'making_charge_percent': float(self.making_charge_percent),
+                'making_charges': 25000.0,
+                'stone_price': self.stone_price,
+                'taxable_amount': round(self.base_price_override * 0.97, 2),
+                'gst_amount': round(self.base_price_override * 0.03, 2),
+                'final_price': self.base_price_override,
+            }
+
         if not rates:
             rates = MetalRate.objects.filter(is_active=True).first()
             if not rates:
@@ -227,6 +313,8 @@ class JewelProduct(models.Model):
             rate_per_gram = float(rates.gold_24k)
         elif self.purity == '18K':
             rate_per_gram = float(rates.gold_18k)
+        elif self.metal == 'Platinum' or self.purity == '950':
+            rate_per_gram = 4200.0
         else:
             rate_per_gram = float(rates.gold_22k)
 
@@ -241,7 +329,7 @@ class JewelProduct(models.Model):
         return {
             'jewel_id': self.id,
             'name': self.name,
-            'category': self.category.name,
+            'category': self.category.name if self.category else 'Jewellery',
             'metal': self.metal,
             'purity': self.purity,
             'weight_grams': weight,
@@ -261,3 +349,83 @@ class JewelProduct(models.Model):
 
     def __str__(self):
         return f"{self.name} ({self.purity} • {self.weight_grams}g)"
+
+
+class JewelVariant(models.Model):
+    """Product variants (different metal purities, chain lengths, gemstone variants)."""
+    product = models.ForeignKey(JewelProduct, on_delete=models.CASCADE, related_name='variants')
+    metal = models.CharField(max_length=50, default='22K Gold')
+    size = models.CharField(max_length=50, default='Standard / 18 Inch')
+    stone = models.CharField(max_length=100, default='Emerald')
+    sku = models.CharField(max_length=50, blank=True, default='')
+    price = models.IntegerField(default=365000)
+    stock = models.IntegerField(default=5)
+    weight_grams = models.DecimalField(max_digits=8, decimal_places=3, default=45.0)
+    image_url = models.CharField(max_length=500, blank=True, default='')
+
+    def __str__(self):
+        return f"{self.product.name} - {self.metal} / {self.size}"
+
+
+class JewelOrder(models.Model):
+    """Customer orders tracked within the luxury vault CMS."""
+    STATUS_CHOICES = (
+        ('Pending', 'Pending'),
+        ('Confirmed', 'Confirmed'),
+        ('Crafting', 'Crafting'),
+        ('Packed', 'Packed'),
+        ('Shipped', 'Shipped'),
+        ('Delivered', 'Delivered'),
+        ('Cancelled', 'Cancelled'),
+    )
+    order_id = models.CharField(max_length=50, unique=True)
+    customer_name = models.CharField(max_length=150)
+    customer_email = models.EmailField()
+    customer_phone = models.CharField(max_length=30, blank=True, default='')
+    product_name = models.CharField(max_length=200)
+    total_amount = models.IntegerField()
+    payment_method = models.CharField(max_length=50, default='Vault Gold Pay / UPI')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Confirmed')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Order {self.order_id} - {self.customer_name} ({self.status})"
+
+
+class JewelCustomer(models.Model):
+    """VIP Client directory for high-jewelry patrons."""
+    TIER_CHOICES = (
+        ('Royal VIP', 'Royal VIP Patron'),
+        ('Privilege', 'Privilege Member'),
+        ('Member', 'Heritage Member'),
+    )
+    name = models.CharField(max_length=150)
+    email = models.EmailField(unique=True)
+    phone = models.CharField(max_length=30, blank=True, default='')
+    customer_type = models.CharField(max_length=30, choices=TIER_CHOICES, default='Privilege')
+    total_orders = models.IntegerField(default=1)
+    total_spent = models.IntegerField(default=365000)
+    last_purchase_date = models.DateField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-total_spent']
+
+    def __str__(self):
+        return f"{self.name} ({self.customer_type})"
+
+
+class JewelVaultItem(models.Model):
+    """Curated pieces in the user's constellation Jewel Vault."""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='vault_items', null=True, blank=True)
+    category_type = models.CharField(max_length=50, default='Necklace')  # Necklace, Ring, Earrings, Bangle, Bracelet
+    title = models.CharField(max_length=150)
+    image_url = models.CharField(max_length=500, blank=True, default='')
+    price = models.IntegerField(default=365000)
+    metal_purity = models.CharField(max_length=50, default='22K Gold')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Vault Item: {self.title} ({self.category_type})"

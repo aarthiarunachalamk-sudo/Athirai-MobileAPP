@@ -9,6 +9,9 @@ import 'athirai_splash_screen.dart';
 import '../../../auth/presentation/screens/athirai_otp_verification_screen.dart';
 import '../../../auth/presentation/screens/sign_in_screen.dart';
 import '../../../auth/data/services/secure_storage_service.dart';
+import 'package:athirai_mobile/features/vault_cms/presentation/screens/shell/vault_app_root.dart';
+
+
 
 /// Master container providing exact fidelity for all Athirai Screens:
 /// 01 Splash / Onboarding ("Enter the Heritage")
@@ -210,39 +213,74 @@ class _AthiraiFlowContainerState extends State<AthiraiFlowContainer> {
             color: HeritageTheme.goldPrimary,
             size: 19,
           ),
-          onSelected: (index) => _navigateTo(index),
-          itemBuilder: (context) => List.generate(screenTitles.length, (i) {
-            final isCurrent = i == _currentScreen;
-            return PopupMenuItem<int>(
-              value: i,
-              child: Row(
-                children: [
-                  Icon(
-                    isCurrent
-                        ? Icons.radio_button_checked_rounded
-                        : Icons.radio_button_off_rounded,
-                    color: isCurrent
-                        ? HeritageTheme.goldBright
-                        : HeritageTheme.textMutedDark,
-                    size: 15,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    screenTitles[i],
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: isCurrent ? FontWeight.w700 : FontWeight.w400,
+          onSelected: (index) {
+            if (index == 99) {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const VaultAppRoot(startInClientExperience: false)),
+              );
+            } else {
+              _navigateTo(index);
+            }
+          },
+          itemBuilder: (context) {
+            final items = List<PopupMenuEntry<int>>.generate(screenTitles.length, (i) {
+              final isCurrent = i == _currentScreen;
+              return PopupMenuItem<int>(
+                value: i,
+                child: Row(
+                  children: [
+                    Icon(
+                      isCurrent
+                          ? Icons.radio_button_checked_rounded
+                          : Icons.radio_button_off_rounded,
                       color: isCurrent
                           ? HeritageTheme.goldBright
-                          : HeritageTheme.textLight,
+                          : HeritageTheme.textMutedDark,
+                      size: 15,
                     ),
-                  ),
-                ],
+                    const SizedBox(width: 8),
+                    Text(
+                      screenTitles[i],
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: isCurrent ? FontWeight.w700 : FontWeight.w400,
+                        color: isCurrent
+                            ? HeritageTheme.goldBright
+                            : HeritageTheme.textLight,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            });
+
+            // Add Vault CMS Platform shortcut
+            items.add(const PopupMenuDivider());
+            items.add(
+              const PopupMenuItem<int>(
+                value: 99,
+                child: Row(
+                  children: [
+                    Icon(Icons.dashboard_customize, color: HeritageTheme.goldBright, size: 16),
+                    SizedBox(width: 8),
+                    Text(
+                      'Vault CMS Platform ↗',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: HeritageTheme.goldBright,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             );
-          }),
+
+            return items;
+          },
         ),
       ),
     );
   }
 }
+

@@ -18,6 +18,12 @@ from .views import (
     JewelCategoryListCreateView,
     JewelProductListCreateView,
     JewelPriceListView,
+    JewelProductDetailView,
+    JewelCollectionListCreateView,
+    JewelOrderListView,
+    JewelCustomerListView,
+    JewelVaultListView,
+    AnalyticsSummaryView,
 )
 
 urlpatterns = [
@@ -36,10 +42,16 @@ urlpatterns = [
     path('selfie/latest/', LatestSelfieView.as_view(), name='selfie_latest'),
     path('selfie/list/', UserSelfieListView.as_view(), name='selfie_list'),
 
-    # Dynamic Metal Rates & Jewellery Endpoints
+    # Dynamic Metal Rates & Jewellery CMS Endpoints
     path('rates/', MetalRateView.as_view(), name='live_metal_rates'),
     path('categories/', JewelCategoryListCreateView.as_view(), name='jewel_categories'),
     path('jewels/', JewelProductListCreateView.as_view(), name='jewel_products'),
+    path('jewels/<int:pk>/', JewelProductDetailView.as_view(), name='jewel_detail'),
+    path('collections/', JewelCollectionListCreateView.as_view(), name='jewel_collections'),
+    path('orders/', JewelOrderListView.as_view(), name='jewel_orders'),
+    path('customers/', JewelCustomerListView.as_view(), name='jewel_customers'),
+    path('vault/', JewelVaultListView.as_view(), name='jewel_vault'),
+    path('analytics/summary/', AnalyticsSummaryView.as_view(), name='analytics_summary'),
     path('price-list/', JewelPriceListView.as_view(), name='jewel_price_list'),
 
     # Enterprise SSO Flow

@@ -7,7 +7,9 @@ import 'core/constants/app_colors.dart';
 import 'core/theme/app_theme.dart';
 import 'features/auth/data/services/secure_storage_service.dart';
 import 'features/auth/presentation/controllers/auth_controller.dart';
-import 'features/shop/presentation/screens/athirai_flow_container.dart';
+import 'features/vault_cms/presentation/screens/shell/vault_app_root.dart';
+
+
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -121,11 +123,17 @@ class _AthiraiGatekeeperState extends ConsumerState<AthiraiGatekeeper> {
       );
     }
 
-    // Amazon-style persistent login:
-    // If authenticated -> directly open Dashboard (initialScreenIndex: 1)
-    // If unauthenticated -> open Welcome & Login onboarding (initialScreenIndex: 0)
-    return AthiraiFlowContainer(
-      initialScreenIndex: _isAuthenticated ? 1 : 0,
+    // Responsive Experience Gatekeeper:
+    // On web / desktop (width >= 800) -> Open Vault CMS & Platform
+    // On mobile devices -> Open mobile experience (with quick switcher to Vault CMS)
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isDesktopOrWeb = constraints.maxWidth >= 800;
+        return VaultAppRoot(
+          startInClientExperience: !isDesktopOrWeb && _isAuthenticated,
+        );
+      },
     );
   }
 }
+

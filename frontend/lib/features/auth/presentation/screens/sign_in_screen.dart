@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_assets.dart';
 import '../controllers/auth_controller.dart';
+import '../../data/repositories/auth_repository.dart';
 import '../../data/services/secure_storage_service.dart';
 import '../../../shop/presentation/screens/athirai_flow_container.dart';
 import 'complete_profile_screen.dart';
@@ -12,7 +13,7 @@ import 'register_screen.dart';
 import 'sso_email_screen.dart';
 
 /// Screen-accurate luxury login screen matching Screen 2 of the Athirai reference:
-/// - Dark emerald temple courtyard architecture background
+/// - Dark emerald temple courtyard architecture background with warm diya glow
 /// - Top bar with right-aligned "Skip" action
 /// - Athirai emerald drop jewel crest + "ATHIRAI / TIMELESS JEWELS"
 /// - "Welcome Back" serif headline & luxury journey subtitle
@@ -45,17 +46,30 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   void initState() {
     super.initState();
     _loadRemembered();
+    _identifierCtrl.addListener(_onIdentifierChanged);
+  }
+
+  void _onIdentifierChanged() {
+    if (_rememberMe) {
+      final id = _identifierCtrl.text.trim();
+      if (id.isNotEmpty) {
+        SecureStorageService().saveRememberedIdentifier(id);
+      }
+    }
   }
 
   Future<void> _loadRemembered() async {
     final saved = await SecureStorageService().getRememberedIdentifier();
-    if (!mounted || saved == null || saved.isEmpty) return;
-    _identifierCtrl.text = saved;
-    setState(() => _rememberMe = true);
+    if (!mounted) return;
+    if (saved != null && saved.isNotEmpty) {
+      _identifierCtrl.text = saved;
+      setState(() => _rememberMe = true);
+    }
   }
 
   @override
   void dispose() {
+    _identifierCtrl.removeListener(_onIdentifierChanged);
     _identifierCtrl.dispose();
     _passwordCtrl.dispose();
     _idFocus.dispose();
@@ -156,68 +170,47 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   void _showForgotPassword() {
     showModalBottomSheet<void>(
       context: context,
-      backgroundColor: const Color(0xFF04120E),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        side: BorderSide(color: Color(0x66C5A059)),
-      ),
-      builder: (_) => Padding(
-        padding: const EdgeInsets.fromLTRB(24, 28, 24, 36),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Icon(
-                  Icons.lock_reset_rounded,
-                  color: Color(0xFFD4AF37),
-                  size: 22,
-                ),
-                const SizedBox(width: 10),
-                Text(
-                  'Reset Your Password',
-                  style: GoogleFonts.cormorantGaramond(
-                    fontSize: 24,
-                    fontWeight: FontWeight.w600,
-                    color: const Color(0xFFF7F2E8),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withOpacity(0.75),
+      builder: (_) => _ForgotPasswordSheet(
+        initialIdentifier: _identifierCtrl.text.trim(),
+        onPasswordResetSuccess: (identifier) {
+          setState(() {
+            _identifierCtrl.text = identifier;
+            _passwordCtrl.clear();
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              backgroundColor: const Color(0xFF041A13),
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+                side: const BorderSide(color: Color(0xFFC5A059), width: 1),
+              ),
+              content: Row(
+                children: [
+                  const Icon(
+                    Icons.check_circle_rounded,
+                    color: Color(0xFFD4AF37),
+                    size: 20,
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 14),
-            Text(
-              'For assistance recovering your account or resetting your credentials, please connect with our Athirai Concierge at concierge@athirai.com with your registered contact details.',
-              style: GoogleFonts.inter(
-                fontSize: 13.5,
-                color: const Color(0xFF8E9E94),
-                height: 1.55,
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'Password updated successfully! Please log in.',
+                      style: GoogleFonts.inter(
+                        color: const Color(0xFFF7F2E8),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              height: 48,
-              child: OutlinedButton(
-                onPressed: () => Navigator.of(context).pop(),
-                style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: Color(0xFFC5A059)),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(24),
-                  ),
-                ),
-                child: Text(
-                  'Close',
-                  style: GoogleFonts.inter(
-                    fontSize: 14,
-                    color: const Color(0xFFD4AF37),
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
@@ -233,16 +226,16 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
         resizeToAvoidBottomInset: true,
         body: Stack(
           children: [
-            // ── Background: Temple courtyard with ambient diya glow ──────
+            // ── Background: Temple courtyard with ambient diya glow & enhanced light ──
             Positioned.fill(
               child: Image.asset(
-                AppAssets.templeArchChandelier,
+                AppAssets.templeLoginBg,
                 fit: BoxFit.cover,
-                alignment: Alignment.topCenter,
+                alignment: Alignment.center,
               ),
             ),
 
-            // ── Atmospheric Dark Emerald Gradient Vignette ─────────────
+            // ── Atmospheric Dark Emerald Gradient Vignette with Enhanced Temple Light ──
             Positioned.fill(
               child: Container(
                 decoration: const BoxDecoration(
@@ -250,11 +243,11 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                     colors: [
-                      Color(0xCC030E0B),
-                      Color(0xEE020907),
-                      Color(0xFC010605),
+                      Color(0x8C030E0B),
+                      Color(0xB3020907),
+                      Color(0xEE010605),
                     ],
-                    stops: [0.0, 0.45, 1.0],
+                    stops: [0.0, 0.48, 1.0],
                   ),
                 ),
               ),
@@ -456,14 +449,32 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(4),
                                   ),
-                                  onChanged: (v) =>
-                                      setState(() => _rememberMe = v ?? false),
+                                  onChanged: (v) async {
+                                    final val = v ?? false;
+                                    setState(() => _rememberMe = val);
+                                    if (!val) {
+                                      await SecureStorageService().clearRememberedIdentifier();
+                                    } else if (_identifierCtrl.text.trim().isNotEmpty) {
+                                      await SecureStorageService().saveRememberedIdentifier(
+                                        _identifierCtrl.text.trim(),
+                                      );
+                                    }
+                                  },
                                 ),
                               ),
                               const SizedBox(width: 8),
                               GestureDetector(
-                                onTap: () =>
-                                    setState(() => _rememberMe = !_rememberMe),
+                                onTap: () async {
+                                  final val = !_rememberMe;
+                                  setState(() => _rememberMe = val);
+                                  if (!val) {
+                                    await SecureStorageService().clearRememberedIdentifier();
+                                  } else if (_identifierCtrl.text.trim().isNotEmpty) {
+                                    await SecureStorageService().saveRememberedIdentifier(
+                                      _identifierCtrl.text.trim(),
+                                    );
+                                  }
+                                },
                                 child: Text(
                                   'Remember me',
                                   style: GoogleFonts.inter(
@@ -794,10 +805,14 @@ class _CapsuleAuthFieldState extends State<_CapsuleAuthField> {
 class _GoldGradientButton extends StatefulWidget {
   const _GoldGradientButton({
     required this.onPressed,
+    this.label = 'Log In',
+    this.icon = Icons.arrow_forward_rounded,
     this.isLoading = false,
   });
 
   final VoidCallback onPressed;
+  final String label;
+  final IconData? icon;
   final bool isLoading;
 
   @override
@@ -866,7 +881,7 @@ class _GoldGradientButtonState extends State<_GoldGradientButton> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
-                        'Log In',
+                        widget.label,
                         style: GoogleFonts.inter(
                           fontSize: 15,
                           fontWeight: FontWeight.w700,
@@ -874,12 +889,14 @@ class _GoldGradientButtonState extends State<_GoldGradientButton> {
                           color: const Color(0xFF161108),
                         ),
                       ),
-                      const SizedBox(width: 8),
-                      const Icon(
-                        Icons.arrow_forward_rounded,
-                        size: 16,
-                        color: Color(0xFF161108),
-                      ),
+                      if (widget.icon != null) ...[
+                        const SizedBox(width: 8),
+                        Icon(
+                          widget.icon,
+                          size: 16,
+                          color: const Color(0xFF161108),
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -1084,3 +1101,513 @@ class _BottomFoliagePainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
+
+// ── Interactive Luxury Forgot Password Bottom Sheet ───────────────────────────
+class _ForgotPasswordSheet extends StatefulWidget {
+  const _ForgotPasswordSheet({
+    required this.initialIdentifier,
+    required this.onPasswordResetSuccess,
+  });
+
+  final String initialIdentifier;
+  final ValueChanged<String> onPasswordResetSuccess;
+
+  @override
+  State<_ForgotPasswordSheet> createState() => _ForgotPasswordSheetState();
+}
+
+class _ForgotPasswordSheetState extends State<_ForgotPasswordSheet> {
+  int _step = 1; // 1: Request code, 2: Reset password, 3: Success
+  late final TextEditingController _identifierCtrl;
+  final _tokenCtrl = TextEditingController();
+  final _newPasswordCtrl = TextEditingController();
+  final _confirmPasswordCtrl = TextEditingController();
+
+  final _idFocus = FocusNode();
+  final _tokenFocus = FocusNode();
+  final _newPwFocus = FocusNode();
+  final _confirmPwFocus = FocusNode();
+
+  bool _obscureNew = true;
+  bool _obscureConfirm = true;
+  bool _isLoading = false;
+  String? _errorMessage;
+  String? _demoTokenHint;
+
+  @override
+  void initState() {
+    super.initState();
+    _identifierCtrl = TextEditingController(text: widget.initialIdentifier);
+  }
+
+  @override
+  void dispose() {
+    _identifierCtrl.dispose();
+    _tokenCtrl.dispose();
+    _newPasswordCtrl.dispose();
+    _confirmPasswordCtrl.dispose();
+    _idFocus.dispose();
+    _tokenFocus.dispose();
+    _newPwFocus.dispose();
+    _confirmPwFocus.dispose();
+    super.dispose();
+  }
+
+  Future<void> _handleRequestCode() async {
+    final identifier = _identifierCtrl.text.trim();
+    if (identifier.isEmpty) {
+      setState(() => _errorMessage = 'Please enter your email or mobile number.');
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final res = await AuthRepository().requestPasswordReset(identifier);
+      if (!mounted) return;
+
+      if (res.isSuccess) {
+        final token = res.data != null ? res.data!['reset_token']?.toString() : null;
+        setState(() {
+          _step = 2;
+          _isLoading = false;
+          _demoTokenHint = token;
+          if (token != null && token.isNotEmpty) {
+            _tokenCtrl.text = token;
+          }
+        });
+      } else {
+        setState(() {
+          _isLoading = false;
+          _errorMessage = res.errorMessage ?? 'Unable to send recovery code. Please check your details.';
+        });
+      }
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+        _errorMessage = 'Could not connect to the reset service. Please try again.';
+      });
+    }
+  }
+
+  Future<void> _handleConfirmReset() async {
+    final identifier = _identifierCtrl.text.trim();
+    final token = _tokenCtrl.text.trim();
+    final newPass = _newPasswordCtrl.text;
+    final confirmPass = _confirmPasswordCtrl.text;
+
+    if (token.isEmpty) {
+      setState(() => _errorMessage = 'Please enter the verification code.');
+      return;
+    }
+    if (newPass.isEmpty) {
+      setState(() => _errorMessage = 'Please enter your new password.');
+      return;
+    }
+    if (newPass.length < 6) {
+      setState(() => _errorMessage = 'New password must be at least 6 characters.');
+      return;
+    }
+    if (newPass != confirmPass) {
+      setState(() => _errorMessage = 'New passwords do not match.');
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final res = await AuthRepository().confirmPasswordReset(
+        identifier: identifier,
+        otp: token,
+        newPassword: newPass,
+      );
+
+      if (!mounted) return;
+
+      if (res.isSuccess) {
+        setState(() {
+          _step = 3;
+          _isLoading = false;
+        });
+      } else {
+        setState(() {
+          _isLoading = false;
+          _errorMessage = res.errorMessage ?? 'Invalid verification code or unable to reset password.';
+        });
+      }
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+        _errorMessage = 'Could not connect to the reset service. Please try again.';
+      });
+    }
+  }
+
+  Widget _buildErrorBanner(String message) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: AppColors.error.withOpacity(0.12),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.error.withOpacity(0.5)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.error_outline_rounded, size: 16, color: AppColors.error),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              message,
+              style: GoogleFonts.inter(color: AppColors.error, fontSize: 12),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStep1() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0x26C5A059),
+                    shape: BoxShape.circle,
+                    border: Border.all(color: const Color(0x4DC5A059)),
+                  ),
+                  child: const Icon(
+                    Icons.lock_reset_rounded,
+                    color: Color(0xFFD4AF37),
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  'Forgot Password',
+                  style: GoogleFonts.cormorantGaramond(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xFFF7F2E8),
+                  ),
+                ),
+              ],
+            ),
+            IconButton(
+              icon: const Icon(Icons.close_rounded, color: Color(0xFF8E9E94), size: 20),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        Text(
+          'Enter your registered email address or mobile number. We will send a secure password recovery code to verify your account.',
+          style: GoogleFonts.inter(
+            fontSize: 13,
+            color: const Color(0xFF8E9E94),
+            height: 1.5,
+          ),
+        ),
+        const SizedBox(height: 20),
+        _CapsuleAuthField(
+          controller: _identifierCtrl,
+          focusNode: _idFocus,
+          hint: 'Email / Mobile Number',
+          prefixIcon: Icons.person_outline_rounded,
+          keyboardType: TextInputType.emailAddress,
+          textInputAction: TextInputAction.done,
+          onSubmitted: (_) => _handleRequestCode(),
+          onChanged: (_) {
+            if (_errorMessage != null) setState(() => _errorMessage = null);
+          },
+        ),
+        if (_errorMessage != null) ...[
+          const SizedBox(height: 12),
+          _buildErrorBanner(_errorMessage!),
+        ],
+        const SizedBox(height: 22),
+        _GoldGradientButton(
+          label: 'Send Recovery Code',
+          isLoading: _isLoading,
+          onPressed: _handleRequestCode,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStep2() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0x26C5A059),
+                    shape: BoxShape.circle,
+                    border: Border.all(color: const Color(0x4DC5A059)),
+                  ),
+                  child: const Icon(
+                    Icons.security_rounded,
+                    color: Color(0xFFD4AF37),
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  'Set New Password',
+                  style: GoogleFonts.cormorantGaramond(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xFFF7F2E8),
+                  ),
+                ),
+              ],
+            ),
+            IconButton(
+              icon: const Icon(Icons.close_rounded, color: Color(0xFF8E9E94), size: 20),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                'Recovery code sent for ${_identifierCtrl.text.trim()}',
+                style: GoogleFonts.inter(
+                  fontSize: 12.5,
+                  color: const Color(0xFF8E9E94),
+                ),
+              ),
+            ),
+            GestureDetector(
+              onTap: () => setState(() => _step = 1),
+              child: Text(
+                'Change',
+                style: GoogleFonts.inter(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFFD4AF37),
+                ),
+              ),
+            ),
+          ],
+        ),
+        if (_demoTokenHint != null && _demoTokenHint!.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            decoration: BoxDecoration(
+              color: const Color(0x1AD4AF37),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: const Color(0x4DD4AF37)),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.vpn_key_outlined, size: 16, color: Color(0xFFD4AF37)),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Verification code: $_demoTokenHint',
+                    style: GoogleFonts.inter(
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w500,
+                      color: const Color(0xFFE5C170),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+        const SizedBox(height: 16),
+        _CapsuleAuthField(
+          controller: _tokenCtrl,
+          focusNode: _tokenFocus,
+          hint: 'Verification Code',
+          prefixIcon: Icons.pin_outlined,
+          keyboardType: TextInputType.number,
+          textInputAction: TextInputAction.next,
+          onSubmitted: (_) => _newPwFocus.requestFocus(),
+          onChanged: (_) {
+            if (_errorMessage != null) setState(() => _errorMessage = null);
+          },
+        ),
+        const SizedBox(height: 12),
+        _CapsuleAuthField(
+          controller: _newPasswordCtrl,
+          focusNode: _newPwFocus,
+          hint: 'New Password',
+          prefixIcon: Icons.lock_outline_rounded,
+          obscureText: _obscureNew,
+          textInputAction: TextInputAction.next,
+          onSubmitted: (_) => _confirmPwFocus.requestFocus(),
+          onChanged: (_) {
+            if (_errorMessage != null) setState(() => _errorMessage = null);
+          },
+          suffixIcon: IconButton(
+            icon: Icon(
+              _obscureNew ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+              size: 19,
+              color: const Color(0xFF8E9E94),
+            ),
+            onPressed: () => setState(() => _obscureNew = !_obscureNew),
+          ),
+        ),
+        const SizedBox(height: 12),
+        _CapsuleAuthField(
+          controller: _confirmPasswordCtrl,
+          focusNode: _confirmPwFocus,
+          hint: 'Confirm New Password',
+          prefixIcon: Icons.lock_reset_rounded,
+          obscureText: _obscureConfirm,
+          textInputAction: TextInputAction.done,
+          onSubmitted: (_) => _handleConfirmReset(),
+          onChanged: (_) {
+            if (_errorMessage != null) setState(() => _errorMessage = null);
+          },
+          suffixIcon: IconButton(
+            icon: Icon(
+              _obscureConfirm ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+              size: 19,
+              color: const Color(0xFF8E9E94),
+            ),
+            onPressed: () => setState(() => _obscureConfirm = !_obscureConfirm),
+          ),
+        ),
+        if (_errorMessage != null) ...[
+          const SizedBox(height: 12),
+          _buildErrorBanner(_errorMessage!),
+        ],
+        const SizedBox(height: 20),
+        _GoldGradientButton(
+          label: 'Reset Password',
+          isLoading: _isLoading,
+          onPressed: _handleConfirmReset,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStep3() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: const Color(0x26C5A059),
+              border: Border.all(color: const Color(0xFFD4AF37), width: 1.5),
+            ),
+            child: const Icon(
+              Icons.check_circle_rounded,
+              color: Color(0xFFD4AF37),
+              size: 48,
+            ),
+          ),
+          const SizedBox(height: 18),
+          Text(
+            'Password Reset Complete',
+            textAlign: TextAlign.center,
+            style: GoogleFonts.cormorantGaramond(
+              fontSize: 24,
+              fontWeight: FontWeight.w700,
+              color: const Color(0xFFF7F2E8),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Your password has been updated successfully.\nYou can now sign in with your new credentials.',
+            textAlign: TextAlign.center,
+            style: GoogleFonts.inter(
+              fontSize: 13,
+              color: const Color(0xFF8E9E94),
+              height: 1.5,
+            ),
+          ),
+          const SizedBox(height: 24),
+          _GoldGradientButton(
+            label: 'Back to Sign In',
+            icon: Icons.check_rounded,
+            onPressed: () {
+              Navigator.of(context).pop();
+              widget.onPasswordResetSuccess(_identifierCtrl.text.trim());
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: Color(0xFF04120E),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        border: Border(
+          top: BorderSide(color: Color(0x66C5A059), width: 1.2),
+          left: BorderSide(color: Color(0x33C5A059), width: 0.8),
+          right: BorderSide(color: Color(0x33C5A059), width: 0.8),
+        ),
+      ),
+      padding: EdgeInsets.fromLTRB(
+        24,
+        14,
+        24,
+        MediaQuery.of(context).viewInsets.bottom + 28,
+      ),
+      child: SafeArea(
+        top: false,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Top Pull Handle
+              Center(
+                child: Container(
+                  width: 44,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: const Color(0x4DC5A059),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 18),
+
+              if (_step == 1) _buildStep1(),
+              if (_step == 2) _buildStep2(),
+              if (_step == 3) _buildStep3(),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+

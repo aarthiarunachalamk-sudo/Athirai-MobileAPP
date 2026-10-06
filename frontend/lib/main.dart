@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'core/constants/app_assets.dart';
 import 'core/constants/app_colors.dart';
+import 'core/theme/app_theme.dart';
+import 'features/auth/data/services/secure_storage_service.dart';
 import 'features/auth/presentation/controllers/auth_controller.dart';
-import 'features/auth/presentation/screens/athirai_entry_screen.dart';
-import 'features/auth/presentation/screens/complete_profile_screen.dart';
-import 'features/auth/presentation/screens/sign_in_screen.dart';
 import 'features/shop/presentation/screens/athirai_flow_container.dart';
 
 void main() {
@@ -38,55 +38,94 @@ class AthiraiJewelsApp extends StatelessWidget {
     return MaterialApp(
       title: 'ATHIRAI – TIMELESS JEWELS',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        useMaterial3: true,
-        scaffoldBackgroundColor: const Color(0xFFFAF6F0),
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF7A1B2E),
-          primary: const Color(0xFF7A1B2E),
-          surface: const Color(0xFFFAF6F0),
-        ),
-      ),
-      home: const AthiraiFlowContainer(initialScreenIndex: 0),
+      theme: AppTheme.luxuryDarkTheme,
+      home: const AthiraiGatekeeper(),
     );
   }
 }
 
-class AuthStartupScreen extends ConsumerStatefulWidget {
-  const AuthStartupScreen({super.key});
+/// Amazon-style Persistent Session Gatekeeper:
+/// - Checks if the user has an active authenticated session or access token.
+/// - If authenticated: Navigates straight to the Dashboard (Screen index 1).
+///   Even if the app is killed and restarted, the dashboard opens automatically.
+/// - If not authenticated (or after explicit logout): Navigates to the Welcome & Login flow (Screen index 0).
+class AthiraiGatekeeper extends ConsumerStatefulWidget {
+  const AthiraiGatekeeper({super.key});
 
   @override
-  ConsumerState<AuthStartupScreen> createState() => _AuthStartupScreenState();
+  ConsumerState<AthiraiGatekeeper> createState() => _AthiraiGatekeeperState();
 }
 
-class _AuthStartupScreenState extends ConsumerState<AuthStartupScreen> {
-  bool _checkingSession = true;
+class _AthiraiGatekeeperState extends ConsumerState<AthiraiGatekeeper> {
+  bool _isChecking = true;
+  bool _isAuthenticated = false;
 
   @override
   void initState() {
     super.initState();
-    _restoreSession();
+    _checkActiveSession();
   }
 
-  Future<void> _restoreSession() async {
-    await ref.read(authControllerProvider.notifier).restoreSession();
-    if (mounted) setState(() => _checkingSession = false);
+  Future<void> _checkActiveSession() async {
+    final storage = SecureStorageService();
+    final isSessionActive = await storage.isSessionActive();
+    final token = await storage.getAccessToken();
+
+    // If an active session flag is set OR a valid access token exists, directly enter dashboard
+    final hasSession = isSessionActive || (token != null && token.isNotEmpty);
+
+    if (hasSession) {
+      // Opportunistically refresh user profile in background
+      ref.read(authControllerProvider.notifier).restoreSession();
+    }
+
+    if (mounted) {
+      setState(() {
+        _isAuthenticated = hasSession;
+        _isChecking = false;
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_checkingSession) {
-      return const Scaffold(
-        backgroundColor: AppColors.backgroundBlack,
+    if (_isChecking) {
+      return Scaffold(
+        backgroundColor: const Color(0xFF030D0A),
         body: Center(
-          child: CircularProgressIndicator(color: AppColors.goldPrimary),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Image.asset(
+                AppAssets.emeraldCrest,
+                height: 72,
+                fit: BoxFit.contain,
+                errorBuilder: (context, error, stackTrace) => const Icon(
+                  Icons.diamond_outlined,
+                  color: AppColors.goldPrimary,
+                  size: 48,
+                ),
+              ),
+              const SizedBox(height: 20),
+              const SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: AppColors.goldPrimary,
+                ),
+              ),
+            ],
+          ),
         ),
       );
     }
 
-    final authState = ref.watch(authControllerProvider);
-    if (!authState.isAuthenticated) return const SignInScreen();
-    if (authState.requiresProfileCompletion) return const CompleteProfileScreen();
-    return const AthiraiEntryScreen();
+    // Amazon-style persistent login:
+    // If authenticated -> directly open Dashboard (initialScreenIndex: 1)
+    // If unauthenticated -> open Welcome & Login onboarding (initialScreenIndex: 0)
+    return AthiraiFlowContainer(
+      initialScreenIndex: _isAuthenticated ? 1 : 0,
+    );
   }
 }

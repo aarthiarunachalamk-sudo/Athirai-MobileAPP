@@ -7,8 +7,8 @@ import 'athirai_home_screen.dart';
 import 'athirai_product_detail_screen.dart';
 import 'athirai_splash_screen.dart';
 import '../../../auth/presentation/screens/athirai_otp_verification_screen.dart';
-
 import '../../../auth/presentation/screens/sign_in_screen.dart';
+import '../../../auth/data/services/secure_storage_service.dart';
 
 /// Master container providing exact fidelity for all Athirai Screens:
 /// 01 Splash / Onboarding ("Enter the Heritage")
@@ -70,8 +70,10 @@ class _AthiraiFlowContainerState extends State<AthiraiFlowContainer> {
     }
   }
 
-  void _handleSignOut() {
+  void _handleSignOut() async {
+    await SecureStorageService().clearSession();
     widget.onSignOut?.call();
+    if (!mounted) return;
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(builder: (_) => const SignInScreen()),
       (route) => false,

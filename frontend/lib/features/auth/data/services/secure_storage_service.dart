@@ -5,6 +5,7 @@ class SecureStorageService {
   static const _refreshTokenKey = 'athirai_refresh_token';
   static const _userEmailKey = 'athirai_user_email';
   static const _rememberedIdentifierKey = 'athirai_remembered_identifier';
+  static const _isSessionActiveKey = 'athirai_session_active';
 
   final FlutterSecureStorage _storage;
 
@@ -18,6 +19,7 @@ class SecureStorageService {
   Future<void> saveTokens({required String accessToken, required String refreshToken}) async {
     await _storage.write(key: _accessTokenKey, value: accessToken);
     await _storage.write(key: _refreshTokenKey, value: refreshToken);
+    await setSessionActive(true);
   }
 
   Future<void> saveAccessToken(String token) async {
@@ -34,6 +36,15 @@ class SecureStorageService {
 
   Future<String?> getRefreshToken() async {
     return await _storage.read(key: _refreshTokenKey);
+  }
+
+  Future<void> setSessionActive(bool active) async {
+    await _storage.write(key: _isSessionActiveKey, value: active ? 'true' : 'false');
+  }
+
+  Future<bool> isSessionActive() async {
+    final val = await _storage.read(key: _isSessionActiveKey);
+    return val == 'true';
   }
 
   Future<void> saveUserEmail(String email) async {
@@ -56,10 +67,22 @@ class SecureStorageService {
     await _storage.delete(key: _rememberedIdentifierKey);
   }
 
-  Future<void> clearAll() async {
+  /// Clears only the active session tokens.
+  /// Preserves the user's remembered identifier (login screen pre-fill).
+  Future<void> clearSession() async {
     await _storage.delete(key: _accessTokenKey);
     await _storage.delete(key: _refreshTokenKey);
     await _storage.delete(key: _userEmailKey);
-    await _storage.delete(key: _rememberedIdentifierKey);
+    await _storage.delete(key: _isSessionActiveKey);
+  }
+
+  Future<void> clearAll({bool preserveRemembered = true}) async {
+    await _storage.delete(key: _accessTokenKey);
+    await _storage.delete(key: _refreshTokenKey);
+    await _storage.delete(key: _userEmailKey);
+    await _storage.delete(key: _isSessionActiveKey);
+    if (!preserveRemembered) {
+      await _storage.delete(key: _rememberedIdentifierKey);
+    }
   }
 }

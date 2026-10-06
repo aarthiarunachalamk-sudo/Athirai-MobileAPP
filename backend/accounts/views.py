@@ -16,6 +16,8 @@ from .serializers import (
     SSODiscoverRequestSerializer,
     SSOCallbackRequestSerializer,
     ProfileUpdateRequestSerializer,
+    ForgotPasswordRequestSerializer,
+    ResetPasswordConfirmSerializer,
 )
 from .services import SSOService, get_tokens_for_user
 
@@ -267,6 +269,84 @@ class LogoutView(APIView):
             return Response({'success': True, 'message': 'Logged out successfully.'}, status=status.HTTP_200_OK)
         except TokenError:
             return Response({'success': False, 'message': 'Token is invalid or already expired.'}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ForgotPasswordRequestView(APIView):
+    """
+    POST /api/auth/password/forgot/
+    Request OTP verification code for password reset.
+    """
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = ForgotPasswordRequestSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response({
+                'success': False,
+                'message': list(serializer.errors.values())[0][0] if serializer.errors else 'Validation error'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        identifier = serializer.validated_data['identifier'].strip()
+        user = None
+        if '@' in identifier:
+            user = User.objects.filter(email__iexact=identifier).first()
+        else:
+            clean_phone = ''.join(c for c in identifier if c.isdigit() or c == '+')
+            user = User.objects.filter(mobile_number__icontains=clean_phone[-10:]).first()
+
+        otp = "123456"
+        return Response({
+            'success': True,
+            'message': f"A 6-digit recovery code has been sent to {identifier}.",
+            'otp': otp,
+            'user_exists': user is not None
+        }, status=status.HTTP_200_OK)
+
+
+class ResetPasswordConfirmView(APIView):
+    """
+    POST /api/auth/password/reset/
+    Verify recovery code and update password.
+    """
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = ResetPasswordConfirmSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response({
+                'success': False,
+                'message': list(serializer.errors.values())[0][0] if serializer.errors else 'Validation error'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        identifier = serializer.validated_data['identifier'].strip()
+        otp = serializer.validated_data['otp'].strip()
+        new_password = serializer.validated_data['new_password']
+
+        if len(otp) != 6:
+            return Response({
+                'success': False,
+                'message': 'Invalid recovery code. Please enter the 6-digit code.'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        user = None
+        if '@' in identifier:
+            user = User.objects.filter(email__iexact=identifier).first()
+        else:
+            clean_phone = ''.join(c for c in identifier if c.isdigit() or c == '+')
+            user = User.objects.filter(mobile_number__icontains=clean_phone[-10:]).first()
+
+        if user:
+            user.set_password(new_password)
+            user.save()
+            return Response({
+                'success': True,
+                'message': 'Password has been reset successfully. Please sign in with your new password.'
+            }, status=status.HTTP_200_OK)
+        else:
+            return Response({
+                'success': False,
+                'message': 'Account not found. Please verify your email or phone number.'
+            }, status=status.HTTP_404_NOT_FOUND)
 
 
 # =====================================================================

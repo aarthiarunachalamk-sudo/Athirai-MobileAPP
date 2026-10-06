@@ -186,3 +186,14 @@ class JewelProductSerializer(serializers.ModelSerializer):
 
     def get_price_breakdown(self, obj):
         return obj.calculate_price_breakdown()
+
+
+class ForgotPasswordRequestSerializer(serializers.Serializer):
+    identifier = serializers.CharField(max_length=255, required=True)
+
+
+class ResetPasswordConfirmSerializer(serializers.Serializer):
+    identifier = serializers.CharField(max_length=255, required=True)
+    otp = serializers.CharField(max_length=10, required=True)
+    new_password = serializers.CharField(min_length=6, max_length=128, required=True)
+

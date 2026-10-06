@@ -44,6 +44,8 @@ class ApiEndpoints {
   static String get ssoCallback => '$baseUrl/api/auth/sso/callback/';
   static String get tokenRefresh => '$baseUrl/api/auth/token/refresh/';
   static String get logout => '$baseUrl/api/auth/logout/';
+  static String get forgotPassword => '$baseUrl/api/auth/password/forgot/';
+  static String get resetPassword => '$baseUrl/api/auth/password/reset/';
   static String get me => '$baseUrl/api/auth/me/';
   static String get profile => '$baseUrl/api/auth/profile/';
   static String get mockIdpAuthorize => '$baseUrl/api/auth/mock-idp/authorize/';

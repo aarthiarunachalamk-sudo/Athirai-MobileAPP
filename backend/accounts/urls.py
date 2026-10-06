@@ -7,6 +7,8 @@ from .views import (
     SSOCallbackView,
     UserProfileView,
     LogoutView,
+    ForgotPasswordRequestView,
+    ResetPasswordConfirmView,
     MockIdPAuthorizeView,
     MockIdPVerifyMFAView,
     SelfieUploadView,
@@ -24,6 +26,8 @@ urlpatterns = [
     path('register/', RegisterView.as_view(), name='auth_register'),
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('logout/', LogoutView.as_view(), name='auth_logout'),
+    path('password/forgot/', ForgotPasswordRequestView.as_view(), name='auth_forgot_password'),
+    path('password/reset/', ResetPasswordConfirmView.as_view(), name='auth_reset_password'),
     path('me/', UserProfileView.as_view(), name='auth_me'),
     path('profile/', UserProfileView.as_view(), name='auth_profile'),
 

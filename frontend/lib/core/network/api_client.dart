@@ -308,7 +308,7 @@ class ApiClient {
         }
       }
     } catch (_) {}
-    await _storage.clearAll();
+    await _storage.clearSession();
     return false;
   }
 

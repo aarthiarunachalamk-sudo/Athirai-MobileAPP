@@ -91,6 +91,28 @@ class AuthRepository {
     return response;
   }
 
+  Future<ApiResponse<Map<String, dynamic>>> requestPasswordReset(String identifier) async {
+    return await _apiClient.post(
+      ApiEndpoints.forgotPassword,
+      body: {'identifier': identifier},
+    );
+  }
+
+  Future<ApiResponse<Map<String, dynamic>>> confirmPasswordReset({
+    required String identifier,
+    required String otp,
+    required String newPassword,
+  }) async {
+    return await _apiClient.post(
+      ApiEndpoints.resetPassword,
+      body: {
+        'identifier': identifier,
+        'otp': otp,
+        'new_password': newPassword,
+      },
+    );
+  }
+
   Future<ApiResponse<OrganizationModel>> discoverSSO(String email) async {
     final response = await _apiClient.post(
       ApiEndpoints.ssoDiscover,
@@ -210,7 +232,7 @@ class AuthRepository {
         requireAuth: true,
       );
     }
-    await _storage.clearAll();
+    await _storage.clearSession();
   }
 
   // Mock IdP simulation calls for end-to-end testing

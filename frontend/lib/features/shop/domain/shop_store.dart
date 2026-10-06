@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 
 import '../../showroom/data/jewellery_data.dart';
 import '../../showroom/domain/models/jewellery_item.dart';
+import '../data/shop_api_service.dart';
 
 String rupees(int amount) {
   final digits = amount.toString();
@@ -224,9 +225,14 @@ class ShopProduct {
   }
 }
 
-/// Fully Dynamic Shopping Store with Live Metal Rates, Add Jewel & Add Category capabilities
+/// Fully Dynamic Shopping Store with Live Metal Rates, Backend Connection & Dynamic Products
 class ShopStore extends ChangeNotifier {
   static final session = ShopStore();
+
+  final ShopApiService _api = ShopApiService();
+  bool isLoadingBackend = false;
+  bool isLiveBackend = false;
+  String? backendError;
 
   MetalRates _rates = MetalRates(
     gold22k: 7450,
@@ -253,9 +259,57 @@ class ShopStore extends ChangeNotifier {
   final Set<String> _saved = {};
   final Map<String, int> _quantities = {};
 
-  ShopStore() {
+  ShopStore({bool autoLoadBackend = true}) {
     _products = [
       // 1. Signature Temple & Heritage Masterpieces
+      ShopProduct(
+        const JewelleryItem(
+          id: 'temple-blossom-1',
+          name: 'Temple Blossom Necklace',
+          category: 'Necklaces',
+          purity: '22K',
+          weightGrams: 44.00,
+          priceFormatted: '₹3,77,619',
+          description: 'Intricately handcrafted 22K yellow gold temple blossom necklace with delicate floral motifs and certified hallmarking.',
+          posX: 0.0,
+          posZ: -3.0,
+          assetPreview: 'assets/images/pedestal_necklace.png',
+        ),
+        'Heritage Collection',
+        makingChargePercent: 12.0,
+      ),
+      ShopProduct(
+        const JewelleryItem(
+          id: 'chola-dynasty-1',
+          name: 'Chola Dynasty Necklace',
+          category: 'Necklaces',
+          purity: '22K',
+          weightGrams: 33.20,
+          priceFormatted: '₹2,85,331',
+          description: 'Regal Chola dynasty heirloom necklace handcrafted in 22K yellow gold.',
+          posX: 0.0,
+          posZ: -3.0,
+          assetPreview: 'assets/images/shop_necklace.png',
+        ),
+        'Heritage Collection',
+        makingChargePercent: 12.0,
+      ),
+      ShopProduct(
+        const JewelleryItem(
+          id: 'lotus-grace-1',
+          name: 'Lotus Grace Necklace',
+          category: 'Necklaces',
+          purity: '22K',
+          weightGrams: 49.60,
+          priceFormatted: '₹4,26,384',
+          description: 'Exquisite 22K gold necklace sculpted with blooming lotus petals and divine grace.',
+          posX: 0.0,
+          posZ: -3.0,
+          assetPreview: 'assets/images/heritage_necklace.png',
+        ),
+        'Heritage Collection',
+        makingChargePercent: 12.0,
+      ),
       ShopProduct(
         const JewelleryItem(
           id: 'rg-1',
@@ -320,6 +374,10 @@ class ShopStore extends ChangeNotifier {
       // 3. 24K and 999 Coin Vault Products
       ..._coinProducts(),
     ];
+
+    if (autoLoadBackend) {
+      loadFromBackend(notify: false);
+    }
   }
 
   // --- Dynamic Getters ---
@@ -333,6 +391,49 @@ class ShopStore extends ChangeNotifier {
 
   JewelPriceBreakdown getBreakdown(ShopProduct product) =>
       product.getBreakdown(_rates);
+
+  /// Dynamically loads live metal rates, categories, and products from backend REST API
+  Future<void> loadFromBackend({bool notify = true}) async {
+    try {
+      isLoadingBackend = true;
+      if (notify) notifyListeners();
+
+      // 1. Fetch live metal rates
+      final liveRates = await _api.fetchLiveRates();
+      if (liveRates != null) {
+        _rates = liveRates;
+        isLiveBackend = true;
+      }
+
+      // 2. Fetch categories
+      final backendCategories = await _api.fetchCategories();
+      if (backendCategories.isNotEmpty) {
+        for (final cat in backendCategories) {
+          if (!_categories.any((c) => c.name.toLowerCase() == cat.name.toLowerCase())) {
+            _categories.add(cat);
+          }
+        }
+      }
+
+      // 3. Fetch dynamic products
+      final backendJewels = await _api.fetchJewels();
+      if (backendJewels.isNotEmpty) {
+        for (final bj in backendJewels.reversed) {
+          _products.removeWhere(
+            (p) => p.id == bj.id || p.name.toLowerCase() == bj.name.toLowerCase(),
+          );
+          _products.insert(0, bj);
+        }
+        isLiveBackend = true;
+      }
+      backendError = null;
+    } catch (e) {
+      backendError = e.toString();
+    } finally {
+      isLoadingBackend = false;
+      notifyListeners();
+    }
+  }
 
   // --- Dynamic Mutations: Live Rates ---
   void updateMetalRates({
@@ -420,6 +521,23 @@ class ShopStore extends ChangeNotifier {
     // Prepend to catalog so it appears immediately at the top
     _products.insert(0, product);
     notifyListeners();
+
+    // Dynamically persist to Django backend REST API in background
+    _api.createJewel(
+      name: name.trim(),
+      category: category.trim(),
+      purity: purity.trim(),
+      weightGrams: weightGrams,
+      metal: metal,
+      makingChargePercent: makingChargePercent,
+      stonePrice: stonePrice,
+      description: desc,
+      imageUrl: image ?? '',
+    ).catchError((e) {
+      debugPrint('Background backend createJewel sync: $e');
+      return null;
+    });
+
     return product;
   }
 

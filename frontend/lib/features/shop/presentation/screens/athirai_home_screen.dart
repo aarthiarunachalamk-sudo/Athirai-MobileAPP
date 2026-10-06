@@ -42,73 +42,181 @@ class AthiraiHomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final featuredProduct = store.products.firstWhere(
-      (p) => p.item.name.contains('Temple') || p.item.name.contains('Cosmic'),
-      orElse: () => store.products.first,
+    return AnimatedBuilder(
+      animation: store,
+      builder: (context, _) {
+        final featuredProduct = store.products.firstWhere(
+          (p) => p.item.name.contains('Temple') || p.item.name.contains('Cosmic'),
+          orElse: () => store.products.first,
+        );
+
+        return Scaffold(
+          backgroundColor: HeritageTheme.darkBg,
+          body: Stack(
+            children: [
+              // Background atmospheric dark emerald gradients
+              Container(
+                decoration: const BoxDecoration(
+                  gradient: RadialGradient(
+                    center: Alignment(0.4, -0.2),
+                    radius: 1.1,
+                    colors: [
+                      Color(0xFF09201A),
+                      Color(0xFF04100D),
+                      Color(0xFF020706),
+                    ],
+                  ),
+                ),
+              ),
+
+              // Scrollable Content with Pull-to-Refresh from Backend
+              SafeArea(
+                child: RefreshIndicator(
+                  color: HeritageTheme.goldBright,
+                  backgroundColor: const Color(0xFF04100D),
+                  onRefresh: () => store.loadFromBackend(),
+                  child: SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(
+                      parent: BouncingScrollPhysics(),
+                    ),
+                    padding: const EdgeInsets.only(left: 64, right: 16, top: 8, bottom: 24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Top Header: Welcome, Notification, Avatar
+                        _buildHeader(context),
+
+                        // Live Rates Ticker Bar (connected to backend)
+                        _buildLiveRatesBar(context),
+
+                        const SizedBox(height: 14),
+
+                        // "Discover Your Legacy" Title + Star
+                        _buildTitleSection(),
+
+                        const SizedBox(height: 14),
+
+                        // Hero Sphere: Floating Necklace in Glass Orb
+                        _buildHeroSphere(context, featuredProduct),
+
+                        const SizedBox(height: 22),
+
+                        // "Explore Categories" (Dynamic from backend)
+                        _buildExploreCategories(context),
+
+                        const SizedBox(height: 18),
+
+                        // Bottom Banner: "A Legacy in Every Piece"
+                        _buildLegacyBanner(context),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+
+              // Left Floating Vertical Navigation Rail (Pinned on the left)
+              Positioned(
+                left: 12,
+                top: 90,
+                bottom: 90,
+                child: _buildLeftNavRail(context),
+              ),
+            ],
+          ),
+        );
+      },
     );
+  }
 
-    return Scaffold(
-      backgroundColor: HeritageTheme.darkBg,
-      body: Stack(
+  /// Live Metal Rates Ticker Bar connected to Django REST backend
+  Widget _buildLiveRatesBar(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(top: 8, bottom: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: const Color(0xE6061814),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: HeritageTheme.goldBorderSubtle, width: 0.9),
+      ),
+      child: Row(
         children: [
-          // Background atmospheric dark emerald gradients
           Container(
-            decoration: const BoxDecoration(
-              gradient: RadialGradient(
-                center: Alignment(0.4, -0.2),
-                radius: 1.1,
-                colors: [
-                  Color(0xFF09201A),
-                  Color(0xFF04100D),
-                  Color(0xFF020706),
-                ],
-              ),
+            width: 7,
+            height: 7,
+            decoration: BoxDecoration(
+              color: store.isLiveBackend ? const Color(0xFF00E676) : HeritageTheme.goldBright,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: (store.isLiveBackend ? const Color(0xFF00E676) : HeritageTheme.goldBright)
+                      .withOpacity(0.6),
+                  blurRadius: 6,
+                  spreadRadius: 1,
+                ),
+              ],
             ),
           ),
-
-          // Scrollable Content
-          SafeArea(
+          const SizedBox(width: 6),
+          Text(
+            'LIVE RATES',
+            style: GoogleFonts.inter(
+              fontSize: 9,
+              fontWeight: FontWeight.w700,
+              color: HeritageTheme.goldBright,
+              letterSpacing: 0.5,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
             child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
               physics: const BouncingScrollPhysics(),
-              padding: const EdgeInsets.only(left: 64, right: 16, top: 8, bottom: 24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              child: Row(
                 children: [
-                  // Top Header: Welcome, Notification, Avatar
-                  _buildHeader(context),
-
-                  const SizedBox(height: 18),
-
-                  // "Discover Your Legacy" Title + Star
-                  _buildTitleSection(),
-
-                  const SizedBox(height: 14),
-
-                  // Hero Sphere: Floating Necklace in Glass Orb
-                  _buildHeroSphere(context, featuredProduct),
-
-                  const SizedBox(height: 22),
-
-                  // "Explore Categories"
-                  _buildExploreCategories(context),
-
-                  const SizedBox(height: 18),
-
-                  // Bottom Banner: "A Legacy in Every Piece"
-                  _buildLegacyBanner(context),
+                  _rateBadge('22K', '₹${store.rates.gold22k}/g'),
+                  const SizedBox(width: 6),
+                  _rateBadge('24K', '₹${store.rates.gold24k}/g'),
+                  const SizedBox(width: 6),
+                  _rateBadge('Silver', '₹${store.rates.silver999.toStringAsFixed(1)}/g'),
                 ],
               ),
             ),
           ),
-
-          // Left Floating Vertical Navigation Rail (Pinned on the left)
-          Positioned(
-            left: 12,
-            top: 90,
-            bottom: 90,
-            child: _buildLeftNavRail(context),
+          GestureDetector(
+            onTap: () {
+              store.loadFromBackend();
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Syncing live rates & products from backend...'),
+                  duration: Duration(seconds: 1),
+                ),
+              );
+            },
+            child: Icon(
+              store.isLoadingBackend ? Icons.sync : Icons.refresh_rounded,
+              color: HeritageTheme.goldPrimary,
+              size: 15,
+            ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _rateBadge(String label, String value) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+      decoration: BoxDecoration(
+        color: const Color(0x33D4AF37),
+        borderRadius: BorderRadius.circular(5),
+      ),
+      child: Text(
+        '$label: $value',
+        style: GoogleFonts.inter(
+          fontSize: 9,
+          fontWeight: FontWeight.w600,
+          color: HeritageTheme.textLight,
+        ),
       ),
     );
   }
@@ -377,7 +485,7 @@ class AthiraiHomeScreen extends StatelessWidget {
                 ),
               ),
 
-              // Bottom pill badge: "The Timeless Necklace" with play button
+              // Bottom pill badge: "The Timeless Necklace" with dynamic price & play button
               Positioned(
                 left: 14,
                 bottom: 14,
@@ -410,6 +518,15 @@ class AthiraiHomeScreen extends StatelessWidget {
                               color: HeritageTheme.textLight,
                             ),
                           ),
+                          const SizedBox(height: 1),
+                          Text(
+                            rupees(product.price),
+                            style: GoogleFonts.inter(
+                              fontSize: 9.5,
+                              fontWeight: FontWeight.w700,
+                              color: HeritageTheme.goldBright,
+                            ),
+                          ),
                         ],
                       ),
                       const SizedBox(width: 10),
@@ -437,16 +554,10 @@ class AthiraiHomeScreen extends StatelessWidget {
     );
   }
 
-  /// "Explore Categories" section with 6 circular capsule items
+  /// "Explore Categories" section with dynamic categories from backend
   Widget _buildExploreCategories(BuildContext context) {
-    final categories = [
-      {'name': 'Necklaces', 'icon': Icons.circle_outlined, 'image': AppAssets.shopNecklace},
-      {'name': 'Rings', 'icon': Icons.circle_outlined, 'image': AppAssets.shopRing},
-      {'name': 'Bangles', 'icon': Icons.circle_outlined, 'image': AppAssets.shopBangle},
-      {'name': 'Earrings', 'icon': Icons.circle_outlined, 'image': AppAssets.shopEarrings},
-      {'name': 'Heritage', 'icon': Icons.temple_hindu_outlined, 'image': AppAssets.heritageNecklace},
-      {'name': 'Contemporary', 'icon': Icons.auto_awesome, 'image': AppAssets.pedestalNecklace},
-    ];
+    // Dynamic categories from backend & store
+    final categories = store.categories.take(6).toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -475,6 +586,17 @@ class AthiraiHomeScreen extends StatelessWidget {
           ),
           itemBuilder: (context, index) {
             final cat = categories[index];
+            final iconData = switch (cat.name.toLowerCase()) {
+              'necklaces' => Icons.circle_outlined,
+              'rings' => Icons.circle_outlined,
+              'bangles' => Icons.circle_outlined,
+              'earrings' => Icons.circle_outlined,
+              'heritage' => Icons.temple_hindu_outlined,
+              'temple' => Icons.temple_hindu_rounded,
+              'coins' => Icons.monetization_on_outlined,
+              _ => Icons.auto_awesome,
+            };
+
             return GestureDetector(
               onTap: onOpenCollection,
               child: Container(
@@ -504,22 +626,32 @@ class AthiraiHomeScreen extends StatelessWidget {
                         color: const Color(0x55040F0D),
                       ),
                       child: ClipOval(
-                        child: Image.asset(
-                          cat['image'] as String,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) => Icon(
-                            cat['icon'] as IconData,
-                            color: HeritageTheme.goldPrimary,
-                            size: 18,
-                          ),
-                        ),
+                        child: cat.image.startsWith('http')
+                            ? Image.network(
+                                cat.image,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) => Icon(
+                                  iconData,
+                                  color: HeritageTheme.goldPrimary,
+                                  size: 18,
+                                ),
+                              )
+                            : Image.asset(
+                                cat.image,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) => Icon(
+                                  iconData,
+                                  color: HeritageTheme.goldPrimary,
+                                  size: 18,
+                                ),
+                              ),
                       ),
                     ),
                     const SizedBox(height: 5),
                     FittedBox(
                       fit: BoxFit.scaleDown,
                       child: Text(
-                        cat['name'] as String,
+                        cat.name,
                         textAlign: TextAlign.center,
                         style: GoogleFonts.inter(
                           fontSize: 9.5,

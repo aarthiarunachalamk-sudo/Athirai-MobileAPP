@@ -35,85 +35,114 @@ class AthiraiCollectionScreen extends StatefulWidget {
 class _AthiraiCollectionScreenState extends State<AthiraiCollectionScreen> {
   String _selectedCategory = 'Necklaces';
 
-  final List<String> _categories = [
-    'All',
-    'Necklaces',
-    'Rings',
-    'Bangles',
-    'Earrings',
-  ];
+  List<String> get _categories {
+    final list = <String>['All'];
+    for (final c in widget.store.categories) {
+      if (!list.contains(c.name)) list.add(c.name);
+    }
+    return list;
+  }
 
   @override
   Widget build(BuildContext context) {
-    final featuredProduct = widget.store.products.firstWhere(
-      (p) => p.item.name.contains('Temple') || p.item.name.contains('Cosmic'),
-      orElse: () => widget.store.products.first,
-    );
+    return AnimatedBuilder(
+      animation: widget.store,
+      builder: (context, _) {
+        final categories = _categories;
+        if (!categories.contains(_selectedCategory)) {
+          _selectedCategory = 'All';
+        }
 
-    return Scaffold(
-      backgroundColor: HeritageTheme.darkBg,
-      body: Stack(
-        children: [
-          // Background subtle dark emerald gradient
-          Container(
-            decoration: const BoxDecoration(
-              gradient: RadialGradient(
-                center: Alignment(0.2, -0.3),
-                radius: 1.2,
-                colors: [
-                  Color(0xFF09201A),
-                  Color(0xFF04100D),
-                  Color(0xFF020706),
-                ],
-              ),
-            ),
+        final filtered = _selectedCategory == 'All'
+            ? widget.store.products
+            : widget.store.products
+                .where((p) => p.category.toLowerCase() == _selectedCategory.toLowerCase())
+                .toList();
+        final effectiveProducts = filtered.isNotEmpty ? filtered : widget.store.products;
+
+        final featuredProduct = effectiveProducts.firstWhere(
+          (p) => p.item.name.contains('Temple Blossom'),
+          orElse: () => effectiveProducts.firstWhere(
+            (p) => p.item.name.contains('Temple') || p.item.name.contains('Cosmic'),
+            orElse: () => effectiveProducts.first,
           ),
+        );
 
-          SafeArea(
-            child: Column(
-              children: [
-                // 1. Top App Bar: < Collections, Search, Filter
-                _buildTopAppBar(context),
+        final remainingProducts = effectiveProducts.where((p) => p.id != featuredProduct.id).toList();
 
-                // 2. Filter Chips Row
-                _buildFilterChips(),
-
-                const SizedBox(height: 10),
-
-                // Scrollable Content
-                Expanded(
-                  child: SingleChildScrollView(
-                    physics: const BouncingScrollPhysics(),
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        // 3. Hero Card: "Heritage Dial"
-                        _buildHeritageDialCard(),
-
-                        const SizedBox(height: 16),
-
-                        // 4. Large Featured Card: "Temple Blossom Necklace"
-                        _buildFeaturedProductCard(context, featuredProduct),
-
-                        const SizedBox(height: 16),
-
-                        // 5. 2-Column Product Grid (Chola Dynasty, Lotus Grace)
-                        _buildTwoColumnGrid(context),
-
-                        const SizedBox(height: 32),
-                      ],
-                    ),
+        return Scaffold(
+          backgroundColor: HeritageTheme.darkBg,
+          body: Stack(
+            children: [
+              // Background subtle dark emerald gradient
+              Container(
+                decoration: const BoxDecoration(
+                  gradient: RadialGradient(
+                    center: Alignment(0.2, -0.3),
+                    radius: 1.2,
+                    colors: [
+                      Color(0xFF09201A),
+                      Color(0xFF04100D),
+                      Color(0xFF020706),
+                    ],
                   ),
                 ),
+              ),
 
-                // 6. Minimalist Bottom Accent Bar with Gold Compass
-                _buildBottomCompassBar(),
-              ],
-            ),
+              SafeArea(
+                child: Column(
+                  children: [
+                    // 1. Top App Bar: < Collections, Search, Filter
+                    _buildTopAppBar(context),
+
+                    // 2. Filter Chips Row (Dynamic from backend)
+                    _buildFilterChips(),
+
+                    const SizedBox(height: 10),
+
+                    // Scrollable Content with Pull-to-Refresh
+                    Expanded(
+                      child: RefreshIndicator(
+                        color: HeritageTheme.goldBright,
+                        backgroundColor: const Color(0xFF04100D),
+                        onRefresh: () => widget.store.loadFromBackend(),
+                        child: SingleChildScrollView(
+                          physics: const AlwaysScrollableScrollPhysics(
+                            parent: BouncingScrollPhysics(),
+                          ),
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              // 3. Hero Card: "Heritage Dial"
+                              _buildHeritageDialCard(),
+
+                              const SizedBox(height: 16),
+
+                              // 4. Large Featured Card: Dynamic Temple Blossom Necklace
+                              _buildFeaturedProductCard(context, featuredProduct),
+
+                              const SizedBox(height: 16),
+
+                              // 5. Dynamic 2-Column Product Grid from Backend
+                              _buildTwoColumnGrid(context, remainingProducts),
+
+                              const SizedBox(height: 32),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    // 6. Minimalist Bottom Accent Bar with Gold Compass
+                    _buildBottomCompassBar(),
+                  ],
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -329,8 +358,20 @@ class _AthiraiCollectionScreenState extends State<AthiraiCollectionScreen> {
     );
   }
 
-  /// Featured Product Card: Temple Blossom Necklace (₹ 3,65,000)
+  /// Featured Product Card: Dynamic Temple Blossom Necklace with live rate calculation
   Widget _buildFeaturedProductCard(BuildContext context, ShopProduct product) {
+    final isTempleBlossom = product.name.contains('Temple Blossom');
+    final nameFirst = isTempleBlossom
+        ? 'Temple Blossom'
+        : (product.name.contains(' ')
+            ? product.name.substring(0, product.name.lastIndexOf(' '))
+            : product.name);
+    final nameSecond = isTempleBlossom
+        ? 'Necklace'
+        : (product.name.contains(' ')
+            ? product.name.substring(product.name.lastIndexOf(' ') + 1)
+            : product.category);
+
     return GestureDetector(
       onTap: () => widget.onOpenProduct(product),
       child: Container(
@@ -418,7 +459,7 @@ class _AthiraiCollectionScreenState extends State<AthiraiCollectionScreen> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Text(
-                            'Temple Blossom',
+                            nameFirst,
                             style: GoogleFonts.cormorantGaramond(
                               fontSize: 18,
                               fontWeight: FontWeight.w600,
@@ -427,7 +468,7 @@ class _AthiraiCollectionScreenState extends State<AthiraiCollectionScreen> {
                             ),
                           ),
                           Text(
-                            'Necklace',
+                            nameSecond,
                             style: GoogleFonts.cormorantGaramond(
                               fontSize: 18,
                               fontWeight: FontWeight.w600,
@@ -437,7 +478,7 @@ class _AthiraiCollectionScreenState extends State<AthiraiCollectionScreen> {
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            'Heritage Collection',
+                            '${product.purity} ${product.metal} • ${product.weightGrams}g',
                             style: GoogleFonts.inter(
                               fontSize: 10,
                               color: HeritageTheme.textMutedDark,
@@ -445,7 +486,7 @@ class _AthiraiCollectionScreenState extends State<AthiraiCollectionScreen> {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            '₹ 3,65,000',
+                            rupees(product.price),
                             style: GoogleFonts.inter(
                               fontSize: 13.5,
                               fontWeight: FontWeight.w700,
@@ -458,26 +499,45 @@ class _AthiraiCollectionScreenState extends State<AthiraiCollectionScreen> {
 
                     // Heart Outline Icon
                     IconButton(
-                      icon: const Icon(
-                        Icons.favorite_border_rounded,
-                        color: HeritageTheme.textLight,
+                      icon: Icon(
+                        widget.store.isSaved(product.id)
+                            ? Icons.favorite_rounded
+                            : Icons.favorite_border_rounded,
+                        color: widget.store.isSaved(product.id)
+                            ? HeritageTheme.goldBright
+                            : HeritageTheme.textLight,
                         size: 20,
                       ),
-                      onPressed: () {},
+                      onPressed: () {
+                        setState(() {
+                          widget.store.toggleSaved(product.id);
+                        });
+                      },
                     ),
 
                     // Circular "+" Add Button
-                    Container(
-                      padding: const EdgeInsets.all(7),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: HeritageTheme.goldPrimary.withOpacity(0.22),
-                        border: Border.all(color: HeritageTheme.goldPrimary, width: 1.0),
-                      ),
-                      child: const Icon(
-                        Icons.add_rounded,
-                        color: HeritageTheme.goldBright,
-                        size: 16,
+                    GestureDetector(
+                      onTap: () {
+                        widget.store.setQuantity(product.id, 1);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Added "${product.name}" to your Jewel Vault'),
+                            duration: const Duration(seconds: 1),
+                          ),
+                        );
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.all(7),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: HeritageTheme.goldPrimary.withOpacity(0.22),
+                          border: Border.all(color: HeritageTheme.goldPrimary, width: 1.0),
+                        ),
+                        child: const Icon(
+                          Icons.add_rounded,
+                          color: HeritageTheme.goldBright,
+                          size: 16,
+                        ),
                       ),
                     ),
                   ],
@@ -490,31 +550,41 @@ class _AthiraiCollectionScreenState extends State<AthiraiCollectionScreen> {
     );
   }
 
-  /// 2-Column Product Grid (Chola Dynasty Necklace, Lotus Grace Necklace)
-  Widget _buildTwoColumnGrid(BuildContext context) {
-    final items = [
-      {
-        'title': 'Chola Dynasty',
-        'subtitle': 'Necklace',
-        'price': '₹ 2,85,000',
-        'image': AppAssets.shopNecklace,
-      },
-      {
-        'title': 'Lotus Grace',
-        'subtitle': 'Necklace',
-        'price': '₹ 4,10,000',
-        'image': AppAssets.heritageNecklace,
-      },
-    ];
+  /// 2-Column Product Grid rendered dynamically from backend products
+  Widget _buildTwoColumnGrid(BuildContext context, List<ShopProduct> products) {
+    if (products.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(24),
+        alignment: Alignment.center,
+        child: Text(
+          'No other items in this category.',
+          style: GoogleFonts.inter(fontSize: 12, color: HeritageTheme.textMutedDark),
+        ),
+      );
+    }
 
-    return Row(
-      children: items.map((item) {
-        return Expanded(
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: products.length,
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        childAspectRatio: 0.70,
+        crossAxisSpacing: 10,
+        mainAxisSpacing: 10,
+      ),
+      itemBuilder: (context, index) {
+        final item = products[index];
+        final titleFirst = item.name.contains(' ')
+            ? item.name.substring(0, item.name.lastIndexOf(' '))
+            : item.name;
+        final titleSecond = item.name.contains(' ')
+            ? item.name.substring(item.name.lastIndexOf(' ') + 1)
+            : item.category;
+
+        return GestureDetector(
+          onTap: () => widget.onOpenProduct(item),
           child: Container(
-            margin: EdgeInsets.only(
-              right: item == items.first ? 6 : 0,
-              left: item == items.last ? 6 : 0,
-            ),
             decoration: BoxDecoration(
               color: const Color(0xCC071B16),
               borderRadius: BorderRadius.circular(14),
@@ -533,16 +603,25 @@ class _AthiraiCollectionScreenState extends State<AthiraiCollectionScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Image
-                  Container(
-                    height: 110,
-                    width: double.infinity,
-                    color: const Color(0x55040F0D),
-                    child: Image.asset(
-                      item['image'] as String,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) => const Center(
-                        child: Icon(Icons.diamond_outlined, color: HeritageTheme.goldPrimary),
-                      ),
+                  Expanded(
+                    child: Container(
+                      width: double.infinity,
+                      color: const Color(0x55040F0D),
+                      child: item.image.startsWith('http')
+                          ? Image.network(
+                              item.image,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) => const Center(
+                                child: Icon(Icons.diamond_outlined, color: HeritageTheme.goldPrimary),
+                              ),
+                            )
+                          : Image.asset(
+                              item.image,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) => const Center(
+                                child: Icon(Icons.diamond_outlined, color: HeritageTheme.goldPrimary),
+                              ),
+                            ),
                     ),
                   ),
 
@@ -553,7 +632,9 @@ class _AthiraiCollectionScreenState extends State<AthiraiCollectionScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          item['title'] as String,
+                          titleFirst,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: GoogleFonts.cormorantGaramond(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
@@ -562,7 +643,9 @@ class _AthiraiCollectionScreenState extends State<AthiraiCollectionScreen> {
                           ),
                         ),
                         Text(
-                          item['subtitle'] as String,
+                          titleSecond,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: GoogleFonts.inter(
                             fontSize: 10,
                             color: HeritageTheme.textMutedDark,
@@ -573,17 +656,28 @@ class _AthiraiCollectionScreenState extends State<AthiraiCollectionScreen> {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
-                              item['price'] as String,
+                              rupees(item.price),
                               style: GoogleFonts.inter(
                                 fontSize: 11.5,
                                 fontWeight: FontWeight.w700,
                                 color: HeritageTheme.goldBright,
                               ),
                             ),
-                            const Icon(
-                              Icons.favorite_border_rounded,
-                              color: HeritageTheme.textMutedDark,
-                              size: 15,
+                            GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  widget.store.toggleSaved(item.id);
+                                });
+                              },
+                              child: Icon(
+                                widget.store.isSaved(item.id)
+                                    ? Icons.favorite_rounded
+                                    : Icons.favorite_border_rounded,
+                                color: widget.store.isSaved(item.id)
+                                    ? HeritageTheme.goldBright
+                                    : HeritageTheme.textMutedDark,
+                                size: 16,
+                              ),
                             ),
                           ],
                         ),
@@ -595,7 +689,7 @@ class _AthiraiCollectionScreenState extends State<AthiraiCollectionScreen> {
             ),
           ),
         );
-      }).toList(),
+      },
     );
   }
 

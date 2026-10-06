@@ -47,9 +47,11 @@ class _AthiraiProductDetailScreenState
             !widget.product!.item.name.contains('Cosmic')
         ? widget.product!.item.name
         : 'Temple Blossom Necklace';
-    const collection = 'Heritage Collection';
-    const priceText = '₹ 3,65,000';
-    const specsText = '22K Gold • Emerald • Pearls';
+    final collection = widget.product?.collection ?? 'Heritage Collection';
+    final priceText = widget.product != null ? rupees(widget.product!.price) : '₹ 3,65,000';
+    final specsText = widget.product != null
+        ? '${widget.product!.purity} ${widget.product!.metal} • ${widget.product!.weightGrams}g'
+        : '22K Gold • Emerald • Pearls';
 
     return Scaffold(
       backgroundColor: HeritageTheme.darkBg,
@@ -204,17 +206,29 @@ class _AthiraiProductDetailScreenState
         child: Stack(
           fit: StackFit.expand,
           children: [
-            // Pedestal image
-            Image.asset(
-              AppAssets.pedestalNecklace,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) => Container(
-                color: const Color(0xFF071C17),
-                child: const Center(
-                  child: Icon(Icons.diamond_outlined, color: HeritageTheme.goldPrimary, size: 54),
-                ),
-              ),
-            ),
+            // Pedestal image (dynamic from product with pedestal asset fallback)
+            widget.product != null && widget.product!.image.isNotEmpty
+                ? (widget.product!.image.startsWith('http')
+                    ? Image.network(
+                        widget.product!.image,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) => Image.asset(
+                          AppAssets.pedestalNecklace,
+                          fit: BoxFit.cover,
+                        ),
+                      )
+                    : Image.asset(
+                        widget.product!.image,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) => Image.asset(
+                          AppAssets.pedestalNecklace,
+                          fit: BoxFit.cover,
+                        ),
+                      ))
+                : Image.asset(
+                    AppAssets.pedestalNecklace,
+                    fit: BoxFit.cover,
+                  ),
 
             // Gradient at bottom of image
             Positioned.fill(
@@ -500,10 +514,23 @@ class _AthiraiProductDetailScreenState
 
   /// Material Details: 3 cards (Gold 22K, Emerald 4.32 ct, Pearl Natural)
   Widget _buildMaterialDetails() {
+    final p = widget.product;
     final materials = [
-      {'name': 'Gold', 'sub': '22K', 'icon': Icons.monetization_on_outlined},
-      {'name': 'Emerald', 'sub': '4.32 ct', 'icon': Icons.hexagon_outlined},
-      {'name': 'Pearl', 'sub': 'Natural', 'icon': Icons.circle_outlined},
+      {
+        'name': p != null ? p.metal : 'Gold',
+        'sub': p != null ? p.purity : '22K',
+        'icon': Icons.monetization_on_outlined,
+      },
+      {
+        'name': 'Weight',
+        'sub': p != null ? '${p.weightGrams}g' : '44.20g',
+        'icon': Icons.scale_outlined,
+      },
+      {
+        'name': 'Making',
+        'sub': p != null ? '${p.makingChargePercent}%' : '12%',
+        'icon': Icons.handyman_outlined,
+      },
     ];
 
     return Column(

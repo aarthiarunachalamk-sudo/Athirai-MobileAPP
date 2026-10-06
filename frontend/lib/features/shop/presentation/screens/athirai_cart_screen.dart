@@ -110,67 +110,77 @@ class _AthiraiCartScreenState extends State<AthiraiCartScreen> {
 
   @override
   Widget build(BuildContext context) {
-    const itemPrice = 365000;
-    final total = itemPrice * _quantity;
+    return AnimatedBuilder(
+      animation: widget.store,
+      builder: (context, _) {
+        final cartProduct = widget.store.products.firstWhere(
+          (p) => p.name.contains('Temple Blossom') || p.name.contains('Temple'),
+          orElse: () => widget.store.products.first,
+        );
+        final itemPrice = cartProduct.price;
+        final total = itemPrice * _quantity;
 
-    return Scaffold(
-      backgroundColor: HeritageTheme.darkBg,
-      body: Stack(
-        children: [
-          // Background ambient dark emerald gradient
-          Container(
-            decoration: const BoxDecoration(
-              gradient: RadialGradient(
-                center: Alignment(0, -0.3),
-                radius: 1.2,
-                colors: [
-                  Color(0xFF09201A),
-                  Color(0xFF04100D),
-                  Color(0xFF020706),
-                ],
-              ),
-            ),
-          ),
-
-          SafeArea(
-            child: Column(
-              children: [
-                // 1. Top App Bar: < My Jewel Vault, Settings gear
-                _buildTopAppBar(context),
-
-                // Scrollable Content
-                Expanded(
-                  child: SingleChildScrollView(
-                    physics: const BouncingScrollPhysics(),
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        // 2. Interactive Virtual Mannequin / Styling Orbit Hub
-                        _buildMannequinStylingHub(),
-
-                        const SizedBox(height: 18),
-
-                        // 3. "Your Rewards" Card
-                        _buildRewardsCard(),
-
-                        const SizedBox(height: 20),
-
-                        // 4. "Checkout" Section
-                        _buildCheckoutSection(total),
-
-                        const SizedBox(height: 36),
-                      ],
-                    ),
+        return Scaffold(
+          backgroundColor: HeritageTheme.darkBg,
+          body: Stack(
+            children: [
+              // Background ambient dark emerald gradient
+              Container(
+                decoration: const BoxDecoration(
+                  gradient: RadialGradient(
+                    center: Alignment(0, -0.3),
+                    radius: 1.2,
+                    colors: [
+                      Color(0xFF09201A),
+                      Color(0xFF04100D),
+                      Color(0xFF020706),
+                    ],
                   ),
                 ),
-              ],
-            ),
+              ),
+
+              SafeArea(
+                child: Column(
+                  children: [
+                    // 1. Top App Bar: < My Jewel Vault, Settings gear
+                    _buildTopAppBar(context),
+
+                    // Scrollable Content
+                    Expanded(
+                      child: SingleChildScrollView(
+                        physics: const BouncingScrollPhysics(),
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            // 2. Interactive Virtual Mannequin / Styling Orbit Hub
+                            _buildMannequinStylingHub(),
+
+                            const SizedBox(height: 18),
+
+                            // 3. "Your Rewards" Card
+                            _buildRewardsCard(),
+
+                            const SizedBox(height: 20),
+
+                            // 4. "Checkout" Section
+                            _buildCheckoutSection(total, cartProduct),
+
+                            const SizedBox(height: 36),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
+
 
   /// Top App Bar
   Widget _buildTopAppBar(BuildContext context) {
@@ -507,7 +517,7 @@ class _AthiraiCartScreenState extends State<AthiraiCartScreen> {
   }
 
   /// "Checkout" Section with Stepper, Item Card, Breakdown, and "Pay Securely"
-  Widget _buildCheckoutSection(int total) {
+  Widget _buildCheckoutSection(int total, [ShopProduct? product]) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -542,8 +552,8 @@ class _AthiraiCartScreenState extends State<AthiraiCartScreen> {
 
           const SizedBox(height: 18),
 
-          // Cart Item Card: Temple Blossom Necklace
-          _buildCartItemRow(),
+          // Cart Item Card: Temple Blossom Necklace (dynamic)
+          _buildCartItemRow(product),
 
           const SizedBox(height: 16),
 
@@ -636,7 +646,15 @@ class _AthiraiCartScreenState extends State<AthiraiCartScreen> {
   }
 
   /// Cart Item Row: Thumbnail, Title, Subtitle, Qty [- 1 +], Price, Delivery
-  Widget _buildCartItemRow() {
+  Widget _buildCartItemRow([ShopProduct? product]) {
+    final name = product != null
+        ? (product.name.contains('Temple Blossom') ? 'Temple Blossom Necklace' : product.name)
+        : 'Temple Blossom Necklace';
+    final collection = product != null && product.collection.isNotEmpty
+        ? '${product.collection} Collection'
+        : 'Heritage Collection';
+    final priceStr = product != null ? rupees(product.price) : '₹ 3,65,000';
+
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -676,7 +694,7 @@ class _AthiraiCartScreenState extends State<AthiraiCartScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Temple Blossom Necklace',
+                      name,
                       style: GoogleFonts.cormorantGaramond(
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
@@ -684,7 +702,7 @@ class _AthiraiCartScreenState extends State<AthiraiCartScreen> {
                       ),
                     ),
                     Text(
-                      'Heritage Collection',
+                      collection,
                       style: GoogleFonts.inter(
                         fontSize: 9.5,
                         color: HeritageTheme.textMutedDark,
@@ -715,7 +733,7 @@ class _AthiraiCartScreenState extends State<AthiraiCartScreen> {
               ),
               // Price
               Text(
-                '₹ 3,65,000',
+                priceStr,
                 style: GoogleFonts.inter(
                   fontSize: 13,
                   fontWeight: FontWeight.w700,

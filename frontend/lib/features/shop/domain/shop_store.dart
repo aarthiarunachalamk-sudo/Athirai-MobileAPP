@@ -548,17 +548,35 @@ class ShopStore extends ChangeNotifier {
     notifyListeners();
   }
 
-  // --- Cart & Saved State ---
+  // --- Cart & Saved / Wishlist State ---
   bool isSaved(String id) => _saved.contains(id);
+  bool isWishlisted(String id) => _saved.contains(id);
   int quantity(String id) => _quantities[id] ?? 0;
   int get count => _quantities.values.fold(0, (sum, qty) => sum + qty);
   List<ShopProduct> get cart =>
       _products.where((p) => quantity(p.id) > 0).toList();
   int get subtotal => cart.fold(0, (sum, p) => sum + p.price * quantity(p.id));
 
+  List<ShopProduct> get wishlist =>
+      _products.where((p) => isSaved(p.id)).toList();
+  int get wishlistCount => _saved.length;
+
+  ShopProduct? findProduct(String id) {
+    try {
+      return _products.firstWhere((p) => p.id == id);
+    } catch (_) {
+      return null;
+    }
+  }
+
   void clear() {
     _saved.clear();
     _quantities.clear();
+    notifyListeners();
+  }
+
+  void clearWishlist() {
+    _saved.clear();
     notifyListeners();
   }
 
@@ -568,8 +586,31 @@ class ShopStore extends ChangeNotifier {
     notifyListeners();
   }
 
+  void toggleWishlist(String id) => toggleSaved(id);
+
+  void addToWishlist(String id) {
+    if (!_products.any((p) => p.id == id)) return;
+    if (_saved.add(id)) notifyListeners();
+  }
+
+  void removeFromWishlist(String id) {
+    if (_saved.remove(id)) notifyListeners();
+  }
+
+  void addAllWishlistToCart() {
+    for (final p in wishlist) {
+      final current = quantity(p.id);
+      setQuantity(p.id, current > 0 ? current : 1);
+    }
+  }
+
   void addToCart(String id, [int qty = 1]) {
     setQuantity(id, quantity(id) + qty);
+  }
+
+  void removeFromCart(String id) {
+    _quantities.remove(id);
+    notifyListeners();
   }
 
   void setQuantity(String id, int quantity) {

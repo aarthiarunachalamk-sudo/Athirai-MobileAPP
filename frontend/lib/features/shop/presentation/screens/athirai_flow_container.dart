@@ -6,6 +6,7 @@ import 'athirai_collection_screen.dart';
 import 'athirai_home_screen.dart';
 import 'athirai_product_detail_screen.dart';
 import 'athirai_splash_screen.dart';
+import 'athirai_wishlist_screen.dart';
 import '../../../auth/presentation/screens/athirai_otp_verification_screen.dart';
 import '../../../auth/presentation/screens/sign_in_screen.dart';
 import '../../../auth/data/services/secure_storage_service.dart';
@@ -19,6 +20,7 @@ import 'package:athirai_mobile/features/vault_cms/presentation/screens/shell/vau
 /// 03 Collection Explorer ("Curated for Generations")
 /// 04 Product Detail ("Crafted in Every Detail")
 /// 05 Styling / Checkout ("Your Jewel Vault")
+/// 06 Royal Wishlist ("Your Curated Heirlooms")
 /// + Verify Your Number (Image 2 Screen 4)
 class AthiraiFlowContainer extends StatefulWidget {
   const AthiraiFlowContainer({
@@ -40,7 +42,7 @@ class AthiraiFlowContainer extends StatefulWidget {
 
 class _AthiraiFlowContainerState extends State<AthiraiFlowContainer> {
   late final ShopStore store = widget.store ?? ShopStore.session;
-  late int _currentScreen; // 0: Splash, 1: Home, 2: Collection, 3: Product, 4: Vault/Checkout, 5: OTP
+  late int _currentScreen; // 0: Splash, 1: Home, 2: Collection, 3: Product, 4: Vault/Checkout, 5: OTP, 6: Wishlist
   ShopProduct? _activeProduct;
   final List<int> _screenHistory = [];
 
@@ -127,7 +129,7 @@ class _AthiraiFlowContainerState extends State<AthiraiFlowContainer> {
           onOpenCollection: () => _navigateTo(2),
           onOpenProduct: (product) => _navigateTo(3, product: product),
           onOpenBag: () => _navigateTo(4),
-          onOpenWishlist: () => _navigateTo(2),
+          onOpenWishlist: () => _navigateTo(6),
           onOpenSearch: () => _navigateTo(2),
           onLotusTap: () => _navigateTo(3),
           onOpenStudio: () => _navigateTo(3),
@@ -139,6 +141,8 @@ class _AthiraiFlowContainerState extends State<AthiraiFlowContainer> {
           onBack: _navigateBack,
           onOpenProduct: (product) => _navigateTo(3, product: product),
           onOpenBag: () => _navigateTo(4),
+          onOpenWishlist: () => _navigateTo(6),
+          onBuyNow: (product) => _navigateTo(4, product: product),
         );
       case 3:
         return AthiraiProductDetailScreen(
@@ -147,17 +151,28 @@ class _AthiraiFlowContainerState extends State<AthiraiFlowContainer> {
           onBack: _navigateBack,
           onBuyNow: () => _navigateTo(4),
           onOpenBag: () => _navigateTo(4),
+          onOpenWishlist: () => _navigateTo(6),
         );
       case 4:
         return AthiraiCartScreen(
           store: store,
           onBack: _navigateBack,
           onOpenProduct: (product) => _navigateTo(3, product: product),
+          onOpenWishlist: () => _navigateTo(6),
         );
       case 5:
         return AthiraiOtpVerificationScreen(
           phoneNumber: '+91 98765 43210',
           onVerified: () => _navigateTo(1),
+        );
+      case 6:
+        return AthiraiWishlistScreen(
+          store: store,
+          onBack: _navigateBack,
+          onOpenProduct: (product) => _navigateTo(3, product: product),
+          onOpenBag: () => _navigateTo(4),
+          onBuyNow: (product) => _navigateTo(4, product: product),
+          onExplore: () => _navigateTo(2),
         );
       default:
         return AthiraiHomeScreen(
@@ -165,7 +180,7 @@ class _AthiraiFlowContainerState extends State<AthiraiFlowContainer> {
           onOpenCollection: () => _navigateTo(2),
           onOpenProduct: (product) => _navigateTo(3, product: product),
           onOpenBag: () => _navigateTo(4),
-          onOpenWishlist: () => _navigateTo(2),
+          onOpenWishlist: () => _navigateTo(6),
           onOpenSearch: () => _navigateTo(2),
           onLotusTap: () => _navigateTo(3),
           onOpenStudio: () => _navigateTo(3),
@@ -174,7 +189,7 @@ class _AthiraiFlowContainerState extends State<AthiraiFlowContainer> {
     }
   }
 
-  /// Floating discrete switcher pill allowing instant jumping between all 6 screens
+  /// Floating discrete switcher pill allowing instant jumping between all screens
   Widget _buildFloatingQuickSwitcher() {
     final screenTitles = [
       '01 Onboarding',
@@ -183,6 +198,7 @@ class _AthiraiFlowContainerState extends State<AthiraiFlowContainer> {
       '04 Product Detail',
       '05 Vault & Pay',
       'OTP Verification',
+      '06 Royal Wishlist',
     ];
 
     return Container(

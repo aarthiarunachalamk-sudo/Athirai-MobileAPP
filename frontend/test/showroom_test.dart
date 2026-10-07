@@ -182,7 +182,7 @@ void main() {
     expect(find.text('AR Try-on'), findsOneWidget);
     expect(find.text('View on Avatar'), findsOneWidget);
     expect(find.text('Craftsmanship Journey'), findsOneWidget);
-    expect(find.text('Add to Vault'), findsOneWidget);
+    expect(find.text('Add to Cart'), findsOneWidget);
     expect(find.text('Buy Now'), findsOneWidget);
   });
 

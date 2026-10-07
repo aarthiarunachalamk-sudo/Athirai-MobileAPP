@@ -24,6 +24,7 @@ class AthiraiProductDetailScreen extends StatefulWidget {
     required this.onBack,
     required this.onBuyNow,
     required this.onOpenBag,
+    this.onOpenWishlist,
   });
 
   final ShopStore store;
@@ -31,6 +32,7 @@ class AthiraiProductDetailScreen extends StatefulWidget {
   final VoidCallback onBack;
   final VoidCallback onBuyNow;
   final VoidCallback onOpenBag;
+  final VoidCallback? onOpenWishlist;
 
   @override
   State<AthiraiProductDetailScreen> createState() =>
@@ -130,58 +132,144 @@ class _AthiraiProductDetailScreenState
     );
   }
 
-  /// Top App Bar
+  /// Top App Bar with back, wishlist counter, cart counter, and 3D badge
   Widget _buildTopAppBar(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      child: Row(
-        children: [
-          IconButton(
-            icon: const Icon(
-              Icons.arrow_back_ios_new_rounded,
-              color: HeritageTheme.textLight,
-              size: 19,
-            ),
-            onPressed: widget.onBack,
-          ),
-          Text(
-            'Product Detail',
-            style: GoogleFonts.cormorantGaramond(
-              fontSize: 22,
-              fontWeight: FontWeight.w600,
-              color: HeritageTheme.textLight,
-              letterSpacing: 0.3,
-            ),
-          ),
-          const Spacer(),
-          IconButton(
-            icon: const Icon(
-              Icons.ios_share_rounded,
-              color: HeritageTheme.textLight,
-              size: 20,
-            ),
-            onPressed: () {},
-          ),
-          // "3D" pill badge
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-            margin: const EdgeInsets.only(right: 8),
-            decoration: BoxDecoration(
-              color: const Color(0x33D4AF37),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: HeritageTheme.goldBorder, width: 0.8),
-            ),
-            child: Text(
-              '3D',
-              style: GoogleFonts.inter(
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-                color: HeritageTheme.goldBright,
+    return AnimatedBuilder(
+      animation: widget.store,
+      builder: (context, _) {
+        final wishlistCount = widget.store.wishlistCount;
+        final cartCount = widget.store.count;
+
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          child: Row(
+            children: [
+              IconButton(
+                icon: const Icon(
+                  Icons.arrow_back_ios_new_rounded,
+                  color: HeritageTheme.textLight,
+                  size: 19,
+                ),
+                onPressed: widget.onBack,
               ),
-            ),
+              Text(
+                'Product Detail',
+                style: GoogleFonts.cormorantGaramond(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w600,
+                  color: HeritageTheme.textLight,
+                  letterSpacing: 0.3,
+                ),
+              ),
+              const Spacer(),
+              // Wishlist shortcut icon button with badge
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  IconButton(
+                    icon: Icon(
+                      wishlistCount > 0
+                          ? Icons.favorite_rounded
+                          : Icons.favorite_border_rounded,
+                      color: wishlistCount > 0
+                          ? HeritageTheme.goldBright
+                          : HeritageTheme.textLight,
+                      size: 21,
+                    ),
+                    tooltip: 'Wishlist',
+                    onPressed: widget.onOpenWishlist,
+                  ),
+                  if (wishlistCount > 0)
+                    Positioned(
+                      right: 6,
+                      top: 6,
+                      child: Container(
+                        padding: const EdgeInsets.all(3),
+                        decoration: const BoxDecoration(
+                          color: HeritageTheme.goldBright,
+                          shape: BoxShape.circle,
+                        ),
+                        constraints: const BoxConstraints(
+                          minWidth: 15,
+                          minHeight: 15,
+                        ),
+                        child: Center(
+                          child: Text(
+                            '$wishlistCount',
+                            style: GoogleFonts.inter(
+                              fontSize: 9,
+                              fontWeight: FontWeight.w800,
+                              color: const Color(0xFF04100D),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              // Cart shortcut icon button with badge
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  IconButton(
+                    icon: const Icon(
+                      Icons.shopping_bag_outlined,
+                      color: HeritageTheme.textLight,
+                      size: 21,
+                    ),
+                    tooltip: 'Shopping Bag',
+                    onPressed: widget.onOpenBag,
+                  ),
+                  if (cartCount > 0)
+                    Positioned(
+                      right: 6,
+                      top: 6,
+                      child: Container(
+                        padding: const EdgeInsets.all(3),
+                        decoration: const BoxDecoration(
+                          color: HeritageTheme.goldBright,
+                          shape: BoxShape.circle,
+                        ),
+                        constraints: const BoxConstraints(
+                          minWidth: 15,
+                          minHeight: 15,
+                        ),
+                        child: Center(
+                          child: Text(
+                            '$cartCount',
+                            style: GoogleFonts.inter(
+                              fontSize: 9,
+                              fontWeight: FontWeight.w800,
+                              color: const Color(0xFF04100D),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              // "3D" pill badge
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                margin: const EdgeInsets.only(right: 6),
+                decoration: BoxDecoration(
+                  color: const Color(0x33D4AF37),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: HeritageTheme.goldBorder, width: 0.8),
+                ),
+                child: Text(
+                  '3D',
+                  style: GoogleFonts.inter(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: HeritageTheme.goldBright,
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -599,124 +687,215 @@ class _AthiraiProductDetailScreenState
     );
   }
 
-  /// Bottom Action Bar: "Add to Vault" + "Buy Now"
+  /// Bottom Action Bar: Wishlist Toggle + "Add to Cart" + "Buy Now"
   Widget _buildBottomActionBar() {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
-      decoration: BoxDecoration(
-        color: const Color(0xF2040D0B),
-        border: const Border(
-          top: BorderSide(color: HeritageTheme.goldBorderSubtle, width: 0.8),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.6),
-            blurRadius: 16,
-            offset: const Offset(0, -4),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          // "Add to Vault" Button
-          Expanded(
-            flex: 4,
-            child: Container(
-              height: 48,
-              decoration: BoxDecoration(
-                color: const Color(0xCC071B16),
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: HeritageTheme.goldBorder, width: 0.9),
+    final productId = widget.product?.id ?? 'rg-1';
+    final productName = widget.product?.name ?? 'Temple Blossom Necklace';
+
+    return AnimatedBuilder(
+      animation: widget.store,
+      builder: (context, _) {
+        final isWishlisted = widget.store.isSaved(productId);
+        final inCartQty = widget.store.quantity(productId);
+
+        return Container(
+          padding: const EdgeInsets.fromLTRB(14, 12, 14, 20),
+          decoration: BoxDecoration(
+            color: const Color(0xF2040D0B),
+            border: const Border(
+              top: BorderSide(color: HeritageTheme.goldBorderSubtle, width: 0.8),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.6),
+                blurRadius: 16,
+                offset: const Offset(0, -4),
               ),
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
+            ],
+          ),
+          child: Row(
+            children: [
+              // 1. Wishlist Heart Toggle Button
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: isWishlisted
+                      ? HeritageTheme.goldPrimary.withOpacity(0.2)
+                      : const Color(0xCC071B16),
                   borderRadius: BorderRadius.circular(24),
-                  onTap: () {
-                    widget.store.setQuantity(widget.product?.id ?? 'rg-1', 1);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Added to your Jewel Vault'),
-                        duration: Duration(seconds: 1),
-                      ),
-                    );
-                  },
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(
-                        Icons.bookmark_outline_rounded,
-                        color: HeritageTheme.goldPrimary,
-                        size: 17,
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        'Add to Vault',
-                        style: GoogleFonts.inter(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: HeritageTheme.textLight,
+                  border: Border.all(
+                    color: isWishlisted
+                        ? HeritageTheme.goldBright
+                        : HeritageTheme.goldBorder,
+                    width: 1.0,
+                  ),
+                ),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(24),
+                    onTap: () {
+                      widget.store.toggleWishlist(productId);
+                      final nowWishlisted = widget.store.isSaved(productId);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            nowWishlisted
+                                ? 'Added "$productName" to Wishlist'
+                                : 'Removed from Wishlist',
+                          ),
+                          duration: const Duration(seconds: 1),
+                          action: nowWishlisted && widget.onOpenWishlist != null
+                              ? SnackBarAction(
+                                  label: 'VIEW',
+                                  textColor: HeritageTheme.goldBright,
+                                  onPressed: widget.onOpenWishlist!,
+                                )
+                              : null,
                         ),
+                      );
+                    },
+                    child: Center(
+                      child: Icon(
+                        isWishlisted
+                            ? Icons.favorite_rounded
+                            : Icons.favorite_border_rounded,
+                        color: isWishlisted
+                            ? HeritageTheme.goldBright
+                            : HeritageTheme.textLight,
+                        size: 22,
                       ),
-                    ],
+                    ),
                   ),
                 ),
               ),
-            ),
-          ),
 
-          const SizedBox(width: 10),
+              const SizedBox(width: 8),
 
-          // "Buy Now" Gold Gradient Button
-          Expanded(
-            flex: 5,
-            child: Container(
-              height: 48,
-              decoration: BoxDecoration(
-                gradient: HeritageTheme.goldGradient,
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: [
-                  BoxShadow(
-                    color: HeritageTheme.goldPrimary.withOpacity(0.35),
-                    blurRadius: 12,
-                    offset: const Offset(0, 3),
+              // 2. "Add to Cart" Capsule Button
+              Expanded(
+                flex: 5,
+                child: Container(
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: inCartQty > 0
+                        ? const Color(0xE60A2B23)
+                        : const Color(0xCC071B16),
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(
+                      color: inCartQty > 0
+                          ? HeritageTheme.goldBright
+                          : HeritageTheme.goldBorder,
+                      width: 1.0,
+                    ),
                   ),
-                ],
-              ),
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(24),
-                  onTap: () {
-                    widget.store.setQuantity(widget.product?.id ?? 'rg-1', 1);
-                    widget.onBuyNow();
-                  },
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(
-                        Icons.shopping_bag_outlined,
-                        color: Color(0xFF1A1203),
-                        size: 17,
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(24),
+                      onTap: () {
+                        widget.store.addToCart(productId, 1);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              'Added to Cart (Qty: ${widget.store.quantity(productId)})',
+                            ),
+                            duration: const Duration(seconds: 1),
+                            action: SnackBarAction(
+                              label: 'VIEW CART',
+                              textColor: HeritageTheme.goldBright,
+                              onPressed: widget.onOpenBag,
+                            ),
+                          ),
+                        );
+                      },
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            inCartQty > 0
+                                ? Icons.check_circle_rounded
+                                : Icons.shopping_bag_outlined,
+                            color: inCartQty > 0
+                                ? HeritageTheme.goldBright
+                                : HeritageTheme.goldPrimary,
+                            size: 17,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            inCartQty > 0
+                                ? 'In Cart ($inCartQty)'
+                                : 'Add to Cart',
+                            style: GoogleFonts.inter(
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w600,
+                              color: inCartQty > 0
+                                  ? HeritageTheme.goldBright
+                                  : HeritageTheme.textLight,
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 6),
-                      Text(
-                        'Buy Now',
-                        style: GoogleFonts.inter(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                          color: const Color(0xFF1A1203),
-                          letterSpacing: 0.3,
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
                 ),
               ),
-            ),
+
+              const SizedBox(width: 8),
+
+              // 3. "Buy Now" Gold Gradient Button
+              Expanded(
+                flex: 5,
+                child: Container(
+                  height: 48,
+                  decoration: BoxDecoration(
+                    gradient: HeritageTheme.goldGradient,
+                    borderRadius: BorderRadius.circular(24),
+                    boxShadow: [
+                      BoxShadow(
+                        color: HeritageTheme.goldPrimary.withOpacity(0.35),
+                        blurRadius: 12,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(24),
+                      onTap: () {
+                        widget.store.addToCart(productId, 1);
+                        widget.onBuyNow();
+                      },
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(
+                            Icons.flash_on_rounded,
+                            color: Color(0xFF1A1203),
+                            size: 17,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            'Buy Now',
+                            style: GoogleFonts.inter(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              color: const Color(0xFF1A1203),
+                              letterSpacing: 0.3,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 }

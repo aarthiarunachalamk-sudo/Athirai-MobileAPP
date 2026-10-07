@@ -23,11 +23,13 @@ class AthiraiCartScreen extends StatefulWidget {
     required this.store,
     required this.onBack,
     required this.onOpenProduct,
+    this.onOpenWishlist,
   });
 
   final ShopStore store;
   final VoidCallback onBack;
   final ValueChanged<ShopProduct> onOpenProduct;
+  final VoidCallback? onOpenWishlist;
 
   @override
   State<AthiraiCartScreen> createState() => _AthiraiCartScreenState();
@@ -60,6 +62,11 @@ class _AthiraiCartScreenState extends State<AthiraiCartScreen> {
     Future.delayed(const Duration(milliseconds: 1400), () {
       if (!mounted) return;
       setState(() => _isProcessingPayment = false);
+      final count = widget.store.count > 0 ? widget.store.count : _quantity;
+      final total = widget.store.subtotal > 0
+          ? widget.store.subtotal
+          : (widget.store.products.first.price * _quantity);
+
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
@@ -78,7 +85,7 @@ class _AthiraiCartScreenState extends State<AthiraiCartScreen> {
             ),
           ),
           content: Text(
-            'Thank you, Ananya! Your Temple Blossom Necklace has been securely ordered and reserved in your vault.',
+            'Thank you, Ananya! Your order of $count heirloom ${count == 1 ? 'piece' : 'pieces'} totaling ${rupees(total)} has been securely reserved and ordered into your vault.',
             textAlign: TextAlign.center,
             style: GoogleFonts.inter(
               fontSize: 13,
@@ -90,6 +97,7 @@ class _AthiraiCartScreenState extends State<AthiraiCartScreen> {
             Center(
               child: TextButton(
                 onPressed: () {
+                  widget.store.clear();
                   Navigator.pop(context);
                   widget.onBack();
                 },
@@ -118,7 +126,7 @@ class _AthiraiCartScreenState extends State<AthiraiCartScreen> {
           orElse: () => widget.store.products.first,
         );
         final itemPrice = cartProduct.price;
-        final total = itemPrice * _quantity;
+        final total = widget.store.subtotal > 0 ? widget.store.subtotal : (itemPrice * _quantity);
 
         return Scaffold(
           backgroundColor: HeritageTheme.darkBg,
@@ -142,7 +150,7 @@ class _AthiraiCartScreenState extends State<AthiraiCartScreen> {
               SafeArea(
                 child: Column(
                   children: [
-                    // 1. Top App Bar: < My Jewel Vault, Settings gear
+                    // 1. Top App Bar: < My Jewel Vault, Wishlist, Settings
                     _buildTopAppBar(context),
 
                     // Scrollable Content
@@ -181,7 +189,6 @@ class _AthiraiCartScreenState extends State<AthiraiCartScreen> {
     );
   }
 
-
   /// Top App Bar
   Widget _buildTopAppBar(BuildContext context) {
     return Padding(
@@ -206,6 +213,52 @@ class _AthiraiCartScreenState extends State<AthiraiCartScreen> {
             ),
           ),
           const Spacer(),
+          // Wishlist Shortcut Button
+          if (widget.onOpenWishlist != null)
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                IconButton(
+                  icon: Icon(
+                    widget.store.wishlistCount > 0
+                        ? Icons.favorite_rounded
+                        : Icons.favorite_border_rounded,
+                    color: widget.store.wishlistCount > 0
+                        ? HeritageTheme.goldBright
+                        : HeritageTheme.textLight,
+                    size: 21,
+                  ),
+                  tooltip: 'Wishlist',
+                  onPressed: widget.onOpenWishlist,
+                ),
+                if (widget.store.wishlistCount > 0)
+                  Positioned(
+                    right: 6,
+                    top: 6,
+                    child: Container(
+                      padding: const EdgeInsets.all(3),
+                      decoration: const BoxDecoration(
+                        color: HeritageTheme.goldBright,
+                        shape: BoxShape.circle,
+                      ),
+                      constraints: const BoxConstraints(
+                        minWidth: 15,
+                        minHeight: 15,
+                      ),
+                      child: Center(
+                        child: Text(
+                          '${widget.store.wishlistCount}',
+                          style: GoogleFonts.inter(
+                            fontSize: 9,
+                            fontWeight: FontWeight.w800,
+                            color: const Color(0xFF04100D),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
           IconButton(
             icon: const Icon(
               Icons.settings_outlined,
@@ -552,8 +605,15 @@ class _AthiraiCartScreenState extends State<AthiraiCartScreen> {
 
           const SizedBox(height: 18),
 
-          // Cart Item Card: Temple Blossom Necklace (dynamic)
-          _buildCartItemRow(product),
+          // Cart Items: Dynamic list of all pieces added to cart
+          if (widget.store.cart.isNotEmpty) ...[
+            for (final cartItem in widget.store.cart) ...[
+              _buildDynamicCartItemRow(cartItem),
+              const SizedBox(height: 10),
+            ],
+          ] else ...[
+            _buildCartItemRow(product),
+          ],
 
           const SizedBox(height: 16),
 
@@ -754,6 +814,167 @@ class _AthiraiCartScreenState extends State<AthiraiCartScreen> {
               const SizedBox(width: 6),
               Text(
                 'Delivery by 5-7 business days',
+                style: GoogleFonts.inter(
+                  fontSize: 10,
+                  color: HeritageTheme.textMutedDark,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Dynamic Cart Item Row connected directly to ShopStore
+  Widget _buildDynamicCartItemRow(ShopProduct product) {
+    final qty = widget.store.quantity(product.id);
+    final itemTotal = product.price * qty;
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0x80040F0D),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: HeritageTheme.goldBorderSubtle, width: 0.8),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              // Product Thumbnail
+              GestureDetector(
+                onTap: () => widget.onOpenProduct(product),
+                child: Container(
+                  width: 52,
+                  height: 52,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: HeritageTheme.goldBorder, width: 0.8),
+                    color: const Color(0x5509201A),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: product.image.startsWith('http')
+                        ? Image.network(
+                            product.image,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) => const Icon(
+                              Icons.diamond_outlined,
+                              color: HeritageTheme.goldPrimary,
+                            ),
+                          )
+                        : Image.asset(
+                            product.image.isNotEmpty ? product.image : AppAssets.pedestalNecklace,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) => const Icon(
+                              Icons.diamond_outlined,
+                              color: HeritageTheme.goldPrimary,
+                            ),
+                          ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      product.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.cormorantGaramond(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: HeritageTheme.textLight,
+                      ),
+                    ),
+                    Text(
+                      '${product.purity} ${product.metal} • ${product.weightGrams}g',
+                      style: GoogleFonts.inter(
+                        fontSize: 9.5,
+                        color: HeritageTheme.textMutedDark,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    // Quantity Stepper: [- qty +] + delete icon
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _buildStepperBtn(Icons.remove, () {
+                          if (qty > 1) {
+                            widget.store.setQuantity(product.id, qty - 1);
+                          } else {
+                            widget.store.removeFromCart(product.id);
+                          }
+                        }),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 10),
+                          child: Text(
+                            '$qty',
+                            style: GoogleFonts.inter(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: HeritageTheme.textLight,
+                            ),
+                          ),
+                        ),
+                        _buildStepperBtn(Icons.add, () {
+                          widget.store.addToCart(product.id, 1);
+                        }),
+                        const SizedBox(width: 10),
+                        GestureDetector(
+                          onTap: () {
+                            widget.store.removeFromCart(product.id);
+                          },
+                          child: const Icon(
+                            Icons.delete_outline_rounded,
+                            color: Colors.redAccent,
+                            size: 16,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              // Price
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    rupees(itemTotal),
+                    style: GoogleFonts.inter(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: HeritageTheme.goldBright,
+                    ),
+                  ),
+                  if (qty > 1)
+                    Text(
+                      '${rupees(product.price)} ea',
+                      style: GoogleFonts.inter(
+                        fontSize: 9,
+                        color: HeritageTheme.textMutedDark,
+                      ),
+                    ),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              const Icon(
+                Icons.local_shipping_outlined,
+                color: HeritageTheme.goldPrimary,
+                size: 14,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                'Insured Royal Express Delivery by 3-5 days',
                 style: GoogleFonts.inter(
                   fontSize: 10,
                   color: HeritageTheme.textMutedDark,

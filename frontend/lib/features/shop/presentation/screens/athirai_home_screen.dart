@@ -259,7 +259,7 @@ class AthiraiHomeScreen extends StatelessWidget {
               size: 20,
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 18),
           // Explore / Gem icon
           GestureDetector(
             onTap: onOpenCollection,
@@ -269,7 +269,7 @@ class AthiraiHomeScreen extends StatelessWidget {
               size: 20,
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 18),
           // Diamond / Studio icon
           GestureDetector(
             onTap: onLotusTap ?? onOpenCollection,
@@ -279,17 +279,97 @@ class AthiraiHomeScreen extends StatelessWidget {
               size: 20,
             ),
           ),
-          const SizedBox(height: 20),
-          // Sparkle / Wishlist icon
+          const SizedBox(height: 18),
+          // Wishlist Heart icon with live badge
           GestureDetector(
             onTap: onOpenWishlist,
-            child: const Icon(
-              Icons.auto_awesome_outlined,
-              color: HeritageTheme.textMutedDark,
-              size: 20,
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Icon(
+                  store.wishlistCount > 0
+                      ? Icons.favorite_rounded
+                      : Icons.favorite_border_rounded,
+                  color: store.wishlistCount > 0
+                      ? HeritageTheme.goldBright
+                      : HeritageTheme.textMutedDark,
+                  size: 20,
+                ),
+                if (store.wishlistCount > 0)
+                  Positioned(
+                    right: -6,
+                    top: -6,
+                    child: Container(
+                      padding: const EdgeInsets.all(3),
+                      decoration: const BoxDecoration(
+                        color: HeritageTheme.goldBright,
+                        shape: BoxShape.circle,
+                      ),
+                      constraints: const BoxConstraints(
+                        minWidth: 14,
+                        minHeight: 14,
+                      ),
+                      child: Center(
+                        child: Text(
+                          '${store.wishlistCount}',
+                          style: GoogleFonts.inter(
+                            fontSize: 8.5,
+                            fontWeight: FontWeight.w800,
+                            color: const Color(0xFF04100D),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 18),
+          // Shopping Bag icon with live badge
+          GestureDetector(
+            onTap: onOpenBag,
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Icon(
+                  store.count > 0
+                      ? Icons.shopping_bag_rounded
+                      : Icons.shopping_bag_outlined,
+                  color: store.count > 0
+                      ? HeritageTheme.goldBright
+                      : HeritageTheme.textMutedDark,
+                  size: 20,
+                ),
+                if (store.count > 0)
+                  Positioned(
+                    right: -6,
+                    top: -6,
+                    child: Container(
+                      padding: const EdgeInsets.all(3),
+                      decoration: const BoxDecoration(
+                        color: HeritageTheme.goldBright,
+                        shape: BoxShape.circle,
+                      ),
+                      constraints: const BoxConstraints(
+                        minWidth: 14,
+                        minHeight: 14,
+                      ),
+                      child: Center(
+                        child: Text(
+                          '${store.count}',
+                          style: GoogleFonts.inter(
+                            fontSize: 8.5,
+                            fontWeight: FontWeight.w800,
+                            color: const Color(0xFF04100D),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 18),
           // Profile / Account icon
           GestureDetector(
             onTap: () => _showUserProfileModal(context),
@@ -304,7 +384,7 @@ class AthiraiHomeScreen extends StatelessWidget {
     );
   }
 
-  /// Header with user greeting, notification bell, profile avatar
+  /// Header with user greeting, wishlist shortcut, notification bell, profile avatar
   Widget _buildHeader(BuildContext context) {
     return Row(
       children: [
@@ -312,53 +392,106 @@ class AthiraiHomeScreen extends StatelessWidget {
         const Icon(
           Icons.auto_awesome_rounded,
           color: HeritageTheme.goldPrimary,
-          size: 16,
+          size: 15,
         ),
-        const SizedBox(width: 6),
-        GestureDetector(
-          onTap: () => _showUserProfileModal(context),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                'Welcome back,',
-                style: GoogleFonts.inter(
-                  fontSize: 10.5,
-                  color: HeritageTheme.textMutedDark,
-                  letterSpacing: 0.2,
+        const SizedBox(width: 5),
+        Expanded(
+          child: GestureDetector(
+            onTap: () => _showUserProfileModal(context),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Welcome back,',
+                  style: GoogleFonts.inter(
+                    fontSize: 10,
+                    color: HeritageTheme.textMutedDark,
+                    letterSpacing: 0.2,
+                  ),
                 ),
-              ),
-              Text(
-                'Ananya',
-                style: GoogleFonts.cormorantGaramond(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w600,
-                  color: HeritageTheme.textLight,
-                  letterSpacing: 0.3,
+                Text(
+                  'Ananya',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.cormorantGaramond(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: HeritageTheme.textLight,
+                    letterSpacing: 0.3,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
-        const Spacer(),
+        // Wishlist Quick Shortcut with badge
+        Stack(
+          clipBehavior: Clip.none,
+          children: [
+            IconButton(
+              padding: const EdgeInsets.all(6),
+              constraints: const BoxConstraints(),
+              icon: Icon(
+                store.wishlistCount > 0
+                    ? Icons.favorite_rounded
+                    : Icons.favorite_border_rounded,
+                color: store.wishlistCount > 0
+                    ? HeritageTheme.goldBright
+                    : HeritageTheme.textLight,
+                size: 20,
+              ),
+              tooltip: 'Wishlist',
+              onPressed: onOpenWishlist,
+            ),
+            if (store.wishlistCount > 0)
+              Positioned(
+                right: 0,
+                top: 0,
+                child: Container(
+                  padding: const EdgeInsets.all(3),
+                  decoration: const BoxDecoration(
+                    color: HeritageTheme.goldBright,
+                    shape: BoxShape.circle,
+                  ),
+                  constraints: const BoxConstraints(
+                    minWidth: 13,
+                    minHeight: 13,
+                  ),
+                  child: Center(
+                    child: Text(
+                      '${store.wishlistCount}',
+                      style: GoogleFonts.inter(
+                        fontSize: 8,
+                        fontWeight: FontWeight.w800,
+                        color: const Color(0xFF04100D),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(width: 4),
         // Notification bell with badge dot
         Stack(
           children: [
             IconButton(
+              padding: const EdgeInsets.all(6),
+              constraints: const BoxConstraints(),
               icon: const Icon(
                 Icons.notifications_none_rounded,
                 color: HeritageTheme.textLight,
-                size: 22,
+                size: 20,
               ),
               onPressed: () {},
             ),
             Positioned(
-              right: 12,
-              top: 12,
+              right: 6,
+              top: 6,
               child: Container(
-                width: 7,
-                height: 7,
+                width: 6,
+                height: 6,
                 decoration: const BoxDecoration(
                   color: HeritageTheme.goldPrimary,
                   shape: BoxShape.circle,
@@ -367,12 +500,13 @@ class AthiraiHomeScreen extends StatelessWidget {
             ),
           ],
         ),
+        const SizedBox(width: 8),
         // User Profile Avatar with circular gold ring
         GestureDetector(
           onTap: () => _showUserProfileModal(context),
           child: Container(
-            width: 36,
-            height: 36,
+            width: 34,
+            height: 34,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               border: Border.all(color: HeritageTheme.goldPrimary, width: 1.4),

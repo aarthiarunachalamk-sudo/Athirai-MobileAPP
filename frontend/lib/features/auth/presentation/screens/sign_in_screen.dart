@@ -1817,46 +1817,44 @@ class _ForgotPasswordSheetState extends State<_ForgotPasswordSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        color: Color(0xFF04120E),
+    return Material(
+      color: const Color(0xFF04120E),
+      shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-        border: Border(
-          top: BorderSide(color: Color(0x66C5A059), width: 1.2),
-          left: BorderSide(color: Color(0x33C5A059), width: 0.8),
-          right: BorderSide(color: Color(0x33C5A059), width: 0.8),
+        side: BorderSide(color: Color(0x66C5A059), width: 1.2),
+      ),
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(
+          24,
+          14,
+          24,
+          MediaQuery.of(context).viewInsets.bottom + 28,
         ),
-      ),
-      padding: EdgeInsets.fromLTRB(
-        24,
-        14,
-        24,
-        MediaQuery.of(context).viewInsets.bottom + 28,
-      ),
-      child: SafeArea(
-        top: false,
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Top Pull Handle
-              Center(
-                child: Container(
-                  width: 44,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: const Color(0x4DC5A059),
-                    borderRadius: BorderRadius.circular(2),
+        child: SafeArea(
+          top: false,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Top Pull Handle
+                Center(
+                  child: Container(
+                    width: 44,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: const Color(0x4DC5A059),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 18),
+                const SizedBox(height: 18),
 
-              if (_step == 1) _buildStep1(),
-              if (_step == 2) _buildStep2(),
-              if (_step == 3) _buildStep3(),
-            ],
+                if (_step == 1) _buildStep1(),
+                if (_step == 2) _buildStep2(),
+                if (_step == 3) _buildStep3(),
+              ],
+            ),
           ),
         ),
       ),

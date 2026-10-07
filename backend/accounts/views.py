@@ -1004,13 +1004,13 @@ class ClaimDailyRewardView(APIView):
         if not user:
             return Response({'success': False, 'message': 'No active user'}, status=status.HTTP_400_BAD_REQUEST)
         wallet, _ = UserWallet.objects.get_or_create(user=user)
-        claimed, new_bal = wallet.claim_daily_reward(coins=1.0)
+        claimed, new_bal = wallet.claim_daily_reward(coins=100.0)
         return Response({
             'success': True,
             'claimed': claimed,
-            'coins_credited': 1.0 if claimed else 0.0,
+            'coins_credited': 100.0 if claimed else 0.0,
             'balance_coins': new_bal,
-            'message': 'Royal Daily Login Bonus! +1 AUG Coin added to your Vault.' if claimed else 'Daily reward already claimed today.'
+            'message': 'Royal Daily Login Bonus! +100 AUG Coins (1 Credit = ₹1) added to your Vault.' if claimed else 'Daily reward already claimed today.'
         }, status=status.HTTP_200_OK)
 
 

@@ -646,9 +646,25 @@ class ShopStore extends ChangeNotifier {
     return (coinDiscountAmount / augCoinValueInRupees.toDouble()).clamp(0.0, _augCoins);
   }
 
-  /// Claims 1 credit daily login reward
+  /// Claims 1 credit daily login reward (1 credit = ₹1 = 100 AUG Coins)
   /// "customer login paninadhum avangalukku one credit reward earn aagum."
   Future<bool> claimDailyLoginReward() async {
+    if (!autoLoadBackend) {
+      _augCoins += 100.0;
+      _walletHistory.insert(0, {
+        'id': DateTime.now().millisecondsSinceEpoch,
+        'type': 'reward',
+        'reward_type': 'daily_login',
+        'direction': 'credit',
+        'amount_paid': 1.0,
+        'coins_credited': 100.0,
+        'payment_method': 'reward',
+        'source': 'Daily Login Bonus (1 Credit = 100 AUG Coins)',
+        'created_at': DateTime.now().toIso8601String(),
+      });
+      notifyListeners();
+      return true;
+    }
     try {
       final res = await _api.claimDailyReward();
       if (res != null) {
@@ -657,7 +673,7 @@ class ShopStore extends ChangeNotifier {
         if (newBal != null) {
           _augCoins = newBal;
         } else if (claimed) {
-          _augCoins += 1.0;
+          _augCoins += 100.0;
         }
         if (claimed) {
           _walletHistory.insert(0, {
@@ -665,10 +681,10 @@ class ShopStore extends ChangeNotifier {
             'type': 'reward',
             'reward_type': 'daily_login',
             'direction': 'credit',
-            'amount_paid': 0.0,
-            'coins_credited': 1.0,
+            'amount_paid': 1.0,
+            'coins_credited': 100.0,
             'payment_method': 'reward',
-            'source': 'Daily Login Bonus',
+            'source': 'Daily Login Bonus (1 Credit = 100 AUG Coins)',
             'created_at': DateTime.now().toIso8601String(),
           });
           notifyListeners();
@@ -702,12 +718,14 @@ class ShopStore extends ChangeNotifier {
     });
     notifyListeners();
 
-    _api.rechargeWallet(amount: amount, coins: coins, paymentMethod: paymentMethod).then((res) {
-      if (res != null && res['new_balance'] != null) {
-        _augCoins = (res['new_balance'] as num).toDouble();
-        notifyListeners();
-      }
-    }).catchError((_) {});
+    if (autoLoadBackend) {
+      _api.rechargeWallet(amount: amount, coins: coins, paymentMethod: paymentMethod).then((res) {
+        if (res != null && res['new_balance'] != null) {
+          _augCoins = (res['new_balance'] as num).toDouble();
+          notifyListeners();
+        }
+      }).catchError((_) {});
+    }
 
     return true;
   }

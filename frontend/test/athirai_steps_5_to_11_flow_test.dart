@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:athirai_mobile/features/shop/domain/shop_store.dart';
@@ -94,6 +95,31 @@ void main() {
       final pdfBytes = await AthiraiReceiptHelper.getOrGenerateReceiptPdf(order);
       expect(pdfBytes, isNotEmpty);
       expect(pdfBytes.length, greaterThan(1000));
+    });
+
+    test('Step 11: AthiraiReceiptHelper saves receipt to disk with valid file', () async {
+      final order = {
+        'order_id': 'ATH-9842',
+        'invoice_number': 'INV-ATH-20261007-001',
+        'product_name': 'Temple Heritage Haram',
+        'metal_purity': '22K Gold (916 Hallmark)',
+        'weight_grams': 22.5,
+        'total_amount': 4500,
+        'coins_used': 450000,
+        'delivery_name': 'Ananya Sundaram',
+        'delivery_phone': '+91 98765 43210',
+        'delivery_address': '12/4 Temple View Road, T Nagar, Chennai - 600017, Tamil Nadu',
+        'created_at': DateTime.now().toIso8601String(),
+      };
+
+      final file = await AthiraiReceiptHelper.saveReceiptToDisk(
+        order,
+        customDirectory: Directory.systemTemp,
+      );
+      expect(file, isNotNull);
+      expect(file!.existsSync(), isTrue);
+      expect(file.lengthSync(), greaterThan(1000));
+      expect(file.path.endsWith('.pdf'), isTrue);
     });
 
     testWidgets('Step 6 & 7: AthiraiProfileDashboardScreen renders vault and services', (tester) async {

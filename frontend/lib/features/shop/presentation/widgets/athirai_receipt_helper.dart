@@ -1,8 +1,12 @@
+import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
+import '../theme/heritage_theme.dart';
 import '../../domain/shop_store.dart';
 
 /// Helper to download, view, or share Athirai Gold & Jewellery Tax Receipt PDFs
@@ -27,8 +31,90 @@ class AthiraiReceiptHelper {
     return await _generateClientPdf(order);
   }
 
+  /// Saves the receipt PDF to the user's Downloads or Documents directory on device
+  /// Returns the saved File, or null if writing failed.
+  static Future<File?> saveReceiptToDisk(
+    Map<String, dynamic> order, {
+    Directory? customDirectory,
+  }) async {
+    try {
+      final pdfBytes = await getOrGenerateReceiptPdf(order);
+      final rawOrderId = order['order_id']?.toString() ?? order['invoice_number']?.toString() ?? 'ORD';
+      final cleanId = rawOrderId.replaceAll(RegExp(r'[^a-zA-Z0-9_\-]'), '_');
+      final fileName = 'Athirai_Receipt_$cleanId.pdf';
+
+      Directory? targetDir = customDirectory;
+      if (targetDir == null) {
+        try {
+          targetDir = await getDownloadsDirectory();
+        } catch (e) {
+          debugPrint('getDownloadsDirectory error: $e');
+        }
+      }
+
+      // Desktop fallback: user profile downloads
+      if (targetDir == null || !targetDir.existsSync()) {
+        try {
+          if (Platform.isWindows && Platform.environment['USERPROFILE'] != null) {
+            final winDownloads = Directory('${Platform.environment['USERPROFILE']}\\Downloads');
+            if (winDownloads.existsSync()) targetDir = winDownloads;
+          }
+        } catch (_) {}
+      }
+
+      // Mobile or fallback: application documents directory
+      if (targetDir == null || !targetDir.existsSync()) {
+        try {
+          targetDir = await getApplicationDocumentsDirectory();
+        } catch (_) {}
+      }
+
+      if (targetDir == null || !targetDir.existsSync()) {
+        targetDir = Directory.systemTemp;
+      }
+
+      final filePath = '${targetDir.path}${Platform.pathSeparator}$fileName';
+      final file = File(filePath);
+      await file.writeAsBytes(pdfBytes, flush: true);
+      debugPrint('Athirai receipt successfully saved to: ${file.path}');
+      return file;
+    } catch (e) {
+      debugPrint('saveReceiptToDisk error: $e');
+      return null;
+    }
+  }
+
+  /// Opens the downloaded file using the platform's default application
+  static Future<bool> openSavedFile(File file) async {
+    try {
+      if (!file.existsSync()) return false;
+
+      if (Platform.isWindows) {
+        await Process.run('cmd', ['/c', 'start', '', file.path]);
+        return true;
+      } else if (Platform.isMacOS) {
+        await Process.run('open', [file.path]);
+        return true;
+      } else if (Platform.isLinux) {
+        await Process.run('xdg-open', [file.path]);
+        return true;
+      }
+    } catch (e) {
+      debugPrint('openSavedFile error: $e');
+    }
+    return false;
+  }
+
   /// Downloads & triggers device print/save dialog
   static Future<void> downloadAndPrintReceipt(
+    BuildContext context,
+    Map<String, dynamic> order,
+  ) async {
+    await downloadReceipt(context, order);
+  }
+
+  /// Main Receipt Download handler (Step 11: Download Receipt)
+  static Future<void> downloadReceipt(
     BuildContext context,
     Map<String, dynamic> order,
   ) async {
@@ -48,32 +134,237 @@ class AthiraiReceiptHelper {
               ),
             ),
             const SizedBox(width: 12),
-            Text(
-              'Preparing Receipt $invoiceNo...',
-              style: const TextStyle(color: Color(0xFFF7F2E8), fontSize: 13),
+            Expanded(
+              child: Text(
+                'Downloading Receipt $invoiceNo...',
+                style: const TextStyle(color: Color(0xFFF7F2E8), fontSize: 13),
+              ),
             ),
           ],
         ),
-        duration: const Duration(milliseconds: 1200),
+        duration: const Duration(milliseconds: 1400),
       ),
     );
 
     try {
       final pdfBytes = await getOrGenerateReceiptPdf(order);
+      final savedFile = await saveReceiptToDisk(order);
 
-      await Printing.layoutPdf(
-        name: '$invoiceNo.pdf',
-        onLayout: (PdfPageFormat format) async => pdfBytes,
-      );
+      // Attempt to automatically open the receipt file (Step 11 Point 3)
+      if (savedFile != null) {
+        await openSavedFile(savedFile);
+      }
+
+      if (!context.mounted) return;
+
+      _showDownloadSuccessSheet(context, order, savedFile, pdfBytes);
     } catch (e) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           backgroundColor: Colors.red.shade900,
-          content: Text('Could not open receipt: $e'),
+          content: Text('Could not download receipt: $e'),
         ),
       );
     }
+  }
+
+  /// Royal bottom sheet displaying downloaded receipt details and quick actions
+  static void _showDownloadSuccessSheet(
+    BuildContext context,
+    Map<String, dynamic> order,
+    File? savedFile,
+    Uint8List pdfBytes,
+  ) {
+    final invoiceNo = order['invoice_number']?.toString() ?? order['order_id']?.toString() ?? 'ATH-INV';
+    final productName = order['product_name']?.toString() ?? 'Gold Jewellery';
+    final savedPath = savedFile?.path ?? 'Downloads Folder';
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (ctx) {
+        return Container(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+          decoration: const BoxDecoration(
+            color: Color(0xFF041511),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            border: Border(
+              top: BorderSide(color: HeritageTheme.goldBorder, width: 1.2),
+            ),
+          ),
+          child: SafeArea(
+            top: false,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Center(
+                  child: Container(
+                    width: 44,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: HeritageTheme.goldBorderSubtle,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Success Header
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: const BoxDecoration(
+                        color: Color(0x2210B981),
+                        shape: BoxShape.circle,
+                        border: Border.fromBorderSide(
+                          BorderSide(color: Color(0xFF10B981), width: 1.2),
+                        ),
+                      ),
+                      child: const Icon(Icons.check_circle_rounded, color: Color(0xFF10B981), size: 26),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Receipt Downloaded!',
+                            style: GoogleFonts.cormorantGaramond(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w700,
+                              color: HeritageTheme.textLight,
+                            ),
+                          ),
+                          Text(
+                            'ரசீது வெற்றிகரமாக பதிவிறக்கம் செய்யப்பட்டது',
+                            style: GoogleFonts.inter(
+                              fontSize: 11,
+                              color: HeritageTheme.goldBright,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+
+                // File Info Card
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF07211B),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: HeritageTheme.goldBorderSubtle, width: 0.8),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(Icons.picture_as_pdf_rounded, color: Color(0xFFEF4444), size: 20),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              '$invoiceNo.pdf',
+                              style: GoogleFonts.inter(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: HeritageTheme.textLight,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          Text(
+                            '${(pdfBytes.length / 1024).toStringAsFixed(1)} KB',
+                            style: GoogleFonts.inter(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: HeritageTheme.textMutedDark,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Item: $productName',
+                        style: GoogleFonts.inter(fontSize: 11.5, color: HeritageTheme.textGold),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Saved Location: $savedPath',
+                        style: GoogleFonts.inter(fontSize: 10.5, color: HeritageTheme.textMutedDark),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 18),
+
+                // Action Buttons: Open PDF & Print/Share
+                Row(
+                  children: [
+                    if (savedFile != null)
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: () {
+                            openSavedFile(savedFile);
+                          },
+                          icon: const Icon(Icons.open_in_new_rounded, size: 16),
+                          label: Text(
+                            'Open Receipt',
+                            style: GoogleFonts.inter(fontSize: 12.5, fontWeight: FontWeight.w700),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: HeritageTheme.goldPrimary,
+                            foregroundColor: const Color(0xFF041814),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                        ),
+                      ),
+                    if (savedFile != null) const SizedBox(width: 10),
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () {
+                          Printing.layoutPdf(
+                            name: '$invoiceNo.pdf',
+                            onLayout: (_) async => pdfBytes,
+                          );
+                        },
+                        icon: const Icon(Icons.print_rounded, size: 16, color: HeritageTheme.goldBright),
+                        label: Text(
+                          'Print / Share',
+                          style: GoogleFonts.inter(fontSize: 12.5, fontWeight: FontWeight.w600, color: HeritageTheme.goldBright),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: HeritageTheme.goldBorder),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                TextButton(
+                  onPressed: () => Navigator.of(ctx).pop(),
+                  child: Text(
+                    'Close',
+                    style: GoogleFonts.inter(fontSize: 12, color: HeritageTheme.textMutedDark),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   /// High fidelity client-side luxury PDF generator

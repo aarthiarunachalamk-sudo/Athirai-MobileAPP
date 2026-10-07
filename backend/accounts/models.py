@@ -429,3 +429,83 @@ class JewelVaultItem(models.Model):
 
     def __str__(self):
         return f"Vault Item: {self.title} ({self.category_type})"
+
+
+class UserWallet(models.Model):
+    """
+    Customer AUG Coin & Rewards Wallet.
+    Tracks AUG coins, daily login rewards, and gold redemption balance.
+    """
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='wallet')
+    balance_coins = models.DecimalField(max_digits=12, decimal_places=2, default=5.0)
+    last_daily_login_reward_date = models.DateField(null=True, blank=True)
+    total_coins_earned = models.DecimalField(max_digits=12, decimal_places=2, default=5.0)
+    total_spent_inr = models.DecimalField(max_digits=12, decimal_places=2, default=0.0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def claim_daily_reward(self, coins=1.0):
+        """
+        Customer login paninadhum avangalukku one credit reward earn aagum.
+        Claims 1 credit reward if not claimed today.
+        """
+        from django.utils import timezone
+        today = timezone.now().date()
+        if self.last_daily_login_reward_date == today:
+            return False, float(self.balance_coins)
+
+        new_bal = float(self.balance_coins) + float(coins)
+        self.balance_coins = new_bal
+        self.total_coins_earned = float(self.total_coins_earned) + float(coins)
+        self.last_daily_login_reward_date = today
+        self.save()
+
+        WalletTransaction.objects.create(
+            user=self.user,
+            type='reward',
+            reward_type='daily_login',
+            direction='credit',
+            amount_paid=0.0,
+            coins_credited=coins,
+            payment_method='reward',
+            source='Daily Login Bonus'
+        )
+        return True, new_bal
+
+    def __str__(self):
+        return f"{self.user} Wallet: {self.balance_coins} AUG Coins"
+
+
+class WalletTransaction(models.Model):
+    """
+    Transactions for Wallet Recharge, Rewards, and Gold Purchase via AUG Coins.
+    Directly compatible with infisq.com /wallet/ and /rewards/ APIs.
+    """
+    DIRECTION_CHOICES = (
+        ('credit', '+ CREDIT'),
+        ('debit', '− DEBIT'),
+    )
+    TYPE_CHOICES = (
+        ('reward', 'Reward'),
+        ('recharge', 'Recharge'),
+        ('debit', 'Debit'),
+        ('purchase', 'Gold Purchase'),
+        ('admin_credit', 'Admin Credit'),
+    )
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='wallet_transactions')
+    type = models.CharField(max_length=30, choices=TYPE_CHOICES, default='recharge')
+    reward_type = models.CharField(max_length=50, blank=True, default='')
+    direction = models.CharField(max_length=10, choices=DIRECTION_CHOICES, default='credit')
+    amount_paid = models.DecimalField(max_digits=12, decimal_places=2, default=0.0)
+    coins_credited = models.DecimalField(max_digits=12, decimal_places=2, default=0.0)
+    payment_method = models.CharField(max_length=30, default='wallet')
+    order_id = models.CharField(max_length=100, blank=True, default='')
+    source = models.CharField(max_length=150, blank=True, default='Athirai Royal Vault')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.user} | {self.direction} | {self.coins_credited} Coins ({self.type})"
+

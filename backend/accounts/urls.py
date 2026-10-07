@@ -24,6 +24,12 @@ from .views import (
     JewelCustomerListView,
     JewelVaultListView,
     AnalyticsSummaryView,
+    WalletView,
+    ClaimDailyRewardView,
+    RechargeCreateOrderView,
+    RechargeVerifyView,
+    BuyGoldWithCoinsView,
+    RewardsTodayView,
 )
 
 urlpatterns = [
@@ -36,6 +42,14 @@ urlpatterns = [
     path('password/reset/', ResetPasswordConfirmView.as_view(), name='auth_reset_password'),
     path('me/', UserProfileView.as_view(), name='auth_me'),
     path('profile/', UserProfileView.as_view(), name='auth_profile'),
+
+    # AUG Coins, Recharge, Daily Rewards & Buy Gold via Coins Endpoints
+    path('wallet/', WalletView.as_view(), name='wallet'),
+    path('wallet/claim-daily/', ClaimDailyRewardView.as_view(), name='wallet_claim_daily'),
+    path('recharge/create-order/', RechargeCreateOrderView.as_view(), name='recharge_create_order'),
+    path('recharge/verify/', RechargeVerifyView.as_view(), name='recharge_verify'),
+    path('gold/buy-with-coins/', BuyGoldWithCoinsView.as_view(), name='buy_gold_with_coins'),
+    path('rewards/today/', RewardsTodayView.as_view(), name='rewards_today'),
 
     # Cloudinary Selfie & AI Avatar Endpoints
     path('selfie/upload/', SelfieUploadView.as_view(), name='selfie_upload'),
@@ -62,3 +76,4 @@ urlpatterns = [
     path('mock-idp/authorize/', MockIdPAuthorizeView.as_view(), name='mock_idp_authorize'),
     path('mock-idp/verify-mfa/', MockIdPVerifyMFAView.as_view(), name='mock_idp_verify_mfa'),
 ]
+

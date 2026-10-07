@@ -426,6 +426,24 @@ class ShopStore extends ChangeNotifier {
         }
         isLiveBackend = true;
       }
+
+      // Fetch wallet & rewards data
+      final walletData = await _api.fetchWallet();
+      if (walletData != null) {
+        if (walletData['balance_coins'] != null) {
+          _augCoins = (walletData['balance_coins'] as num).toDouble();
+        }
+        if (walletData['today_coins'] != null) {
+          _todayCoins = (walletData['today_coins'] as num).toDouble();
+        }
+        if (walletData['today_amount'] != null) {
+          _todayRechargeAmount = (walletData['today_amount'] as num).toDouble();
+        }
+        if (walletData['history'] is List) {
+          _walletHistory = List<Map<String, dynamic>>.from(walletData['history']);
+        }
+      }
+
       backendError = null;
     } catch (e) {
       backendError = e.toString();
@@ -434,6 +452,7 @@ class ShopStore extends ChangeNotifier {
       notifyListeners();
     }
   }
+
 
   // --- Dynamic Mutations: Live Rates ---
   void updateMetalRates({
@@ -557,6 +576,168 @@ class ShopStore extends ChangeNotifier {
       _products.where((p) => quantity(p.id) > 0).toList();
   int get subtotal => cart.fold(0, (sum, p) => sum + p.price * quantity(p.id));
 
+  // --- AUG Coins, Wallet & Daily Rewards System ---
+  double _augCoins = 3.0;
+  double get augCoins => _augCoins;
+  int get augCoinValueInRupees => 100; // 1 AUG Coin = ₹100 Gold value
+  double _todayCoins = 0.0;
+  double get todayCoins => _todayCoins;
+  double _todayRechargeAmount = 0.0;
+  double get todayRechargeAmount => _todayRechargeAmount;
+  bool _useCoinsInCheckout = false;
+  bool get useCoinsInCheckout => _useCoinsInCheckout;
+  List<Map<String, dynamic>> _walletHistory = [];
+  List<Map<String, dynamic>> get walletHistory => List.unmodifiable(_walletHistory);
+
+  void toggleUseCoinsInCheckout() {
+    _useCoinsInCheckout = !_useCoinsInCheckout;
+    notifyListeners();
+  }
+
+  void setUseCoinsInCheckout(bool val) {
+    _useCoinsInCheckout = val;
+    notifyListeners();
+  }
+
+  /// Rupee discount calculated from redeemable AUG coins
+  int get coinDiscountAmount {
+    if (!_useCoinsInCheckout || _augCoins <= 0) return 0;
+    final maxRedeemRupees = (_augCoins * augCoinValueInRupees).round();
+    return maxRedeemRupees > subtotal ? subtotal : maxRedeemRupees;
+  }
+
+  /// Net payable amount after AUG coins & rewards redemption
+  int get payableAmount => (subtotal - coinDiscountAmount).clamp(0, 999999999);
+
+  /// Number of AUG coins to be redeemed for current cart
+  double get coinsToRedeemForCart {
+    if (!_useCoinsInCheckout || coinDiscountAmount <= 0) return 0.0;
+    return (coinDiscountAmount / augCoinValueInRupees.toDouble()).clamp(0.0, _augCoins);
+  }
+
+  /// Claims 1 credit daily login reward
+  /// "customer login paninadhum avangalukku one credit reward earn aagum."
+  Future<bool> claimDailyLoginReward() async {
+    try {
+      final res = await _api.claimDailyReward();
+      if (res != null) {
+        final claimed = res['claimed'] as bool? ?? false;
+        final newBal = (res['balance_coins'] as num?)?.toDouble();
+        if (newBal != null) {
+          _augCoins = newBal;
+        } else if (claimed) {
+          _augCoins += 1.0;
+        }
+        if (claimed) {
+          _walletHistory.insert(0, {
+            'id': DateTime.now().millisecondsSinceEpoch,
+            'type': 'reward',
+            'reward_type': 'daily_login',
+            'direction': 'credit',
+            'amount_paid': 0.0,
+            'coins_credited': 1.0,
+            'payment_method': 'reward',
+            'source': 'Daily Login Bonus',
+            'created_at': DateTime.now().toIso8601String(),
+          });
+          notifyListeners();
+          return true;
+        }
+      }
+    } catch (e) {
+      debugPrint('ShopStore: claimDailyLoginReward error: $e');
+    }
+    return false;
+  }
+
+  /// Recharges AUG coins into customer vault
+  Future<bool> rechargeWallet({
+    required double amount,
+    required double coins,
+    String paymentMethod = 'upi',
+  }) async {
+    _augCoins += coins;
+    _todayCoins += coins;
+    _todayRechargeAmount += amount;
+    _walletHistory.insert(0, {
+      'id': DateTime.now().millisecondsSinceEpoch,
+      'type': 'recharge',
+      'direction': 'credit',
+      'amount_paid': amount,
+      'coins_credited': coins,
+      'payment_method': paymentMethod,
+      'source': 'Wallet Recharge',
+      'created_at': DateTime.now().toIso8601String(),
+    });
+    notifyListeners();
+
+    _api.rechargeWallet(amount: amount, coins: coins, paymentMethod: paymentMethod).then((res) {
+      if (res != null && res['new_balance'] != null) {
+        _augCoins = (res['new_balance'] as num).toDouble();
+        notifyListeners();
+      }
+    }).catchError((_) {});
+
+    return true;
+  }
+
+  /// Buys physical Gold coins or jewellery using AUG coins & rewards!
+  /// "Based on AUG coins and rewards, customer can buy the gold."
+  Future<bool> buyGoldWithCoins({
+    required ShopProduct product,
+    int qty = 1,
+    double? customCoinsToRedeem,
+  }) async {
+    final totalInr = product.price * qty;
+    final maxRedeemableCoins = (totalInr / augCoinValueInRupees).clamp(0.0, _augCoins);
+    final coinsToUse = customCoinsToRedeem != null
+        ? customCoinsToRedeem.clamp(0.0, _augCoins)
+        : maxRedeemableCoins;
+
+    if (coinsToUse <= 0 && _augCoins < 1) return false;
+
+    _augCoins = (_augCoins - coinsToUse).clamp(0.0, double.infinity);
+    _walletHistory.insert(0, {
+      'id': DateTime.now().millisecondsSinceEpoch,
+      'type': 'purchase',
+      'direction': 'debit',
+      'amount_paid': coinsToUse * augCoinValueInRupees,
+      'coins_credited': coinsToUse,
+      'payment_method': 'purchase',
+      'source': 'Gold Purchase: ${product.name} (x$qty)',
+      'created_at': DateTime.now().toIso8601String(),
+    });
+    notifyListeners();
+
+    _api.buyGoldWithCoins(
+      productName: '${product.name} (x$qty)',
+      totalPrice: totalInr.toDouble(),
+      coinsToRedeem: coinsToUse,
+    ).catchError((_) => null);
+
+    return true;
+  }
+
+  /// Completes checkout and deducts redeemed coins
+  void completeCheckout() {
+    if (_useCoinsInCheckout && coinsToRedeemForCart > 0) {
+      final redeemed = coinsToRedeemForCart;
+      _augCoins = (_augCoins - redeemed).clamp(0.0, double.infinity);
+      _walletHistory.insert(0, {
+        'id': DateTime.now().millisecondsSinceEpoch,
+        'type': 'purchase',
+        'direction': 'debit',
+        'amount_paid': (redeemed * augCoinValueInRupees),
+        'coins_credited': redeemed,
+        'payment_method': 'purchase',
+        'source': 'Order Checkout: ${cart.length} item(s)',
+        'created_at': DateTime.now().toIso8601String(),
+      });
+      _useCoinsInCheckout = false;
+    }
+    clear();
+  }
+
   List<ShopProduct> get wishlist =>
       _products.where((p) => isSaved(p.id)).toList();
   int get wishlistCount => _saved.length;
@@ -574,6 +755,7 @@ class ShopStore extends ChangeNotifier {
     _quantities.clear();
     notifyListeners();
   }
+
 
   void clearWishlist() {
     _saved.clear();

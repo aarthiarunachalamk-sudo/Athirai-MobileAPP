@@ -7,7 +7,9 @@ import 'athirai_home_screen.dart';
 import 'athirai_product_detail_screen.dart';
 import 'athirai_splash_screen.dart';
 import 'athirai_wishlist_screen.dart';
+import 'athirai_recharge_screen.dart';
 import '../../../auth/presentation/screens/athirai_otp_verification_screen.dart';
+
 import '../../../auth/presentation/screens/sign_in_screen.dart';
 import '../../../auth/data/services/secure_storage_service.dart';
 import 'package:athirai_mobile/features/vault_cms/presentation/screens/shell/vault_app_root.dart';
@@ -131,6 +133,7 @@ class _AthiraiFlowContainerState extends State<AthiraiFlowContainer> {
           onOpenBag: () => _navigateTo(4),
           onOpenWishlist: () => _navigateTo(6),
           onOpenSearch: () => _navigateTo(2),
+          onOpenRecharge: () => _navigateTo(7),
           onLotusTap: () => _navigateTo(3),
           onOpenStudio: () => _navigateTo(3),
           onSignOut: _handleSignOut,
@@ -174,6 +177,12 @@ class _AthiraiFlowContainerState extends State<AthiraiFlowContainer> {
           onBuyNow: (product) => _navigateTo(4, product: product),
           onExplore: () => _navigateTo(2),
         );
+      case 7:
+        return AthiraiRechargeScreen(
+          store: store,
+          onBack: _navigateBack,
+          onBuyGoldWithCoins: () => _navigateTo(2),
+        );
       default:
         return AthiraiHomeScreen(
           store: store,
@@ -182,6 +191,7 @@ class _AthiraiFlowContainerState extends State<AthiraiFlowContainer> {
           onOpenBag: () => _navigateTo(4),
           onOpenWishlist: () => _navigateTo(6),
           onOpenSearch: () => _navigateTo(2),
+          onOpenRecharge: () => _navigateTo(7),
           onLotusTap: () => _navigateTo(3),
           onOpenStudio: () => _navigateTo(3),
           onSignOut: _handleSignOut,
@@ -199,7 +209,9 @@ class _AthiraiFlowContainerState extends State<AthiraiFlowContainer> {
       '05 Vault & Pay',
       'OTP Verification',
       '06 Royal Wishlist',
+      '07 Recharge & AUG Coins',
     ];
+
 
     return Container(
       decoration: BoxDecoration(

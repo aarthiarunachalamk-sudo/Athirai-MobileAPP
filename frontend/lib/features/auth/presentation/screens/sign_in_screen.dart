@@ -8,7 +8,9 @@ import '../controllers/auth_controller.dart';
 import '../../data/repositories/auth_repository.dart';
 import '../../data/services/secure_storage_service.dart';
 import '../../../shop/presentation/screens/athirai_flow_container.dart';
+import '../../../shop/domain/shop_store.dart';
 import 'complete_profile_screen.dart';
+
 import 'register_screen.dart';
 import 'sso_email_screen.dart';
 
@@ -151,13 +153,21 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
     if (!mounted) return;
 
     if (ok) {
+      // Customer login paninadhum avangalukku one credit reward earn aagum.
+      final earnedReward = await ShopStore.session.claimDailyLoginReward();
+      if (!mounted) return;
+
       final s = ref.read(authControllerProvider);
       if (s.requiresProfileCompletion) {
         Navigator.of(context).push(
           MaterialPageRoute(builder: (_) => const CompleteProfileScreen()),
         );
       } else {
-        _navigateToDashboard();
+        if (earnedReward && mounted) {
+          _showDailyRewardClaimedDialog(context);
+        } else {
+          _navigateToDashboard();
+        }
       }
     } else {
       final err = ref.read(authControllerProvider).errorMessage;
@@ -167,7 +177,232 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
     }
   }
 
+  void _showDailyRewardClaimedDialog(BuildContext context) {
+    final store = ShopStore.session;
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogCtx) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: const Color(0xFF061B18),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: const Color(0xFFD4AF37), width: 1.2),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFFD4AF37).withOpacity(0.25),
+                blurRadius: 30,
+                spreadRadius: 2,
+              ),
+              const BoxShadow(
+                color: Colors.black87,
+                blurRadius: 40,
+                offset: Offset(0, 10),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Shimmering Golden Coin Icon with Radiance
+              Container(
+                width: 76,
+                height: 76,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: const RadialGradient(
+                    colors: [
+                      Color(0xFFFFDF7A),
+                      Color(0xFFC7A45B),
+                      Color(0xFF8A623D),
+                    ],
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFFFFDF7A).withOpacity(0.5),
+                      blurRadius: 20,
+                      spreadRadius: 2,
+                    ),
+                  ],
+                ),
+                child: const Center(
+                  child: Text(
+                    '🪙',
+                    style: TextStyle(fontSize: 38),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 18),
+
+              // Title
+              Text(
+                'Royal Login Reward!',
+                style: GoogleFonts.cormorantGaramond(
+                  fontSize: 26,
+                  fontWeight: FontWeight.w700,
+                  color: const Color(0xFFF7F2E8),
+                  letterSpacing: 0.5,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+
+              // Credit Reward Badge
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                decoration: BoxDecoration(
+                  color: const Color(0x33D4AF37),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: const Color(0xFFD4AF37), width: 0.8),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.stars_rounded, color: Color(0xFFFFDF7A), size: 16),
+                    const SizedBox(width: 6),
+                    Text(
+                      '+1 AUG Coin Earned (1 Credit)',
+                      style: GoogleFonts.inter(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w700,
+                        color: const Color(0xFFFFDF7A),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 14),
+
+              Text(
+                'Welcome to Athirai! As your daily patron privilege, 1 credit reward has been deposited into your vault.',
+                style: GoogleFonts.inter(
+                  fontSize: 13,
+                  height: 1.45,
+                  color: const Color(0xFFD1DFDE),
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 14),
+
+              // Balance Vault Card
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: BoxDecoration(
+                  color: const Color(0x66020907),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: const Color(0x44C7A45B), width: 0.8),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'YOUR VAULT BALANCE',
+                          style: GoogleFonts.inter(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 1.0,
+                            color: const Color(0xFF9FAFA9),
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          '${store.augCoins.toStringAsFixed(1)} AUG Coins',
+                          style: GoogleFonts.inter(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w800,
+                            color: const Color(0xFFE5C882),
+                          ),
+                        ),
+                      ],
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: const Color(0x3316A34A),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        'Worth ₹${(store.augCoins * store.augCoinValueInRupees).round()}',
+                        style: GoogleFonts.inter(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: const Color(0xFF4ADE80),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              Text(
+                '🪙 Redeem your AUG Coins to buy 24K gold coins and jewellery.',
+                style: GoogleFonts.inter(
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w500,
+                  color: const Color(0xFFC7A45B),
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 20),
+
+              // Action: Claim & Enter Vault
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.of(dialogCtx).pop();
+                    _navigateToDashboard();
+                  },
+                  style: ElevatedButton.styleFrom(
+                    padding: EdgeInsets.zero,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                    elevation: 6,
+                    shadowColor: const Color(0x66D4AF37),
+                  ),
+                  child: Ink(
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [
+                          Color(0xFFE5C882),
+                          Color(0xFFC7A45B),
+                          Color(0xFF9E7B36),
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                    child: Center(
+                      child: Text(
+                        'Buy Gold with Coins  →',
+                        style: GoogleFonts.inter(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: const Color(0xFF041A13),
+                          letterSpacing: 0.3,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   void _showForgotPassword() {
+
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,

@@ -4,6 +4,8 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/constants/app_assets.dart';
 import '../../domain/shop_store.dart';
 import '../theme/heritage_theme.dart';
+import 'athirai_recharge_screen.dart';
+
 
 /// Screen 03: Collection Explorer ("Curated for Generations")
 /// Exact match for Mockup Screen 03:
@@ -60,9 +62,14 @@ class _AthiraiCollectionScreenState extends State<AthiraiCollectionScreen> {
         final filtered = _selectedCategory == 'All'
             ? widget.store.products
             : widget.store.products
-                .where((p) => p.category.toLowerCase() == _selectedCategory.toLowerCase())
+                .where((p) =>
+                    p.category.toLowerCase() == _selectedCategory.toLowerCase() ||
+                    (_selectedCategory.toLowerCase() == 'coins' &&
+                        (p.category.toLowerCase().contains('coin') ||
+                            p.name.toLowerCase().contains('coin'))))
                 .toList();
         final effectiveProducts = filtered.isNotEmpty ? filtered : widget.store.products;
+
 
         final featuredProduct = effectiveProducts.firstWhere(
           (p) => p.item.name.contains('Temple Blossom'),
@@ -180,11 +187,46 @@ class _AthiraiCollectionScreenState extends State<AthiraiCollectionScreen> {
                 ),
               ),
               const Spacer(),
+              // AUG Coins Wallet shortcut
+              InkWell(
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => AthiraiRechargeScreen(store: widget.store),
+                    ),
+                  );
+                },
+                borderRadius: BorderRadius.circular(16),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: const Color(0x33D4AF37),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: const Color(0x66D4AF37), width: 0.8),
+                  ),
+                  child: Row(
+                    children: [
+                      const Text('🪙', style: TextStyle(fontSize: 11)),
+                      const SizedBox(width: 3),
+                      Text(
+                        widget.store.augCoins.toStringAsFixed(1),
+                        style: GoogleFonts.inter(
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w800,
+                          color: const Color(0xFFFFDF7A),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(width: 4),
               // Wishlist shortcut button with live badge
               Stack(
                 clipBehavior: Clip.none,
                 children: [
                   IconButton(
+
                     icon: Icon(
                       wishlistCount > 0
                           ? Icons.favorite_rounded

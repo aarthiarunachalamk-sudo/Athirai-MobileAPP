@@ -6,6 +6,18 @@ from .models import Organization
 User = get_user_model()
 
 class UserSerializer(serializers.ModelSerializer):
+    balance_coins = serializers.SerializerMethodField()
+    aug_coins = serializers.SerializerMethodField()
+
+    def get_balance_coins(self, obj):
+        wallet = getattr(obj, 'wallet', None)
+        if wallet:
+            return float(wallet.balance_coins)
+        return 5.0
+
+    def get_aug_coins(self, obj):
+        return self.get_balance_coins(obj)
+
     class Meta:
         model = User
         fields = [
@@ -27,9 +39,12 @@ class UserSerializer(serializers.ModelSerializer):
             'sso_provider',
             'organization_domain',
             'is_profile_completed',
+            'balance_coins',
+            'aug_coins',
             'created_at',
         ]
         read_only_fields = ['id', 'is_sso_user', 'sso_provider', 'organization_domain', 'created_at']
+
 
 
 class LoginRequestSerializer(serializers.Serializer):
@@ -263,4 +278,39 @@ class ResetPasswordConfirmSerializer(serializers.Serializer):
     identifier = serializers.CharField(max_length=255, required=True)
     otp = serializers.CharField(max_length=10, required=True)
     new_password = serializers.CharField(min_length=6, max_length=128, required=True)
+
+
+class WalletTransactionSerializer(serializers.ModelSerializer):
+    class Meta:
+        from .models import WalletTransaction
+        model = WalletTransaction
+        fields = [
+            'id',
+            'type',
+            'reward_type',
+            'direction',
+            'amount_paid',
+            'coins_credited',
+            'payment_method',
+            'order_id',
+            'source',
+            'created_at',
+        ]
+
+
+class UserWalletSerializer(serializers.ModelSerializer):
+    history = WalletTransactionSerializer(source='user.wallet_transactions', many=True, read_only=True)
+
+    class Meta:
+        from .models import UserWallet
+        model = UserWallet
+        fields = [
+            'balance_coins',
+            'last_daily_login_reward_date',
+            'total_coins_earned',
+            'total_spent_inr',
+            'history',
+            'created_at',
+        ]
+
 

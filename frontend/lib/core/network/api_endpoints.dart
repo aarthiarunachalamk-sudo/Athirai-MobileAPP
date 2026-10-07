@@ -62,4 +62,13 @@ class ApiEndpoints {
   static String get categories => '$baseUrl/api/categories/';
   static String get jewels => '$baseUrl/api/jewels/';
   static String get priceList => '$baseUrl/api/price-list/';
+
+  // AUG Coins, Wallet, Rewards & Buy Gold Endpoints
+  static String get wallet => '$baseUrl/api/wallet/';
+  static String get claimDailyReward => '$baseUrl/api/wallet/claim-daily/';
+  static String get rechargeOrder => '$baseUrl/api/recharge/create-order/';
+  static String get rechargeVerify => '$baseUrl/api/recharge/verify/';
+  static String get buyGoldWithCoins => '$baseUrl/api/gold/buy-with-coins/';
+  static String get rewardsToday => '$baseUrl/api/rewards/today/';
 }
+

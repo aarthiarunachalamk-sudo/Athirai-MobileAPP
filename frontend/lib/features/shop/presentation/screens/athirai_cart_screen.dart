@@ -4,6 +4,8 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/constants/app_assets.dart';
 import '../../domain/shop_store.dart';
 import '../theme/heritage_theme.dart';
+import 'athirai_recharge_screen.dart';
+
 
 /// Screen 05: Styling / Checkout ("Your Jewel Vault")
 /// Exact match for Mockup Screen 05:
@@ -63,9 +65,14 @@ class _AthiraiCartScreenState extends State<AthiraiCartScreen> {
       if (!mounted) return;
       setState(() => _isProcessingPayment = false);
       final count = widget.store.count > 0 ? widget.store.count : _quantity;
-      final total = widget.store.subtotal > 0
+      final rawTotal = widget.store.subtotal > 0
           ? widget.store.subtotal
           : (widget.store.products.first.price * _quantity);
+      final coinsUsed = widget.store.coinsToRedeemForCart;
+      final discount = widget.store.coinDiscountAmount;
+      final netPayable = widget.store.payableAmount;
+
+      widget.store.completeCheckout();
 
       showDialog(
         context: context,
@@ -76,7 +83,9 @@ class _AthiraiCartScreenState extends State<AthiraiCartScreen> {
             side: const BorderSide(color: HeritageTheme.goldBorder, width: 1.2),
           ),
           title: Text(
-            'Order Confirmed',
+            coinsUsed > 0 && netPayable == 0
+                ? '🪙 Gold Purchased with Coins!'
+                : 'Order Confirmed',
             textAlign: TextAlign.center,
             style: GoogleFonts.cormorantGaramond(
               fontSize: 24,
@@ -85,7 +94,12 @@ class _AthiraiCartScreenState extends State<AthiraiCartScreen> {
             ),
           ),
           content: Text(
-            'Thank you, Ananya! Your order of $count heirloom ${count == 1 ? 'piece' : 'pieces'} totaling ${rupees(total)} has been securely reserved and ordered into your vault.',
+            coinsUsed > 0
+                ? 'Royal congratulations! Your order of $count ${count == 1 ? 'heirloom piece' : 'pieces'} is confirmed.\n\n'
+                  '🪙 Redeemed: ${coinsUsed.toStringAsFixed(1)} AUG Coins (Saved ₹$discount)\n'
+                  'Net Paid: ₹$netPayable\n\n'
+                  'Your 24K gold and jewellery items have been reserved into your vault.'
+                : 'Thank you! Your order of $count heirloom ${count == 1 ? 'piece' : 'pieces'} totaling ${rupees(rawTotal)} has been securely reserved into your vault.',
             textAlign: TextAlign.center,
             style: GoogleFonts.inter(
               fontSize: 13,
@@ -97,12 +111,11 @@ class _AthiraiCartScreenState extends State<AthiraiCartScreen> {
             Center(
               child: TextButton(
                 onPressed: () {
-                  widget.store.clear();
                   Navigator.pop(context);
                   widget.onBack();
                 },
                 child: Text(
-                  'Return to Dashboard',
+                  'Return to Vault',
                   style: GoogleFonts.inter(
                     fontWeight: FontWeight.w700,
                     color: HeritageTheme.goldBright,
@@ -115,6 +128,7 @@ class _AthiraiCartScreenState extends State<AthiraiCartScreen> {
       );
     });
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -475,7 +489,12 @@ class _AthiraiCartScreenState extends State<AthiraiCartScreen> {
       decoration: BoxDecoration(
         color: const Color(0xCC071B16),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: HeritageTheme.goldBorderSubtle, width: 0.9),
+        border: Border.all(
+          color: widget.store.useCoinsInCheckout
+              ? const Color(0xFFD4AF37)
+              : HeritageTheme.goldBorderSubtle,
+          width: widget.store.useCoinsInCheckout ? 1.2 : 0.9,
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.35),
@@ -484,90 +503,145 @@ class _AthiraiCartScreenState extends State<AthiraiCartScreen> {
           ),
         ],
       ),
-      child: Row(
+      child: Column(
         children: [
-          // Sparkling gold coin illustration
-          SizedBox(
-            width: 48,
-            height: 48,
-            child: Image.asset(
-              AppAssets.shopGoldCoins,
-              fit: BoxFit.contain,
-              errorBuilder: (context, error, stackTrace) => const Icon(
-                Icons.monetization_on_rounded,
-                color: HeritageTheme.goldBright,
-                size: 32,
+          Row(
+            children: [
+              // Sparkling gold coin illustration
+              SizedBox(
+                width: 44,
+                height: 44,
+                child: Image.asset(
+                  AppAssets.shopGoldCoins,
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) => const Icon(
+                    Icons.monetization_on_rounded,
+                    color: HeritageTheme.goldBright,
+                    size: 32,
+                  ),
+                ),
               ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Your Rewards',
-                      style: GoogleFonts.inter(
-                        fontSize: 10.5,
-                        color: HeritageTheme.textMutedDark,
-                      ),
+                    Row(
+                      children: [
+                        Text(
+                          'Your Rewards',
+                          style: GoogleFonts.inter(
+                            fontSize: 10.5,
+                            color: HeritageTheme.textMutedDark,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        const Icon(
+                          Icons.info_outline_rounded,
+                          color: HeritageTheme.textMutedDark,
+                          size: 13,
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 4),
-                    const Icon(
-                      Icons.info_outline_rounded,
-                      color: HeritageTheme.textMutedDark,
-                      size: 13,
+                    const SizedBox(height: 2),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.baseline,
+                      textBaseline: TextBaseline.alphabetic,
+                      children: [
+                        Text(
+                          widget.store.augCoins.toStringAsFixed(2),
+                          style: GoogleFonts.inter(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                            color: HeritageTheme.goldBright,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          'AUG Coins (Worth ₹${(widget.store.augCoins * widget.store.augCoinValueInRupees).round()})',
+                          style: GoogleFonts.inter(
+                            fontSize: 10,
+                            color: HeritageTheme.textMutedDark,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
-                const SizedBox(height: 2),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.baseline,
-                  textBaseline: TextBaseline.alphabetic,
-                  children: [
-                    Text(
-                      '3.00',
-                      style: GoogleFonts.inter(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                        color: HeritageTheme.goldBright,
-                      ),
+              ),
+              // "Recharge / View" Outline Button
+              InkWell(
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => AthiraiRechargeScreen(store: widget.store),
                     ),
-                    const SizedBox(width: 6),
-                    Text(
-                      '(100gm) Coins',
-                      style: GoogleFonts.inter(
-                        fontSize: 10,
-                        color: HeritageTheme.textMutedDark,
-                      ),
+                  );
+                },
+                borderRadius: BorderRadius.circular(14),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: HeritageTheme.goldBorder, width: 0.8),
+                  ),
+                  child: Text(
+                    'Recharge',
+                    style: GoogleFonts.inter(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                      color: HeritageTheme.goldBright,
                     ),
-                  ],
+                  ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-          // "View Rewards" Outline Button
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: HeritageTheme.goldBorder, width: 0.8),
-            ),
-            child: Text(
-              'View Rewards',
-              style: GoogleFonts.inter(
-                fontSize: 10,
-                fontWeight: FontWeight.w600,
-                color: HeritageTheme.goldBright,
+          if (widget.store.augCoins > 0) ...[
+            const SizedBox(height: 10),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: const Color(0x33020907),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: const Color(0x33D4AF37)),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.stars_rounded, color: Color(0xFFFFDF7A), size: 15),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Redeem Coins for this Gold purchase',
+                        style: GoogleFonts.inter(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: const Color(0xFFF7F2E8),
+                        ),
+                      ),
+                    ],
+                  ),
+                  Switch(
+                    value: widget.store.useCoinsInCheckout,
+                    activeColor: const Color(0xFFFFDF7A),
+                    activeTrackColor: const Color(0xFF16A34A),
+                    onChanged: (val) {
+                      setState(() {
+                        widget.store.setUseCoinsInCheckout(val);
+                      });
+                    },
+                  ),
+                ],
               ),
             ),
-          ),
+          ],
         ],
       ),
     );
   }
+
 
   /// "Checkout" Section with Stepper, Item Card, Breakdown, and "Pay Securely"
   Widget _buildCheckoutSection(int total, [ShopProduct? product]) {
@@ -1011,16 +1085,30 @@ class _AthiraiCartScreenState extends State<AthiraiCartScreen> {
 
   /// Price Breakdown (Subtotal, Shipping, Total)
   Widget _buildPriceBreakdown(int total) {
+    final sub = widget.store.subtotal > 0 ? widget.store.subtotal : total;
+    final coinDiscount = widget.store.coinDiscountAmount;
+    final netTotal = widget.store.useCoinsInCheckout && coinDiscount > 0
+        ? widget.store.payableAmount
+        : sub;
+
     return Column(
       children: [
-        _buildPriceRow('Subtotal', '₹ ${_formatCurrency(total)}'),
+        _buildPriceRow('Subtotal', '₹ ${_formatCurrency(sub)}'),
+        if (widget.store.useCoinsInCheckout && coinDiscount > 0) ...[
+          const SizedBox(height: 6),
+          _buildPriceRow(
+            '🪙 AUG Coins & Rewards (${widget.store.coinsToRedeemForCart.toStringAsFixed(1)} Coins)',
+            '- ₹ ${_formatCurrency(coinDiscount)}',
+            isHighlight: true,
+          ),
+        ],
         const SizedBox(height: 6),
         _buildPriceRow('Shipping', 'FREE', isHighlight: true),
         const Padding(
           padding: EdgeInsets.symmetric(vertical: 8),
           child: Divider(color: HeritageTheme.goldBorderSubtle, thickness: 0.8),
         ),
-        _buildPriceRow('Total', '₹ ${_formatCurrency(total)}', isTotal: true),
+        _buildPriceRow('Total Payable', '₹ ${_formatCurrency(netTotal)}', isTotal: true),
       ],
     );
   }
@@ -1054,6 +1142,11 @@ class _AthiraiCartScreenState extends State<AthiraiCartScreen> {
 
   /// "Pay Securely  →" Gold Gradient Button
   Widget _buildPaySecurelyButton() {
+    final netTotal = widget.store.useCoinsInCheckout && widget.store.coinDiscountAmount > 0
+        ? widget.store.payableAmount
+        : (widget.store.subtotal > 0 ? widget.store.subtotal : 365000);
+    final isFreeWithCoins = widget.store.useCoinsInCheckout && netTotal == 0;
+
     return Container(
       width: double.infinity,
       height: 50,
@@ -1087,7 +1180,9 @@ class _AthiraiCartScreenState extends State<AthiraiCartScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
-                        'Pay Securely',
+                        isFreeWithCoins
+                            ? '🪙 Buy Gold with AUG Coins'
+                            : 'Pay Securely',
                         style: GoogleFonts.inter(
                           fontSize: 14,
                           fontWeight: FontWeight.w700,
@@ -1108,6 +1203,7 @@ class _AthiraiCartScreenState extends State<AthiraiCartScreen> {
       ),
     );
   }
+
 
   String _formatCurrency(int amount) {
     final s = amount.toString();

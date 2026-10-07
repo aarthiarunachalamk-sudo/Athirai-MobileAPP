@@ -206,6 +206,83 @@ class ShopApiService {
     return null;
   }
 
+  /// Fetches customer wallet state: GET /api/wallet/
+  Future<Map<String, dynamic>?> fetchWallet() async {
+    try {
+      final response = await _client.get(ApiEndpoints.wallet, requireAuth: false);
+      if (response.isSuccess && response.data != null) {
+        return response.data;
+      }
+    } catch (e) {
+      debugPrint('ShopApiService: error fetching wallet: $e');
+    }
+    return null;
+  }
+
+  /// Claims daily 1 credit login reward: POST /api/wallet/claim-daily/
+  Future<Map<String, dynamic>?> claimDailyReward() async {
+    try {
+      final response = await _client.post(ApiEndpoints.claimDailyReward, body: {}, requireAuth: false);
+      if (response.isSuccess && response.data != null) {
+        return response.data;
+      }
+    } catch (e) {
+      debugPrint('ShopApiService: error claiming daily reward: $e');
+    }
+    return null;
+  }
+
+  /// Recharges wallet with coins: POST /api/recharge/verify/
+  Future<Map<String, dynamic>?> rechargeWallet({
+    required double amount,
+    required double coins,
+    String paymentMethod = 'upi',
+  }) async {
+    try {
+      final response = await _client.post(
+        ApiEndpoints.rechargeVerify,
+        body: {
+          'amount': amount,
+          'coins': coins,
+          'payment_method': paymentMethod,
+        },
+        requireAuth: false,
+      );
+      if (response.isSuccess && response.data != null) {
+        return response.data;
+      }
+    } catch (e) {
+      debugPrint('ShopApiService: error recharging wallet: $e');
+    }
+    return null;
+  }
+
+  /// Purchases gold coins or jewellery using AUG coins & rewards: POST /api/gold/buy-with-coins/
+  Future<Map<String, dynamic>?> buyGoldWithCoins({
+    required String productName,
+    required double totalPrice,
+    required double coinsToRedeem,
+  }) async {
+    try {
+      final response = await _client.post(
+        ApiEndpoints.buyGoldWithCoins,
+        body: {
+          'product_name': productName,
+          'total_price': totalPrice,
+          'coins_to_redeem': coinsToRedeem,
+        },
+        requireAuth: false,
+      );
+      if (response.isSuccess && response.data != null) {
+        return response.data;
+      }
+    } catch (e) {
+      debugPrint('ShopApiService: error buying gold with coins: $e');
+    }
+    return null;
+  }
+
+
   static String _fallbackCategoryImage(String name) {
     final lower = name.toLowerCase();
     if (lower.contains('necklace')) return 'assets/images/heritage_necklace.png';

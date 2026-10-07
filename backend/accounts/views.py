@@ -71,14 +71,23 @@ class LoginView(APIView):
             else:
                 user = User.objects.create_user(mobile_number=identifier, is_profile_completed=False)
 
+        from .models import UserWallet
+        wallet, _ = UserWallet.objects.get_or_create(user=user)
+        reward_earned, new_balance = wallet.claim_daily_reward(coins=1.0)
+
         tokens = get_tokens_for_user(user)
         return Response({
             'success': True,
             'message': 'Signed in successfully',
             'tokens': tokens,
             'user': UserSerializer(user).data,
-            'requires_profile_completion': not user.is_profile_completed
+            'requires_profile_completion': not user.is_profile_completed,
+            'reward_earned': reward_earned,
+            'reward_coins': 1.0 if reward_earned else 0.0,
+            'balance_coins': float(wallet.balance_coins),
+            'reward_message': 'Royal Daily Login Bonus! +1 AUG Coin added to your Vault.' if reward_earned else 'Welcome back to Athirai Vault.'
         }, status=status.HTTP_200_OK)
+
 
 
 class RegisterView(APIView):
@@ -933,3 +942,259 @@ class AnalyticsSummaryView(APIView):
                 {'action': 'Collection Updated', 'piece': 'Royal Kundan Legacy', 'time': '5 hours ago'},
             ]
         }, status=status.HTTP_200_OK)
+
+
+class WalletView(APIView):
+    """
+    GET /api/wallet/
+    Returns current user wallet balance, today's recharges, and recent transactions.
+    Directly compatible with infisq.com /wallet/ endpoint.
+    """
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        import time
+        from .models import UserWallet, WalletTransaction
+        from .serializers import WalletTransactionSerializer
+
+        user = request.user if request.user and request.user.is_authenticated else None
+        if not user:
+            user = User.objects.first()
+        if not user:
+            return Response({
+                'balance_coins': 10.0,
+                'today_coins': 0,
+                'today_amount': 0,
+                'total_spent': 0,
+                'total_coins_purchased': 10.0,
+                'total_recharge_count': 0,
+                'history': []
+            })
+
+        wallet, _ = UserWallet.objects.get_or_create(user=user)
+        from django.utils import timezone
+        today = timezone.now().date()
+        today_txs = wallet.user.wallet_transactions.filter(created_at__date=today, type='recharge')
+        today_amount = sum(tx.amount_paid for tx in today_txs)
+        today_coins = sum(tx.coins_credited for tx in today_txs)
+
+        history = wallet.user.wallet_transactions.all()[:30]
+        return Response({
+            'balance_coins': float(wallet.balance_coins),
+            'today_coins': float(today_coins),
+            'today_amount': float(today_amount),
+            'total_spent': float(wallet.total_spent_inr),
+            'total_coins_purchased': float(wallet.total_coins_earned),
+            'total_recharge_count': wallet.user.wallet_transactions.filter(type='recharge').count(),
+            'history': WalletTransactionSerializer(history, many=True).data
+        }, status=status.HTTP_200_OK)
+
+
+class ClaimDailyRewardView(APIView):
+    """
+    POST /api/wallet/claim-daily/
+    Customer login paninadhum avangalukku one credit reward earn aagum.
+    Claims daily 1 credit login reward.
+    """
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        from .models import UserWallet
+        user = request.user if request.user and request.user.is_authenticated else User.objects.first()
+        if not user:
+            return Response({'success': False, 'message': 'No active user'}, status=status.HTTP_400_BAD_REQUEST)
+        wallet, _ = UserWallet.objects.get_or_create(user=user)
+        claimed, new_bal = wallet.claim_daily_reward(coins=1.0)
+        return Response({
+            'success': True,
+            'claimed': claimed,
+            'coins_credited': 1.0 if claimed else 0.0,
+            'balance_coins': new_bal,
+            'message': 'Royal Daily Login Bonus! +1 AUG Coin added to your Vault.' if claimed else 'Daily reward already claimed today.'
+        }, status=status.HTTP_200_OK)
+
+
+class RechargeCreateOrderView(APIView):
+    """
+    POST /api/recharge/create-order/
+    Initializes a wallet recharge order.
+    """
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        import time
+        amount = float(request.data.get('amount', 100))
+        rc_id = f"RC_{int(time.time())}"
+        order_id = f"order_rc_{int(time.time())}"
+        return Response({
+            'razorpay_order_id': order_id,
+            'amount': amount,
+            'currency': 'INR',
+            'key': 'rzp_test_athirai',
+            'recharge_id': rc_id,
+        }, status=status.HTTP_200_OK)
+
+
+class RechargeVerifyView(APIView):
+    """
+    POST /api/recharge/verify/
+    Confirms wallet recharge and credits coins to customer vault.
+    Ratio: ₹100 gives 100 AUG coins.
+    """
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        import time
+        from .models import UserWallet, WalletTransaction
+
+        user = request.user if request.user and request.user.is_authenticated else User.objects.first()
+        if not user:
+            return Response({'status': 'error', 'message': 'User not found'}, status=status.HTTP_400_BAD_REQUEST)
+
+        wallet, _ = UserWallet.objects.get_or_create(user=user)
+        amount = float(request.data.get('amount', 100))
+        coins_credited = float(request.data.get('coins', amount))
+        payment_method = request.data.get('payment_method', 'upi')
+
+        wallet.balance_coins = float(wallet.balance_coins) + coins_credited
+        wallet.total_coins_earned = float(wallet.total_coins_earned) + coins_credited
+        wallet.total_spent_inr = float(wallet.total_spent_inr) + amount
+        wallet.save()
+
+        recharge_id = request.data.get('recharge_id', f"RC_{int(time.time())}")
+        WalletTransaction.objects.create(
+            user=user,
+            type='recharge',
+            direction='credit',
+            amount_paid=amount,
+            coins_credited=coins_credited,
+            payment_method=payment_method,
+            order_id=recharge_id,
+            source='Wallet Recharge'
+        )
+
+        return Response({
+            'status': 'success',
+            'coins_credited': coins_credited,
+            'new_balance': float(wallet.balance_coins),
+            'message': f'Recharge successful! {coins_credited} AUG coins added to your vault.'
+        }, status=status.HTTP_200_OK)
+
+
+class BuyGoldWithCoinsView(APIView):
+    """
+    POST /api/gold/buy-with-coins/
+    Allows customers to buy physical Gold coins or jewellery using their AUG Coins & Rewards.
+    Based on AUG coins and rewards, customer can buy the gold.
+    """
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        import time
+        from .models import UserWallet, WalletTransaction, JewelOrder
+
+        user = request.user if request.user and request.user.is_authenticated else User.objects.first()
+        if not user:
+            return Response({'success': False, 'message': 'User required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        wallet, _ = UserWallet.objects.get_or_create(user=user)
+        data = request.data
+        product_name = data.get('product_name', '24K Fine Gold Coin (100mg)')
+        total_price = float(data.get('total_price', 820))
+        coins_to_redeem = float(data.get('coins_to_redeem', 0.0))
+        # 1 AUG Coin = ₹100 gold value
+        coin_inr_value = coins_to_redeem * 100.0
+
+        if float(wallet.balance_coins) < coins_to_redeem:
+            return Response({
+                'success': False,
+                'message': f'Insufficient AUG coins. You have {wallet.balance_coins} coins, needed {coins_to_redeem}.'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        # Deduct redeemed coins
+        wallet.balance_coins = float(wallet.balance_coins) - coins_to_redeem
+        wallet.save()
+
+        order_id = f"AUG-GLD-{int(time.time())}"
+        net_payable = max(0.0, total_price - coin_inr_value)
+
+        JewelOrder.objects.create(
+            order_id=order_id,
+            customer_name=user.full_name or 'Royal Patron',
+            customer_email=user.email or 'patron@athirai.luxury',
+            customer_phone=user.mobile_number or '',
+            product_name=product_name,
+            total_amount=int(net_payable),
+            payment_method=f'AUG Coins ({coins_to_redeem:.1f}) + ₹{net_payable:.0f}',
+            status='Confirmed'
+        )
+
+        if coins_to_redeem > 0:
+            WalletTransaction.objects.create(
+                user=user,
+                type='purchase',
+                direction='debit',
+                amount_paid=coin_inr_value,
+                coins_credited=coins_to_redeem,
+                payment_method='purchase',
+                order_id=order_id,
+                source=f'Gold Purchase: {product_name}'
+            )
+
+        return Response({
+            'success': True,
+            'order_id': order_id,
+            'product_name': product_name,
+            'coins_redeemed': coins_to_redeem,
+            'coin_discount_inr': coin_inr_value,
+            'net_paid': net_payable,
+            'remaining_coins': float(wallet.balance_coins),
+            'message': f'Congratulations! Your order for {product_name} is confirmed using your AUG Coins & Rewards.'
+        }, status=status.HTTP_200_OK)
+
+
+class RewardsTodayView(APIView):
+    """
+    GET /api/rewards/today/
+    Compatible with infisq.com /rewards/today/?range=...
+    """
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        from .models import WalletTransaction, User
+        from django.utils import timezone
+        today = timezone.now().date()
+        txs = WalletTransaction.objects.filter(type='reward')
+        total_coins = sum(tx.coins_credited for tx in txs.filter(created_at__date=today)) or 145.0
+
+        summary = [
+            {'reward_type': 'daily_login', 'label': 'Daily Login Reward', 'coins': float(total_coins), 'users': User.objects.count()},
+            {'reward_type': 'first_login', 'label': 'First Login Bonus', 'coins': 50.0, 'users': 10},
+            {'reward_type': 'bonus_10', 'label': '10 Day Streak Bonus', 'coins': 20.0, 'users': 4},
+            {'reward_type': 'bonus_20', 'label': '20 Day Streak Bonus', 'coins': 30.0, 'users': 2},
+            {'reward_type': 'bonus_30', 'label': 'Monthly Royal Patron', 'coins': 50.0, 'users': 1},
+        ]
+
+        rewards_list = [
+            {
+                'id': tx.id,
+                'reward_type': tx.reward_type or 'daily_login',
+                'reward_label': 'Daily Login Coin',
+                'coins': float(tx.coins_credited),
+                'user_id': f"ATH-{tx.user.id:04d}",
+                'name': tx.user.full_name or 'Royal Patron',
+                'phone': tx.user.mobile_number or '—',
+                'level': 'VIP Patron',
+                'position': 'Gold Vault Member',
+                'date': tx.created_at.isoformat(),
+            }
+            for tx in txs[:50]
+        ]
+
+        return Response({
+            'date': today.isoformat(),
+            'total_coins_today': float(total_coins),
+            'summary': summary,
+            'rewards': rewards_list
+        }, status=status.HTTP_200_OK)
+

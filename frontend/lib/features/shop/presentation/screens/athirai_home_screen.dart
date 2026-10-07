@@ -5,6 +5,7 @@ import '../../../../core/constants/app_assets.dart';
 import '../../domain/shop_store.dart';
 import '../theme/heritage_theme.dart';
 import '../../../auth/presentation/screens/sign_in_screen.dart';
+import 'athirai_recharge_screen.dart';
 
 /// Screen 02: Home / Experience Dashboard ("Discover Your Legacy")
 /// Exact match for Mockup Screen 02:
@@ -23,6 +24,7 @@ class AthiraiHomeScreen extends StatelessWidget {
     required this.onOpenBag,
     required this.onOpenWishlist,
     required this.onOpenSearch,
+    this.onOpenRecharge,
     this.onLotusTap,
     this.onOpenStudio,
     this.onOpenPriceList,
@@ -35,10 +37,12 @@ class AthiraiHomeScreen extends StatelessWidget {
   final VoidCallback onOpenBag;
   final VoidCallback onOpenWishlist;
   final VoidCallback onOpenSearch;
+  final VoidCallback? onOpenRecharge;
   final VoidCallback? onLotusTap;
   final VoidCallback? onOpenStudio;
   final VoidCallback? onOpenPriceList;
   final VoidCallback? onSignOut;
+
 
   @override
   Widget build(BuildContext context) {
@@ -370,6 +374,23 @@ class AthiraiHomeScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 18),
+          // AUG Coins Wallet & Recharge icon
+          GestureDetector(
+            onTap: onOpenRecharge ??
+                () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => AthiraiRechargeScreen(store: store),
+                    ),
+                  );
+                },
+            child: const Icon(
+              Icons.account_balance_wallet_outlined,
+              color: HeritageTheme.textMutedDark,
+              size: 20,
+            ),
+          ),
+          const SizedBox(height: 18),
           // Profile / Account icon
           GestureDetector(
             onTap: () => _showUserProfileModal(context),
@@ -404,6 +425,8 @@ class AthiraiHomeScreen extends StatelessWidget {
               children: [
                 Text(
                   'Welcome back,',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.inter(
                     fontSize: 10,
                     color: HeritageTheme.textMutedDark,
@@ -425,10 +448,47 @@ class AthiraiHomeScreen extends StatelessWidget {
             ),
           ),
         ),
+        // AUG Coins Wallet & Recharge Badge
+        InkWell(
+          onTap: onOpenRecharge ??
+              () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => AthiraiRechargeScreen(store: store),
+                  ),
+                );
+              },
+          borderRadius: BorderRadius.circular(14),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+            decoration: BoxDecoration(
+              color: const Color(0x33D4AF37),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: const Color(0x88D4AF37), width: 0.8),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text('🪙', style: TextStyle(fontSize: 10)),
+                const SizedBox(width: 3),
+                Text(
+                  '${store.augCoins.toStringAsFixed(1)} AUG',
+                  style: GoogleFonts.inter(
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w800,
+                    color: const Color(0xFFFFDF7A),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(width: 2),
         // Wishlist Quick Shortcut with badge
         Stack(
           clipBehavior: Clip.none,
           children: [
+
             IconButton(
               padding: const EdgeInsets.all(6),
               constraints: const BoxConstraints(),

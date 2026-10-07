@@ -63,6 +63,9 @@ class _AthiraiFlowContainerState extends State<AthiraiFlowContainer> {
       (p) => p.item.name.contains('Temple') || p.item.name.contains('Cosmic'),
       orElse: () => store.products.first,
     );
+    // Dynamically connect and load latest rates, jewels, wallet, and orders from Django backend
+    store.loadFromBackend();
+    store.loadOrders();
   }
 
   void _navigateTo(int screenIndex, {ShopProduct? product}) {

@@ -127,7 +127,19 @@ class SSOCallbackRequestSerializer(serializers.Serializer):
 class ProfileUpdateRequestSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['full_name', 'mobile_number', 'avatar_url', 'is_profile_completed']
+        fields = [
+            'full_name',
+            'mobile_number',
+            'avatar_url',
+            'door_no',
+            'street_name',
+            'pincode',
+            'town',
+            'city',
+            'district',
+            'state',
+            'is_profile_completed',
+        ]
 
     def validate_full_name(self, value):
         if not value.strip():

@@ -258,8 +258,9 @@ class ShopStore extends ChangeNotifier {
 
   final Set<String> _saved = {};
   final Map<String, int> _quantities = {};
+  final bool autoLoadBackend;
 
-  ShopStore({bool autoLoadBackend = true}) {
+  ShopStore({this.autoLoadBackend = true}) {
     _products = [
       // 1. Signature Temple & Heritage Masterpieces
       ShopProduct(
@@ -394,6 +395,7 @@ class ShopStore extends ChangeNotifier {
 
   /// Dynamically loads live metal rates, categories, and products from backend REST API
   Future<void> loadFromBackend({bool notify = true}) async {
+    if (!autoLoadBackend) return;
     try {
       isLoadingBackend = true;
       if (notify) notifyListeners();
@@ -441,6 +443,35 @@ class ShopStore extends ChangeNotifier {
         }
         if (walletData['history'] is List) {
           _walletHistory = List<Map<String, dynamic>>.from(walletData['history']);
+        }
+      }
+
+      // 5. Fetch profile & delivery address if authenticated
+      final profile = await _api.fetchProfile();
+      if (profile != null) {
+        if (profile['full_name'] != null && (profile['full_name'] as String).trim().isNotEmpty) {
+          _deliveryName = profile['full_name'] as String;
+        }
+        if (profile['mobile_number'] != null && (profile['mobile_number'] as String).trim().isNotEmpty) {
+          _deliveryPhone = profile['mobile_number'] as String;
+        }
+        if (profile['door_no'] != null && (profile['door_no'] as String).trim().isNotEmpty) {
+          _doorNo = profile['door_no'] as String;
+        }
+        if (profile['street_name'] != null && (profile['street_name'] as String).trim().isNotEmpty) {
+          _streetName = profile['street_name'] as String;
+        }
+        if (profile['town'] != null && (profile['town'] as String).trim().isNotEmpty) {
+          _town = profile['town'] as String;
+        }
+        if (profile['city'] != null && (profile['city'] as String).trim().isNotEmpty) {
+          _city = profile['city'] as String;
+        }
+        if (profile['pincode'] != null && (profile['pincode'] as String).trim().isNotEmpty) {
+          _pincode = profile['pincode'] as String;
+        }
+        if (profile['state'] != null && (profile['state'] as String).trim().isNotEmpty) {
+          _state = profile['state'] as String;
         }
       }
 
@@ -775,6 +806,22 @@ class ShopStore extends ChangeNotifier {
     if (pincode != null) _pincode = pincode;
     if (state != null) _state = state;
     notifyListeners();
+
+    if (autoLoadBackend) {
+      _api.updateAddress(
+        name: name,
+        phone: phone,
+        doorNo: doorNo ?? _doorNo,
+        streetName: streetName ?? _streetName,
+        town: town ?? _town,
+        city: city ?? _city,
+        pincode: pincode ?? _pincode,
+        state: state ?? _state,
+      ).catchError((e) {
+        debugPrint('ShopStore: Address sync error: $e');
+        return false;
+      });
+    }
   }
 
   // --- Orders Management (Steps 8, 10, 11) ---
@@ -782,6 +829,7 @@ class ShopStore extends ChangeNotifier {
   List<Map<String, dynamic>> get myOrders => List.unmodifiable(_myOrders);
 
   Future<void> loadOrders() async {
+    if (!autoLoadBackend) return;
     final list = await _api.fetchMyOrders();
     if (list.isNotEmpty) {
       _myOrders = list;
@@ -815,24 +863,31 @@ class ShopStore extends ChangeNotifier {
       };
     }
 
-    final res = await _api.createOrder(
-      productName: productName,
-      totalAmountInr: totalAmountInr,
-      deliveryName: _deliveryName,
-      deliveryPhone: _deliveryPhone,
-      doorNo: _doorNo,
-      streetName: _streetName,
-      town: _town,
-      city: _city,
-      pincode: _pincode,
-      state: _state,
-      productImage: productImage,
-      metalPurity: metalPurity,
-      weightGrams: weightGrams,
-      quantity: quantity,
-    );
+    Map<String, dynamic>? res;
+    if (autoLoadBackend) {
+      res = await _api.createOrder(
+        productName: productName,
+        totalAmountInr: totalAmountInr,
+        deliveryName: _deliveryName,
+        deliveryPhone: _deliveryPhone,
+        doorNo: _doorNo,
+        streetName: _streetName,
+        town: _town,
+        city: _city,
+        pincode: _pincode,
+        state: _state,
+        productImage: productImage,
+        metalPurity: metalPurity,
+        weightGrams: weightGrams,
+        quantity: quantity,
+      );
+    }
 
-    _augCoins = (_augCoins - coinsNeeded).clamp(0.0, double.infinity);
+    if (res != null && res['remaining_coins'] != null) {
+      _augCoins = (res['remaining_coins'] as num).toDouble();
+    } else {
+      _augCoins = (_augCoins - coinsNeeded).clamp(0.0, double.infinity);
+    }
     final orderData = res?['order'] as Map<String, dynamic>? ?? {
       'order_id': 'ATH-${DateTime.now().millisecondsSinceEpoch}',
       'invoice_number': 'INV-ATH-${DateTime.now().millisecondsSinceEpoch}',
@@ -907,12 +962,20 @@ class ShopStore extends ChangeNotifier {
     double amountInr = 0.0,
     String source = 'Manual Admin / System Generation',
   }) async {
-    await _api.manualCreditCoins(
-      coins: coins,
-      amountInr: amountInr,
-      source: source,
-    );
-    _augCoins += coins;
+    if (autoLoadBackend) {
+      final res = await _api.manualCreditCoins(
+        coins: coins,
+        amountInr: amountInr,
+        source: source,
+      );
+      if (res != null && res['balance_coins'] != null) {
+        _augCoins = (res['balance_coins'] as num).toDouble();
+      } else {
+        _augCoins += coins;
+      }
+    } else {
+      _augCoins += coins;
+    }
     _walletHistory.insert(0, {
       'id': DateTime.now().millisecondsSinceEpoch,
       'type': 'bonus',

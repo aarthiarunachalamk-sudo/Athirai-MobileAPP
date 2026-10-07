@@ -64,10 +64,7 @@ class ApiClient {
 
   Future<ApiResponse<Map<String, dynamic>>> get(String url, {bool requireAuth = true}) async {
     try {
-      String? token;
-      if (requireAuth) {
-        token = await _storage.getAccessToken();
-      }
+      String? token = await _storage.getAccessToken();
 
       http.Response response;
       try {
@@ -115,10 +112,7 @@ class ApiClient {
     bool requireAuth = false,
   }) async {
     try {
-      String? token;
-      if (requireAuth) {
-        token = await _storage.getAccessToken();
-      }
+      String? token = await _storage.getAccessToken();
 
       http.Response response;
       try {
@@ -172,10 +166,7 @@ class ApiClient {
     bool requireAuth = true,
   }) async {
     try {
-      String? token;
-      if (requireAuth) {
-        token = await _storage.getAccessToken();
-      }
+      String? token = await _storage.getAccessToken();
 
       http.Response response;
       try {

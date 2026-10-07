@@ -138,7 +138,8 @@ void main() {
           ),
         ),
       );
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
 
       expect(find.text('Profile Dashboard'), findsOneWidget);
       expect(find.text('AUG COINS VAULT'), findsOneWidget);
@@ -163,7 +164,8 @@ void main() {
           ),
         ),
       );
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
 
       expect(find.text('Order Summary'), findsOneWidget);
       expect(find.text('Kaveri Lotus Choker'), findsOneWidget);
@@ -188,7 +190,8 @@ void main() {
           ),
         ),
       );
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
 
       expect(find.text('Profile Dashboard'), findsOneWidget);
       expect(find.text('Order Summary'), findsOneWidget);

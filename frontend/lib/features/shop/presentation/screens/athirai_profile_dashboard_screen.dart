@@ -37,6 +37,13 @@ class AthiraiProfileDashboardScreen extends StatefulWidget {
 
 class _AthiraiProfileDashboardScreenState extends State<AthiraiProfileDashboardScreen> {
   @override
+  void initState() {
+    super.initState();
+    widget.store.loadFromBackend();
+    widget.store.loadOrders();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: HeritageTheme.darkBg,
@@ -48,18 +55,27 @@ class _AthiraiProfileDashboardScreenState extends State<AthiraiProfileDashboardS
               child: ListenableBuilder(
                 listenable: widget.store,
                 builder: (context, _) {
-                  return ListView(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                    children: [
-                      _buildProfileHeaderCard(),
-                      const SizedBox(height: 16),
-                      _buildAugCoinsVaultCard(),
-                      const SizedBox(height: 16),
-                      _buildDeliveryAddressCard(),
-                      const SizedBox(height: 16),
-                      _buildServicesGrid(),
-                      const SizedBox(height: 32),
-                    ],
+                  return RefreshIndicator(
+                    color: HeritageTheme.goldBright,
+                    backgroundColor: const Color(0xFF04100D),
+                    onRefresh: () async {
+                      await widget.store.loadFromBackend();
+                      await widget.store.loadOrders();
+                    },
+                    child: ListView(
+                      physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      children: [
+                        _buildProfileHeaderCard(),
+                        const SizedBox(height: 16),
+                        _buildAugCoinsVaultCard(),
+                        const SizedBox(height: 16),
+                        _buildDeliveryAddressCard(),
+                        const SizedBox(height: 16),
+                        _buildServicesGrid(),
+                        const SizedBox(height: 32),
+                      ],
+                    ),
                   );
                 },
               ),

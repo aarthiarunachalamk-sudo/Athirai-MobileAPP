@@ -391,6 +391,48 @@ class ShopApiService {
     return null;
   }
 
+  /// Fetches authenticated user profile & delivery address: GET /api/auth/me/
+  Future<Map<String, dynamic>?> fetchProfile() async {
+    try {
+      final response = await _client.get(ApiEndpoints.me, requireAuth: false);
+      if (response.isSuccess && response.data != null) {
+        return response.data!['user'] as Map<String, dynamic>?;
+      }
+    } catch (e) {
+      debugPrint('ShopApiService: error fetching profile: $e');
+    }
+    return null;
+  }
+
+  /// Dynamically updates user profile & delivery address: PUT /api/auth/profile/
+  Future<bool> updateAddress({
+    required String name,
+    required String phone,
+    String? doorNo,
+    String? streetName,
+    String? town,
+    String? city,
+    String? pincode,
+    String? state,
+  }) async {
+    try {
+      final body = <String, dynamic>{
+        'full_name': name,
+        'mobile_number': phone,
+      };
+      if (doorNo != null) body['door_no'] = doorNo;
+      if (streetName != null) body['street_name'] = streetName;
+      if (town != null) body['town'] = town;
+      if (city != null) body['city'] = city;
+      if (pincode != null) body['pincode'] = pincode;
+      if (state != null) body['state'] = state;
+      final response = await _client.put(ApiEndpoints.profile, body: body, requireAuth: false);
+      return response.isSuccess;
+    } catch (e) {
+      debugPrint('ShopApiService: error updating address: $e');
+      return false;
+    }
+  }
 
   static String _fallbackCategoryImage(String name) {
     final lower = name.toLowerCase();

@@ -6,6 +6,10 @@ import '../../../../core/constants/app_assets.dart';
 import '../../domain/shop_store.dart';
 import '../theme/heritage_theme.dart';
 import 'athirai_jewel_studio_screen.dart';
+import 'athirai_order_summary_screen.dart';
+import 'athirai_profile_dashboard_screen.dart';
+import '../widgets/athirai_purchase_sheet.dart';
+import '../widgets/athirai_royal_drawer.dart';
 
 /// Interactive modes for the hero product showcase
 enum ShowcaseMode {
@@ -326,6 +330,44 @@ class _AthiraiProductDetailScreenState
                     color: HeritageTheme.goldBright,
                   ),
                 ),
+              ),
+              // Three-line menu button (☰) in top-right corner (Step 10 Point 2)
+              IconButton(
+                padding: const EdgeInsets.all(4),
+                constraints: const BoxConstraints(),
+                icon: const Icon(
+                  Icons.menu_rounded,
+                  color: HeritageTheme.goldBright,
+                  size: 23,
+                ),
+                tooltip: 'Menu (Order Summary & Vault)',
+                onPressed: () {
+                  AthiraiRoyalDrawer.show(
+                    context,
+                    store: widget.store,
+                    onSelectHome: widget.onBack,
+                    onSelectProfile: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => AthiraiProfileDashboardScreen(
+                            store: widget.store,
+                          ),
+                        ),
+                      );
+                    },
+                    onSelectOrders: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => AthiraiOrderSummaryScreen(
+                            store: widget.store,
+                          ),
+                        ),
+                      );
+                    },
+                    onSelectWishlist: widget.onOpenWishlist,
+                    onSelectCart: widget.onOpenBag,
+                  );
+                },
               ),
             ],
           ),
@@ -1466,6 +1508,21 @@ class _AthiraiProductDetailScreenState
                       onTap: () {
                         widget.store.addToCart(productId, 1);
                         widget.onBuyNow();
+                        final prod = widget.product ?? widget.store.products.first;
+                        AthiraiPurchaseSheet.show(
+                          context,
+                          product: prod,
+                          store: widget.store,
+                          onOrderCompleted: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => AthiraiOrderSummaryScreen(
+                                  store: widget.store,
+                                ),
+                              ),
+                            );
+                          },
+                        );
                       },
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,

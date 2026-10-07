@@ -1198,3 +1198,405 @@ class RewardsTodayView(APIView):
             'rewards': rewards_list
         }, status=status.HTTP_200_OK)
 
+
+def generate_order_receipt_pdf(order):
+    from io import BytesIO
+    from reportlab.lib.pagesizes import letter
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, HRFlowable
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib import colors
+
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(
+        buffer,
+        pagesize=letter,
+        rightMargin=36,
+        leftMargin=36,
+        topMargin=36,
+        bottomMargin=36
+    )
+
+    story = []
+    styles = getSampleStyleSheet()
+
+    c_gold = colors.HexColor('#C7A45B')
+    c_dark = colors.HexColor('#061B18')
+    c_light_bg = colors.HexColor('#F9F6F0')
+
+    title_style = ParagraphStyle(
+        'Title',
+        parent=styles['Heading1'],
+        fontName='Helvetica-Bold',
+        fontSize=24,
+        textColor=c_gold,
+        alignment=1,
+        spaceAfter=4,
+    )
+    subtitle_style = ParagraphStyle(
+        'Subtitle',
+        parent=styles['Normal'],
+        fontName='Helvetica',
+        fontSize=10,
+        textColor=colors.HexColor('#555555'),
+        alignment=1,
+        spaceAfter=15,
+    )
+    h2_style = ParagraphStyle(
+        'H2',
+        parent=styles['Heading2'],
+        fontName='Helvetica-Bold',
+        fontSize=12,
+        textColor=c_dark,
+        spaceBefore=10,
+        spaceAfter=6,
+    )
+    body_style = ParagraphStyle(
+        'Body',
+        parent=styles['Normal'],
+        fontName='Helvetica',
+        fontSize=10,
+        textColor=colors.HexColor('#222222'),
+        leading=14,
+    )
+    badge_style = ParagraphStyle(
+        'Badge',
+        parent=styles['Normal'],
+        fontName='Helvetica-Bold',
+        fontSize=9,
+        textColor=c_gold,
+        alignment=1,
+    )
+
+    # Header
+    story.append(Paragraph("ATHIRAI LUXURY JEWELS", title_style))
+    story.append(Paragraph("Ancient Roots • Eternal Beauty • BIS 916 Hallmarked High-Jewellery", subtitle_style))
+    story.append(HRFlowable(width="100%", thickness=1.5, color=c_gold, spaceAfter=15))
+
+    # Invoice Details Table
+    created_str = order.created_at.strftime('%d %B %Y, %I:%M %p') if order.created_at else ''
+    meta_data = [
+        [
+            Paragraph(f"<b>Invoice No:</b> {order.invoice_number or 'INV-' + order.order_id}", body_style),
+            Paragraph(f"<b>Order Date:</b> {created_str}", body_style)
+        ],
+        [
+            Paragraph(f"<b>Order ID:</b> {order.order_id}", body_style),
+            Paragraph(f"<b>Status:</b> <font color='#16A34A'><b>{order.status}</b></font>", body_style)
+        ],
+    ]
+    meta_table = Table(meta_data, colWidths=[270, 270])
+    meta_table.setStyle(TableStyle([
+        ('VALIGN', (0,0), (-1,-1), 'TOP'),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 4),
+    ]))
+    story.append(meta_table)
+    story.append(Spacer(1, 12))
+
+    # Customer & Delivery Address Table
+    addr_text = order.delivery_address or f"{order.door_no} {order.street_name}, {order.city} - {order.pincode}, {order.state}"
+    client_data = [
+        [
+            Paragraph("<b>BILLED TO (PATRON):</b>", h2_style),
+            Paragraph("<b>DELIVERY ADDRESS:</b>", h2_style)
+        ],
+        [
+            Paragraph(f"<b>{order.customer_name}</b><br/>Phone: {order.customer_phone or order.delivery_phone or '—'}<br/>Email: {order.customer_email or 'patron@athirai.luxury'}", body_style),
+            Paragraph(f"<b>{order.delivery_name or order.customer_name}</b><br/>{addr_text}<br/>Phone: {order.delivery_phone or order.customer_phone or '—'}", body_style)
+        ]
+    ]
+    client_table = Table(client_data, colWidths=[270, 270])
+    client_table.setStyle(TableStyle([
+        ('VALIGN', (0,0), (-1,-1), 'TOP'),
+        ('BACKGROUND', (0,0), (-1,-1), c_light_bg),
+        ('BOX', (0,0), (-1,-1), 0.8, c_gold),
+        ('INNERGRID', (0,0), (-1,-1), 0.5, colors.HexColor('#E5D8B8')),
+        ('TOPPADDING', (0,0), (-1,-1), 8),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 8),
+        ('LEFTPADDING', (0,0), (-1,-1), 10),
+        ('RIGHTPADDING', (0,0), (-1,-1), 10),
+    ]))
+    story.append(client_table)
+    story.append(Spacer(1, 16))
+
+    # Product Table
+    story.append(Paragraph("<b>PURCHASED JEWELLERY & AUG COINS SUMMARY</b>", h2_style))
+    items_data = [
+        [
+            Paragraph("<b>Product Description</b>", badge_style),
+            Paragraph("<b>Purity / Hallmark</b>", badge_style),
+            Paragraph("<b>Weight</b>", badge_style),
+            Paragraph("<b>Qty</b>", badge_style),
+            Paragraph("<b>AUG Coins Paid</b>", badge_style),
+            Paragraph("<b>INR Value</b>", badge_style),
+        ],
+        [
+            Paragraph(f"<b>{order.product_name}</b><br/><font size=8 color='#666'>Official Athirai Heritage Piece</font>", body_style),
+            Paragraph(f"{order.metal_purity or '22K (916 BIS)'}", body_style),
+            Paragraph(f"{float(order.weight_grams):.2f}g", body_style),
+            Paragraph(f"{order.quantity}", body_style),
+            Paragraph(f"<b>🪙 {float(order.coins_used):,.0f} AUG</b>", body_style),
+            Paragraph(f"₹ {order.total_amount:,.0f}", body_style),
+        ]
+    ]
+    items_table = Table(items_data, colWidths=[160, 95, 60, 35, 100, 90])
+    items_table.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,0), c_dark),
+        ('TEXTCOLOR', (0,0), (-1,0), colors.white),
+        ('ALIGN', (0,0), (-1,-1), 'LEFT'),
+        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+        ('GRID', (0,0), (-1,-1), 0.8, c_gold),
+        ('TOPPADDING', (0,0), (-1,-1), 8),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 8),
+        ('LEFTPADDING', (0,0), (-1,-1), 6),
+        ('RIGHTPADDING', (0,0), (-1,-1), 6),
+    ]))
+    story.append(items_table)
+    story.append(Spacer(1, 14))
+
+    # Totals Table
+    totals_data = [
+        ["", Paragraph("<b>Total Jewellery Value:</b>", body_style), Paragraph(f"₹ {order.total_amount:,.0f}", body_style)],
+        ["", Paragraph("<b>Payment Method:</b>", body_style), Paragraph(f"{order.payment_method}", body_style)],
+        ["", Paragraph("<b>Conversion Rate:</b>", body_style), Paragraph("1 Rupee = 100 AUG Coins", body_style)],
+        ["", Paragraph("<b>Total AUG Coins Redeemed:</b>", body_style), Paragraph(f"<b>🪙 {float(order.coins_used):,.0f} AUG Coins</b>", body_style)],
+        ["", Paragraph("<b>Net Amount Due:</b>", body_style), Paragraph("<b>₹ 0.00 (PAID IN FULL)</b>", body_style)],
+    ]
+    totals_table = Table(totals_data, colWidths=[240, 180, 120])
+    totals_table.setStyle(TableStyle([
+        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+        ('LINEABOVE', (1,0), (-1,0), 0.8, c_gold),
+        ('LINEBELOW', (1,-1), (-1,-1), 1.2, c_gold),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 4),
+    ]))
+    story.append(totals_table)
+    story.append(Spacer(1, 24))
+
+    # Authenticity & Hallmark Footer
+    cert_data = [
+        [
+            Paragraph("<b>CERTIFICATE OF AUTHENTICITY</b><br/><font size=8 color='#555'>Every Athirai creation is crafted from 100% verified pure gold & natural gemstones, hallmarked by the Bureau of Indian Standards (BIS). Secured by Athirai Royal Vault.</font>", body_style),
+            Paragraph("<b>Authorized Signatory</b><br/><font size=8 color='#888'>Athirai Vault Master<br/>Chennai, Tamil Nadu</font>", body_style)
+        ]
+    ]
+    cert_table = Table(cert_data, colWidths=[380, 160])
+    cert_table.setStyle(TableStyle([
+        ('BOX', (0,0), (-1,-1), 0.8, c_gold),
+        ('BACKGROUND', (0,0), (-1,-1), c_light_bg),
+        ('TOPPADDING', (0,0), (-1,-1), 8),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 8),
+        ('LEFTPADDING', (0,0), (-1,-1), 10),
+        ('RIGHTPADDING', (0,0), (-1,-1), 10),
+    ]))
+    story.append(cert_table)
+
+    doc.build(story)
+    pdf = buffer.getvalue()
+    buffer.close()
+    return pdf
+
+
+class OrderCreateView(APIView):
+    """
+    POST /api/orders/create/
+    Step 8: Delivery Address collection & Purchase strictly via AUG Coins
+    (1 Rupee = 100 AUG Coins)
+    """
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        import time
+        from .models import JewelOrder, User, UserWallet, WalletTransaction
+        from .serializers import JewelOrderSerializer
+
+        data = request.data
+        user = request.user if request.user.is_authenticated else User.objects.first()
+        if not user:
+            return Response({'success': False, 'message': 'Authentication required to place order.'}, status=status.HTTP_401_UNAUTHORIZED)
+
+        wallet, _ = UserWallet.objects.get_or_create(user=user)
+
+        product_name = data.get('product_name', 'Athirai Temple Blossom Necklace')
+        total_amount_inr = int(data.get('total_amount', 3059))
+        quantity = int(data.get('quantity', 1))
+        metal_purity = data.get('metal_purity', '22K Gold')
+        weight_grams = float(data.get('weight_grams', 10.0))
+        product_image = data.get('product_image', '')
+
+        # Delivery Address (Step 8: Delivery Address)
+        delivery_name = data.get('delivery_name') or user.full_name or 'Royal Patron'
+        delivery_phone = data.get('delivery_phone') or user.mobile_number or ''
+        door_no = data.get('door_no', '')
+        street_name = data.get('street_name', '')
+        town = data.get('town', '')
+        city = data.get('city', 'Chennai')
+        pincode = data.get('pincode', '600001')
+        state = data.get('state', 'Tamil Nadu')
+        delivery_address = data.get('delivery_address') or f"{door_no} {street_name}, {town} {city} - {pincode}, {state}".strip()
+
+        # Step 7: 1 Rupee = 100 AUG Coins
+        # Step 8: Purchase strictly using AUG Coins
+        coins_needed = float(total_amount_inr * 100)
+
+        # Check if user has sufficient coins
+        current_coins = float(wallet.balance_coins)
+        if current_coins < coins_needed:
+            shortfall_coins = coins_needed - current_coins
+            shortfall_inr = shortfall_coins / 100.0
+            return Response({
+                'success': False,
+                'error': 'INSUFFICIENT_COINS',
+                'message': f'Insufficient AUG Coins. You have {current_coins:,.0f} coins, but need {coins_needed:,.0f} coins.',
+                'coins_needed': coins_needed,
+                'coins_available': current_coins,
+                'shortfall_coins': shortfall_coins,
+                'shortfall_inr': shortfall_inr,
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        # Deduct AUG Coins from User Wallet
+        wallet.balance_coins = current_coins - coins_needed
+        wallet.save()
+
+        ts = int(time.time())
+        order_id = f"ATH-{ts}"
+        invoice_number = f"INV-ATH-{ts}"
+
+        order = JewelOrder.objects.create(
+            user=user,
+            order_id=order_id,
+            invoice_number=invoice_number,
+            customer_name=user.full_name or delivery_name,
+            customer_email=user.email or '',
+            customer_phone=user.mobile_number or delivery_phone,
+            delivery_name=delivery_name,
+            delivery_phone=delivery_phone,
+            door_no=door_no,
+            street_name=street_name,
+            town=town,
+            city=city,
+            pincode=pincode,
+            state=state,
+            delivery_address=delivery_address,
+            product_name=product_name,
+            product_image=product_image,
+            metal_purity=metal_purity,
+            weight_grams=weight_grams,
+            quantity=quantity,
+            total_amount=total_amount_inr,
+            coins_used=coins_needed,
+            payment_method='AUG Coins',
+            status='Confirmed'
+        )
+
+        WalletTransaction.objects.create(
+            user=user,
+            type='purchase',
+            direction='debit',
+            amount_paid=total_amount_inr,
+            coins_credited=coins_needed,
+            payment_method='AUG Coins',
+            order_id=order_id,
+            source=f'Jewellery Order: {product_name}'
+        )
+
+        return Response({
+            'success': True,
+            'message': 'Order placed successfully using AUG Coins!',
+            'order': JewelOrderSerializer(order).data,
+            'remaining_coins': float(wallet.balance_coins)
+        }, status=status.HTTP_201_CREATED)
+
+
+class OrderListView(APIView):
+    """
+    GET /api/orders/
+    Step 10: View Order Summary of all purchased jewels
+    """
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        from .models import JewelOrder, User
+        from .serializers import JewelOrderSerializer
+
+        user = request.user if request.user.is_authenticated else User.objects.first()
+        if user:
+            orders = JewelOrder.objects.filter(user=user)
+        else:
+            orders = JewelOrder.objects.all()
+
+        return Response({
+            'success': True,
+            'count': orders.count(),
+            'orders': JewelOrderSerializer(orders, many=True).data
+        }, status=status.HTTP_200_OK)
+
+
+class OrderDetailView(APIView):
+    """
+    GET /api/orders/<order_id>/
+    """
+    permission_classes = [AllowAny]
+
+    def get(self, request, order_id):
+        from .models import JewelOrder
+        from .serializers import JewelOrderSerializer
+
+        order = JewelOrder.objects.filter(order_id=order_id).first()
+        if not order:
+            return Response({'success': False, 'message': 'Order not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        return Response({
+            'success': True,
+            'order': JewelOrderSerializer(order).data
+        }, status=status.HTTP_200_OK)
+
+
+class OrderReceiptPdfView(APIView):
+    """
+    GET /api/orders/<order_id>/receipt/
+    Step 11: Download Receipt PDF automatically
+    """
+    permission_classes = [AllowAny]
+
+    def get(self, request, order_id):
+        from django.http import HttpResponse
+        from .models import JewelOrder
+
+        order = JewelOrder.objects.filter(order_id=order_id).first()
+        if not order:
+            return Response({'success': False, 'message': 'Order not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        try:
+            pdf_data = generate_order_receipt_pdf(order)
+            response = HttpResponse(pdf_data, content_type='application/pdf')
+            response['Content-Disposition'] = f'attachment; filename="Athirai_Receipt_{order.order_id}.pdf"'
+            return response
+        except Exception as e:
+            return Response({'success': False, 'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class ManualCoinCreditView(APIView):
+    """
+    POST /api/wallet/manual-credit/
+    Step 7 Point 5: Manual Coin Creation / Generation
+    """
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        from .models import User, UserWallet
+
+        user = request.user if request.user.is_authenticated else User.objects.first()
+        if not user:
+            return Response({'success': False, 'message': 'User required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        wallet, _ = UserWallet.objects.get_or_create(user=user)
+        coins = float(request.data.get('coins', 1000.0))
+        amount_inr = float(request.data.get('amount_inr', 10.0))
+        source = request.data.get('source', 'Manual Admin Generation')
+
+        new_bal = wallet.manual_credit(amount_inr=amount_inr, coins=coins, source=source)
+        return Response({
+            'success': True,
+            'message': f'Successfully credited {coins} AUG Coins.',
+            'balance_coins': new_bal
+        }, status=status.HTTP_200_OK)
+

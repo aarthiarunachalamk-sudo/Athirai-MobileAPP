@@ -70,5 +70,12 @@ class ApiEndpoints {
   static String get rechargeVerify => '$baseUrl/api/recharge/verify/';
   static String get buyGoldWithCoins => '$baseUrl/api/gold/buy-with-coins/';
   static String get rewardsToday => '$baseUrl/api/rewards/today/';
+
+  // Order & Receipt Endpoints (Steps 8, 10, 11)
+  static String get orderCreate => '$baseUrl/api/orders/create/';
+  static String get myOrders => '$baseUrl/api/orders/my-orders/';
+  static String orderDetail(String id) => '$baseUrl/api/orders/$id/';
+  static String orderReceiptPdf(String id) => '$baseUrl/api/orders/$id/receipt/';
+  static String get manualCoinCredit => '$baseUrl/api/wallet/manual-credit/';
 }
 

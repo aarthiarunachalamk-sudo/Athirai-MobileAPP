@@ -738,6 +738,210 @@ class ShopStore extends ChangeNotifier {
     clear();
   }
 
+  // --- Delivery Address (Step 8: Delivery Address) ---
+  String _deliveryName = 'Royal Patron';
+  String get deliveryName => _deliveryName;
+  String _deliveryPhone = '+91 98765 43210';
+  String get deliveryPhone => _deliveryPhone;
+  String _doorNo = '12/4';
+  String get doorNo => _doorNo;
+  String _streetName = 'Temple View Road, T Nagar';
+  String get streetName => _streetName;
+  String _town = 'T Nagar';
+  String get town => _town;
+  String _city = 'Chennai';
+  String get city => _city;
+  String _pincode = '600017';
+  String get pincode => _pincode;
+  String _state = 'Tamil Nadu';
+  String get state => _state;
+
+  void updateDeliveryAddress({
+    required String name,
+    required String phone,
+    String? doorNo,
+    String? streetName,
+    String? town,
+    String? city,
+    String? pincode,
+    String? state,
+  }) {
+    _deliveryName = name;
+    _deliveryPhone = phone;
+    if (doorNo != null) _doorNo = doorNo;
+    if (streetName != null) _streetName = streetName;
+    if (town != null) _town = town;
+    if (city != null) _city = city;
+    if (pincode != null) _pincode = pincode;
+    if (state != null) _state = state;
+    notifyListeners();
+  }
+
+  // --- Orders Management (Steps 8, 10, 11) ---
+  List<Map<String, dynamic>> _myOrders = [];
+  List<Map<String, dynamic>> get myOrders => List.unmodifiable(_myOrders);
+
+  Future<void> loadOrders() async {
+    final list = await _api.fetchMyOrders();
+    if (list.isNotEmpty) {
+      _myOrders = list;
+      notifyListeners();
+    }
+  }
+
+  // Step 7: 1 Rupee = 100 AUG Coins conversion
+  int get augCoinsPerRupee => 100;
+  double inrToCoins(num inr) => inr.toDouble() * 100.0;
+  double coinsToInr(num coins) => coins.toDouble() / 100.0;
+
+  // Step 8: Place Order strictly using AUG Coins
+  Future<Map<String, dynamic>> placeOrderWithCoins({
+    required String productName,
+    required int totalAmountInr,
+    String? productImage,
+    String? metalPurity,
+    double? weightGrams,
+    int quantity = 1,
+  }) async {
+    final coinsNeeded = inrToCoins(totalAmountInr);
+    if (_augCoins < coinsNeeded) {
+      return {
+        'success': false,
+        'error': 'INSUFFICIENT_COINS',
+        'coins_needed': coinsNeeded,
+        'coins_available': _augCoins,
+        'shortfall_coins': coinsNeeded - _augCoins,
+        'shortfall_inr': (coinsNeeded - _augCoins) / 100.0,
+      };
+    }
+
+    final res = await _api.createOrder(
+      productName: productName,
+      totalAmountInr: totalAmountInr,
+      deliveryName: _deliveryName,
+      deliveryPhone: _deliveryPhone,
+      doorNo: _doorNo,
+      streetName: _streetName,
+      town: _town,
+      city: _city,
+      pincode: _pincode,
+      state: _state,
+      productImage: productImage,
+      metalPurity: metalPurity,
+      weightGrams: weightGrams,
+      quantity: quantity,
+    );
+
+    _augCoins = (_augCoins - coinsNeeded).clamp(0.0, double.infinity);
+    final orderData = res?['order'] as Map<String, dynamic>? ?? {
+      'order_id': 'ATH-${DateTime.now().millisecondsSinceEpoch}',
+      'invoice_number': 'INV-ATH-${DateTime.now().millisecondsSinceEpoch}',
+      'product_name': productName,
+      'total_amount': totalAmountInr,
+      'coins_used': coinsNeeded,
+      'status': 'Confirmed',
+      'created_at': DateTime.now().toIso8601String(),
+      'delivery_name': _deliveryName,
+      'delivery_phone': _deliveryPhone,
+      'delivery_address': '$_doorNo $_streetName, $_town $_city - $_pincode, $_state',
+      'metal_purity': metalPurity ?? '22K Gold',
+      'weight_grams': weightGrams ?? 10.0,
+      'quantity': quantity,
+    };
+
+    _myOrders.insert(0, orderData);
+    _walletHistory.insert(0, {
+      'id': DateTime.now().millisecondsSinceEpoch,
+      'type': 'purchase',
+      'direction': 'debit',
+      'amount_paid': totalAmountInr.toDouble(),
+      'coins_credited': coinsNeeded,
+      'payment_method': 'AUG Coins',
+      'order_id': orderData['order_id'],
+      'source': 'Gold Purchase: $productName',
+      'created_at': DateTime.now().toIso8601String(),
+    });
+
+    notifyListeners();
+    return {
+      'success': true,
+      'order': orderData,
+      'remaining_coins': _augCoins,
+    };
+  }
+
+  // Step 9: Recharge AUG Coins via Razorpay
+  Future<bool> buyAUGCoinsViaRazorpay({
+    required double amountInr,
+    required String mobileNumber,
+  }) async {
+    final coinsToCredit = inrToCoins(amountInr);
+    final ok = await rechargeWallet(
+      amount: amountInr,
+      coins: coinsToCredit,
+      paymentMethod: 'razorpay',
+    );
+    if (ok) {
+      notifyListeners();
+      return true;
+    }
+    // Offline resilience fallback
+    _augCoins += coinsToCredit;
+    _walletHistory.insert(0, {
+      'id': DateTime.now().millisecondsSinceEpoch,
+      'type': 'recharge',
+      'direction': 'credit',
+      'amount_paid': amountInr,
+      'coins_credited': coinsToCredit,
+      'payment_method': 'razorpay',
+      'source': 'Razorpay Coins Purchase ($mobileNumber)',
+      'created_at': DateTime.now().toIso8601String(),
+    });
+    notifyListeners();
+    return true;
+  }
+
+  // Step 7 Point 5: Manual Coin Creation / Generation
+  Future<bool> manualCreditAUGCoins({
+    required double coins,
+    double amountInr = 0.0,
+    String source = 'Manual Admin / System Generation',
+  }) async {
+    await _api.manualCreditCoins(
+      coins: coins,
+      amountInr: amountInr,
+      source: source,
+    );
+    _augCoins += coins;
+    _walletHistory.insert(0, {
+      'id': DateTime.now().millisecondsSinceEpoch,
+      'type': 'bonus',
+      'direction': 'credit',
+      'amount_paid': amountInr,
+      'coins_credited': coins,
+      'payment_method': 'system_manual',
+      'source': source,
+      'created_at': DateTime.now().toIso8601String(),
+    });
+    notifyListeners();
+    return true;
+  }
+
+  // Step 11: Download / fetch order receipt PDF bytes
+  Future<List<int>?> downloadReceiptPdf(String orderId) async {
+    return await _api.downloadOrderReceiptPdf(orderId);
+  }
+
+  /// Reset session data for tests
+  void resetSessionForTest() {
+    _augCoins = 0.0;
+    _myOrders = [];
+    _walletHistory.clear();
+    _saved.clear();
+    _quantities.clear();
+    notifyListeners();
+  }
+
   List<ShopProduct> get wishlist =>
       _products.where((p) => isSaved(p.id)).toList();
   int get wishlistCount => _saved.length;

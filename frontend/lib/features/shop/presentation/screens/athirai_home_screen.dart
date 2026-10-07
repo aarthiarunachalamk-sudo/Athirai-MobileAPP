@@ -6,6 +6,9 @@ import '../../domain/shop_store.dart';
 import '../theme/heritage_theme.dart';
 import '../../../auth/presentation/screens/sign_in_screen.dart';
 import 'athirai_recharge_screen.dart';
+import 'athirai_order_summary_screen.dart';
+import 'athirai_profile_dashboard_screen.dart';
+import '../widgets/athirai_royal_drawer.dart';
 
 /// Screen 02: Home / Experience Dashboard ("Discover Your Legacy")
 /// Exact match for Mockup Screen 02:
@@ -28,6 +31,9 @@ class AthiraiHomeScreen extends StatelessWidget {
     this.onLotusTap,
     this.onOpenStudio,
     this.onOpenPriceList,
+    this.onOpenOrders,
+    this.onOpenProfile,
+    this.onOpenMenu,
     this.onSignOut,
   });
 
@@ -41,6 +47,9 @@ class AthiraiHomeScreen extends StatelessWidget {
   final VoidCallback? onLotusTap;
   final VoidCallback? onOpenStudio;
   final VoidCallback? onOpenPriceList;
+  final VoidCallback? onOpenOrders;
+  final VoidCallback? onOpenProfile;
+  final VoidCallback? onOpenMenu;
   final VoidCallback? onSignOut;
 
 
@@ -391,9 +400,25 @@ class AthiraiHomeScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 18),
-          // Profile / Account icon
+          // Profile / Account icon (Step 6)
           GestureDetector(
-            onTap: () => _showUserProfileModal(context),
+            onTap: () {
+              if (onOpenProfile != null) {
+                onOpenProfile!();
+              } else {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => AthiraiProfileDashboardScreen(
+                      store: store,
+                      onOpenOrders: onOpenOrders,
+                      onOpenCollection: onOpenCollection,
+                      onOpenRecharge: onOpenRecharge,
+                      onSignOut: onSignOut,
+                    ),
+                  ),
+                );
+              }
+            },
             child: const Icon(
               Icons.person_outline_rounded,
               color: HeritageTheme.textMutedDark,
@@ -483,55 +508,6 @@ class AthiraiHomeScreen extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(width: 2),
-        // Wishlist Quick Shortcut with badge
-        Stack(
-          clipBehavior: Clip.none,
-          children: [
-
-            IconButton(
-              padding: const EdgeInsets.all(6),
-              constraints: const BoxConstraints(),
-              icon: Icon(
-                store.wishlistCount > 0
-                    ? Icons.favorite_rounded
-                    : Icons.favorite_border_rounded,
-                color: store.wishlistCount > 0
-                    ? HeritageTheme.goldBright
-                    : HeritageTheme.textLight,
-                size: 20,
-              ),
-              tooltip: 'Wishlist',
-              onPressed: onOpenWishlist,
-            ),
-            if (store.wishlistCount > 0)
-              Positioned(
-                right: 0,
-                top: 0,
-                child: Container(
-                  padding: const EdgeInsets.all(3),
-                  decoration: const BoxDecoration(
-                    color: HeritageTheme.goldBright,
-                    shape: BoxShape.circle,
-                  ),
-                  constraints: const BoxConstraints(
-                    minWidth: 13,
-                    minHeight: 13,
-                  ),
-                  child: Center(
-                    child: Text(
-                      '${store.wishlistCount}',
-                      style: GoogleFonts.inter(
-                        fontSize: 8,
-                        fontWeight: FontWeight.w800,
-                        color: const Color(0xFF04100D),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-          ],
-        ),
         const SizedBox(width: 4),
         // Notification bell with badge dot
         Stack(
@@ -560,13 +536,29 @@ class AthiraiHomeScreen extends StatelessWidget {
             ),
           ],
         ),
-        const SizedBox(width: 8),
-        // User Profile Avatar with circular gold ring
+        const SizedBox(width: 6),
+        // User Profile Avatar with circular gold ring (Step 6)
         GestureDetector(
-          onTap: () => _showUserProfileModal(context),
+          onTap: () {
+            if (onOpenProfile != null) {
+              onOpenProfile!();
+            } else {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => AthiraiProfileDashboardScreen(
+                    store: store,
+                    onOpenOrders: onOpenOrders,
+                    onOpenCollection: onOpenCollection,
+                    onOpenRecharge: onOpenRecharge,
+                    onSignOut: onSignOut,
+                  ),
+                ),
+              );
+            }
+          },
           child: Container(
-            width: 34,
-            height: 34,
+            width: 32,
+            height: 32,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               border: Border.all(color: HeritageTheme.goldPrimary, width: 1.4),
@@ -576,6 +568,66 @@ class AthiraiHomeScreen extends StatelessWidget {
               ),
             ),
           ),
+        ),
+        const SizedBox(width: 4),
+        // Three-line menu button (☰) in top-right corner (Step 10 Point 2)
+        IconButton(
+          padding: const EdgeInsets.all(4),
+          constraints: const BoxConstraints(),
+          icon: const Icon(
+            Icons.menu_rounded,
+            color: HeritageTheme.goldBright,
+            size: 23,
+          ),
+          tooltip: 'Menu (Order Summary & Vault)',
+          onPressed: () {
+            if (onOpenMenu != null) {
+              onOpenMenu!();
+            } else {
+              AthiraiRoyalDrawer.show(
+                context,
+                store: store,
+                onSelectHome: () {},
+                onSelectProfile: () {
+                  if (onOpenProfile != null) {
+                    onOpenProfile!();
+                  } else {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => AthiraiProfileDashboardScreen(
+                          store: store,
+                          onOpenOrders: onOpenOrders,
+                          onOpenCollection: onOpenCollection,
+                          onOpenRecharge: onOpenRecharge,
+                          onSignOut: onSignOut,
+                        ),
+                      ),
+                    );
+                  }
+                },
+                onSelectOrders: () {
+                  if (onOpenOrders != null) {
+                    onOpenOrders!();
+                  } else {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => AthiraiOrderSummaryScreen(
+                          store: store,
+                          onOpenMenu: onOpenMenu,
+                          onExploreJewels: onOpenCollection,
+                        ),
+                      ),
+                    );
+                  }
+                },
+                onSelectRecharge: onOpenRecharge,
+                onSelectCollections: onOpenCollection,
+                onSelectWishlist: onOpenWishlist,
+                onSelectCart: onOpenBag,
+                onSignOut: onSignOut,
+              );
+            }
+          },
         ),
       ],
     );

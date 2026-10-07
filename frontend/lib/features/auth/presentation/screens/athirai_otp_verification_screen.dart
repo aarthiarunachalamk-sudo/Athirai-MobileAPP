@@ -105,7 +105,7 @@ class _AthiraiOtpVerificationScreenState
       } else {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
-            builder: (_) => const AthiraiFlowContainer(initialScreenIndex: 0),
+            builder: (_) => const AthiraiFlowContainer(initialScreenIndex: 9),
           ),
         );
       }

@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
 import '../../../../core/network/api_client.dart';
 import '../../../../core/network/api_endpoints.dart';
 import '../../showroom/domain/models/jewellery_item.dart';
@@ -278,6 +279,114 @@ class ShopApiService {
       }
     } catch (e) {
       debugPrint('ShopApiService: error buying gold with coins: $e');
+    }
+    return null;
+  }
+
+  /// Step 8 & 10: Place order with delivery address using AUG Coins
+  Future<Map<String, dynamic>?> createOrder({
+    required String productName,
+    required int totalAmountInr,
+    required String deliveryName,
+    required String deliveryPhone,
+    String doorNo = '',
+    String streetName = '',
+    String town = '',
+    String city = 'Chennai',
+    String pincode = '600001',
+    String state = 'Tamil Nadu',
+    String? deliveryAddress,
+    String? productImage,
+    String? metalPurity,
+    double? weightGrams,
+    int quantity = 1,
+  }) async {
+    try {
+      final response = await _client.post(
+        ApiEndpoints.orderCreate,
+        body: {
+          'product_name': productName,
+          'total_amount': totalAmountInr,
+          'delivery_name': deliveryName,
+          'delivery_phone': deliveryPhone,
+          'door_no': doorNo,
+          'street_name': streetName,
+          'town': town,
+          'city': city,
+          'pincode': pincode,
+          'state': state,
+          'delivery_address': deliveryAddress ?? '$doorNo $streetName, $town $city - $pincode, $state',
+          'product_image': productImage ?? '',
+          'metal_purity': metalPurity ?? '22K Gold',
+          'weight_grams': weightGrams ?? 10.0,
+          'quantity': quantity,
+        },
+        requireAuth: false,
+      );
+      if (response.isSuccess && response.data != null) {
+        return response.data;
+      }
+      return response.data;
+    } catch (e) {
+      debugPrint('ShopApiService: createOrder error: $e');
+    }
+    return null;
+  }
+
+  /// Step 10: Fetch user's Order Summary list
+  Future<List<Map<String, dynamic>>> fetchMyOrders() async {
+    try {
+      final response = await _client.get(
+        ApiEndpoints.myOrders,
+        requireAuth: false,
+      );
+      if (response.isSuccess && response.data != null) {
+        final list = response.data!['orders'];
+        if (list is List) {
+          return list.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+        }
+      }
+    } catch (e) {
+      debugPrint('ShopApiService: fetchMyOrders error: $e');
+    }
+    return [];
+  }
+
+  /// Step 11: Download / Fetch Order Receipt PDF bytes
+  Future<List<int>?> downloadOrderReceiptPdf(String orderId) async {
+    try {
+      final url = Uri.parse(ApiEndpoints.orderReceiptPdf(orderId));
+      final response = await http.get(url);
+      if (response.statusCode == 200 && response.bodyBytes.isNotEmpty) {
+        return response.bodyBytes;
+      }
+    } catch (e) {
+      debugPrint('ShopApiService: downloadOrderReceiptPdf error: $e');
+    }
+    return null;
+  }
+
+  /// Step 7 Point 5: Manual Coin Creation / Generation
+  Future<Map<String, dynamic>?> manualCreditCoins({
+    required double coins,
+    double amountInr = 0.0,
+    String source = 'Manual Generation',
+  }) async {
+    try {
+      final response = await _client.post(
+        ApiEndpoints.manualCoinCredit,
+        body: {
+          'coins': coins,
+          'amount_inr': amountInr,
+          'source': source,
+        },
+        requireAuth: false,
+      );
+      if (response.isSuccess && response.data != null) {
+        return response.data;
+      }
+    } catch (e) {
+      debugPrint('ShopApiService: manualCreditCoins error: $e');
     }
     return null;
   }

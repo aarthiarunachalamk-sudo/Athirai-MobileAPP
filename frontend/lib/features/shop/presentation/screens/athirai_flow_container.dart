@@ -8,6 +8,10 @@ import 'athirai_product_detail_screen.dart';
 import 'athirai_splash_screen.dart';
 import 'athirai_wishlist_screen.dart';
 import 'athirai_recharge_screen.dart';
+import 'athirai_order_summary_screen.dart';
+import 'athirai_profile_dashboard_screen.dart';
+import '../widgets/athirai_purchase_sheet.dart';
+import '../widgets/athirai_royal_drawer.dart';
 import '../../../auth/presentation/screens/athirai_otp_verification_screen.dart';
 
 import '../../../auth/presentation/screens/sign_in_screen.dart';
@@ -23,6 +27,9 @@ import 'package:athirai_mobile/features/vault_cms/presentation/screens/shell/vau
 /// 04 Product Detail ("Crafted in Every Detail")
 /// 05 Styling / Checkout ("Your Jewel Vault")
 /// 06 Royal Wishlist ("Your Curated Heirlooms")
+/// 07 Recharge & AUG Coins
+/// 08 Order Summary & Receipts (Steps 10 & 11)
+/// 09 Profile Dashboard & Vault (Steps 6 & 7)
 /// + Verify Your Number (Image 2 Screen 4)
 class AthiraiFlowContainer extends StatefulWidget {
   const AthiraiFlowContainer({
@@ -44,7 +51,7 @@ class AthiraiFlowContainer extends StatefulWidget {
 
 class _AthiraiFlowContainerState extends State<AthiraiFlowContainer> {
   late final ShopStore store = widget.store ?? ShopStore.session;
-  late int _currentScreen; // 0: Splash, 1: Home, 2: Collection, 3: Product, 4: Vault/Checkout, 5: OTP, 6: Wishlist
+  late int _currentScreen; // 0: Splash, 1: Home, 2: Collection, 3: Product, 4: Vault/Checkout, 5: OTP, 6: Wishlist, 7: Recharge, 8: Orders, 9: Profile
   ShopProduct? _activeProduct;
   final List<int> _screenHistory = [];
 
@@ -75,6 +82,21 @@ class _AthiraiFlowContainerState extends State<AthiraiFlowContainer> {
     } else if (_currentScreen != 1) {
       setState(() => _currentScreen = 1);
     }
+  }
+
+  void _openRoyalDrawer() {
+    AthiraiRoyalDrawer.show(
+      context,
+      store: store,
+      onSelectHome: () => _navigateTo(1),
+      onSelectProfile: () => _navigateTo(9),
+      onSelectOrders: () => _navigateTo(8),
+      onSelectRecharge: () => _navigateTo(7),
+      onSelectCollections: () => _navigateTo(2),
+      onSelectWishlist: () => _navigateTo(6),
+      onSelectCart: () => _navigateTo(4),
+      onSignOut: _handleSignOut,
+    );
   }
 
   void _handleSignOut() async {
@@ -145,14 +167,29 @@ class _AthiraiFlowContainerState extends State<AthiraiFlowContainer> {
           onOpenProduct: (product) => _navigateTo(3, product: product),
           onOpenBag: () => _navigateTo(4),
           onOpenWishlist: () => _navigateTo(6),
-          onBuyNow: (product) => _navigateTo(4, product: product),
+          onBuyNow: (product) {
+            AthiraiPurchaseSheet.show(
+              context,
+              product: product,
+              store: store,
+              onOrderCompleted: () => _navigateTo(8),
+            );
+          },
         );
       case 3:
         return AthiraiProductDetailScreen(
           store: store,
           product: _activeProduct,
           onBack: _navigateBack,
-          onBuyNow: () => _navigateTo(4),
+          onBuyNow: () {
+            final prod = _activeProduct ?? store.products.first;
+            AthiraiPurchaseSheet.show(
+              context,
+              product: prod,
+              store: store,
+              onOrderCompleted: () => _navigateTo(8),
+            );
+          },
           onOpenBag: () => _navigateTo(4),
           onOpenWishlist: () => _navigateTo(6),
         );
@@ -166,7 +203,7 @@ class _AthiraiFlowContainerState extends State<AthiraiFlowContainer> {
       case 5:
         return AthiraiOtpVerificationScreen(
           phoneNumber: '+91 98765 43210',
-          onVerified: () => _navigateTo(1),
+          onVerified: () => _navigateTo(9),
         );
       case 6:
         return AthiraiWishlistScreen(
@@ -174,7 +211,14 @@ class _AthiraiFlowContainerState extends State<AthiraiFlowContainer> {
           onBack: _navigateBack,
           onOpenProduct: (product) => _navigateTo(3, product: product),
           onOpenBag: () => _navigateTo(4),
-          onBuyNow: (product) => _navigateTo(4, product: product),
+          onBuyNow: (product) {
+            AthiraiPurchaseSheet.show(
+              context,
+              product: product,
+              store: store,
+              onOrderCompleted: () => _navigateTo(8),
+            );
+          },
           onExplore: () => _navigateTo(2),
         );
       case 7:
@@ -182,6 +226,23 @@ class _AthiraiFlowContainerState extends State<AthiraiFlowContainer> {
           store: store,
           onBack: _navigateBack,
           onBuyGoldWithCoins: () => _navigateTo(2),
+        );
+      case 8:
+        return AthiraiOrderSummaryScreen(
+          store: store,
+          onBack: _navigateBack,
+          onOpenMenu: _openRoyalDrawer,
+          onExploreJewels: () => _navigateTo(2),
+        );
+      case 9:
+        return AthiraiProfileDashboardScreen(
+          store: store,
+          onBack: _navigateBack,
+          onOpenMenu: _openRoyalDrawer,
+          onOpenOrders: () => _navigateTo(8),
+          onOpenCollection: () => _navigateTo(2),
+          onOpenRecharge: () => _navigateTo(7),
+          onSignOut: _handleSignOut,
         );
       default:
         return AthiraiHomeScreen(
@@ -210,6 +271,8 @@ class _AthiraiFlowContainerState extends State<AthiraiFlowContainer> {
       'OTP Verification',
       '06 Royal Wishlist',
       '07 Recharge & AUG Coins',
+      '08 Order Summary',
+      '09 Profile Dashboard',
     ];
 
 

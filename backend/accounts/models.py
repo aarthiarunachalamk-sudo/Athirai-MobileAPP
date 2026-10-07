@@ -378,13 +378,34 @@ class JewelOrder(models.Model):
         ('Delivered', 'Delivered'),
         ('Cancelled', 'Cancelled'),
     )
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='orders', null=True, blank=True)
     order_id = models.CharField(max_length=50, unique=True)
+    invoice_number = models.CharField(max_length=100, blank=True, default='')
     customer_name = models.CharField(max_length=150)
-    customer_email = models.EmailField()
+    customer_email = models.EmailField(blank=True, default='')
     customer_phone = models.CharField(max_length=30, blank=True, default='')
+
+    # Step 8: Delivery Address
+    delivery_name = models.CharField(max_length=150, blank=True, default='')
+    delivery_phone = models.CharField(max_length=30, blank=True, default='')
+    door_no = models.CharField(max_length=100, blank=True, default='')
+    street_name = models.CharField(max_length=200, blank=True, default='')
+    town = models.CharField(max_length=100, blank=True, default='')
+    city = models.CharField(max_length=100, blank=True, default='')
+    pincode = models.CharField(max_length=20, blank=True, default='')
+    state = models.CharField(max_length=100, blank=True, default='')
+    delivery_address = models.TextField(blank=True, default='')
+
+    # Product & Purchase Details
     product_name = models.CharField(max_length=200)
-    total_amount = models.IntegerField()
-    payment_method = models.CharField(max_length=50, default='Vault Gold Pay / UPI')
+    product_image = models.CharField(max_length=500, blank=True, default='')
+    metal_purity = models.CharField(max_length=50, blank=True, default='22K Gold')
+    weight_grams = models.DecimalField(max_digits=8, decimal_places=3, default=10.0)
+    quantity = models.IntegerField(default=1)
+
+    total_amount = models.IntegerField(help_text="Total value in INR")
+    coins_used = models.DecimalField(max_digits=15, decimal_places=2, default=0.0, help_text="Total AUG Coins paid for order")
+    payment_method = models.CharField(max_length=50, default='AUG Coins')
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Confirmed')
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -471,6 +492,28 @@ class UserWallet(models.Model):
             source='Daily Login Bonus'
         )
         return True, new_bal
+
+    def manual_credit(self, amount_inr, coins, source='Manual Coin Generation'):
+        """
+        Step 7 Point 5: Manual Coin Creation / Coins உருவாக்குதல்.
+        """
+        new_bal = float(self.balance_coins) + float(coins)
+        self.balance_coins = new_bal
+        self.total_coins_earned = float(self.total_coins_earned) + float(coins)
+        if amount_inr > 0:
+            self.total_spent_inr = float(self.total_spent_inr) + float(amount_inr)
+        self.save()
+
+        WalletTransaction.objects.create(
+            user=self.user,
+            type='admin_credit',
+            direction='credit',
+            amount_paid=amount_inr,
+            coins_credited=coins,
+            payment_method='manual_generation',
+            source=source
+        )
+        return new_bal
 
     def __str__(self):
         return f"{self.user} Wallet: {self.balance_coins} AUG Coins"

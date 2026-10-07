@@ -314,3 +314,36 @@ class UserWalletSerializer(serializers.ModelSerializer):
         ]
 
 
+class JewelOrderSerializer(serializers.ModelSerializer):
+    class Meta:
+        from .models import JewelOrder
+        model = JewelOrder
+        fields = [
+            'id',
+            'order_id',
+            'invoice_number',
+            'customer_name',
+            'customer_email',
+            'customer_phone',
+            'delivery_name',
+            'delivery_phone',
+            'door_no',
+            'street_name',
+            'town',
+            'city',
+            'pincode',
+            'state',
+            'delivery_address',
+            'product_name',
+            'product_image',
+            'metal_purity',
+            'weight_grams',
+            'quantity',
+            'total_amount',
+            'coins_used',
+            'payment_method',
+            'status',
+            'created_at',
+        ]
+
+

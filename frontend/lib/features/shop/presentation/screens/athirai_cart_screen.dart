@@ -5,6 +5,10 @@ import '../../../../core/constants/app_assets.dart';
 import '../../domain/shop_store.dart';
 import '../theme/heritage_theme.dart';
 import 'athirai_recharge_screen.dart';
+import 'athirai_order_summary_screen.dart';
+import 'athirai_profile_dashboard_screen.dart';
+import '../widgets/athirai_purchase_sheet.dart';
+import '../widgets/athirai_royal_drawer.dart';
 
 
 /// Screen 05: Styling / Checkout ("Your Jewel Vault")
@@ -40,7 +44,6 @@ class AthiraiCartScreen extends StatefulWidget {
 class _AthiraiCartScreenState extends State<AthiraiCartScreen> {
   int _quantity = 1;
   final int _activeCheckoutStep = 0; // 0: Cart, 1: Address, 2: Payment, 3: Confirm
-  bool _isProcessingPayment = false;
 
   @override
   void initState() {
@@ -60,73 +63,18 @@ class _AthiraiCartScreenState extends State<AthiraiCartScreen> {
   }
 
   void _onPaySecurely() {
-    setState(() => _isProcessingPayment = true);
-    Future.delayed(const Duration(milliseconds: 1400), () {
-      if (!mounted) return;
-      setState(() => _isProcessingPayment = false);
-      final count = widget.store.count > 0 ? widget.store.count : _quantity;
-      final rawTotal = widget.store.subtotal > 0
-          ? widget.store.subtotal
-          : (widget.store.products.first.price * _quantity);
-      final coinsUsed = widget.store.coinsToRedeemForCart;
-      final discount = widget.store.coinDiscountAmount;
-      final netPayable = widget.store.payableAmount;
+    final cartProduct = widget.store.cart.isNotEmpty
+        ? widget.store.cart.first
+        : widget.store.products.first;
 
-      widget.store.completeCheckout();
-
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          backgroundColor: const Color(0xFF071C17),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-            side: const BorderSide(color: HeritageTheme.goldBorder, width: 1.2),
-          ),
-          title: Text(
-            coinsUsed > 0 && netPayable == 0
-                ? '🪙 Gold Purchased with Coins!'
-                : 'Order Confirmed',
-            textAlign: TextAlign.center,
-            style: GoogleFonts.cormorantGaramond(
-              fontSize: 24,
-              fontWeight: FontWeight.w600,
-              color: HeritageTheme.goldBright,
-            ),
-          ),
-          content: Text(
-            coinsUsed > 0
-                ? 'Royal congratulations! Your order of $count ${count == 1 ? 'heirloom piece' : 'pieces'} is confirmed.\n\n'
-                  '🪙 Redeemed: ${coinsUsed.toStringAsFixed(1)} AUG Coins (Saved ₹$discount)\n'
-                  'Net Paid: ₹$netPayable\n\n'
-                  'Your 24K gold and jewellery items have been reserved into your vault.'
-                : 'Thank you! Your order of $count heirloom ${count == 1 ? 'piece' : 'pieces'} totaling ${rupees(rawTotal)} has been securely reserved into your vault.',
-            textAlign: TextAlign.center,
-            style: GoogleFonts.inter(
-              fontSize: 13,
-              color: HeritageTheme.textLight,
-              height: 1.45,
-            ),
-          ),
-          actions: [
-            Center(
-              child: TextButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                  widget.onBack();
-                },
-                child: Text(
-                  'Return to Vault',
-                  style: GoogleFonts.inter(
-                    fontWeight: FontWeight.w700,
-                    color: HeritageTheme.goldBright,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      );
-    });
+    AthiraiPurchaseSheet.show(
+      context,
+      product: cartProduct,
+      store: widget.store,
+      onOrderCompleted: () {
+        widget.store.clear();
+      },
+    );
   }
 
 
@@ -275,11 +223,38 @@ class _AthiraiCartScreenState extends State<AthiraiCartScreen> {
             ),
           IconButton(
             icon: const Icon(
-              Icons.settings_outlined,
-              color: HeritageTheme.textLight,
-              size: 21,
+              Icons.menu_rounded,
+              color: HeritageTheme.goldBright,
+              size: 23,
             ),
-            onPressed: () {},
+            tooltip: 'Menu (Order Summary & Vault)',
+            onPressed: () {
+              AthiraiRoyalDrawer.show(
+                context,
+                store: widget.store,
+                onSelectHome: widget.onBack,
+                onSelectProfile: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => AthiraiProfileDashboardScreen(
+                        store: widget.store,
+                      ),
+                    ),
+                  );
+                },
+                onSelectOrders: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => AthiraiOrderSummaryScreen(
+                        store: widget.store,
+                      ),
+                    ),
+                  );
+                },
+                onSelectWishlist: widget.onOpenWishlist,
+                onSelectCart: () {},
+              );
+            },
           ),
         ],
       ),
@@ -1165,20 +1140,11 @@ class _AthiraiCartScreenState extends State<AthiraiCartScreen> {
         color: Colors.transparent,
         child: InkWell(
           borderRadius: BorderRadius.circular(25),
-          onTap: _isProcessingPayment ? null : _onPaySecurely,
+          onTap: _onPaySecurely,
           child: Center(
-            child: _isProcessingPayment
-                ? const SizedBox(
-                    width: 22,
-                    height: 22,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2.2,
-                      valueColor: AlwaysStoppedAnimation(Color(0xFF1E1405)),
-                    ),
-                  )
-                : Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
                       Text(
                         isFreeWithCoins
                             ? '🪙 Buy Gold with AUG Coins'

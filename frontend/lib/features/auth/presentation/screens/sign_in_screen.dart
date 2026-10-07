@@ -135,6 +135,15 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
     );
   }
 
+  void _navigateToProfileDashboard() {
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(
+        builder: (_) => const AthiraiFlowContainer(initialScreenIndex: 9),
+      ),
+      (route) => false,
+    );
+  }
+
   Future<void> _submit() async {
     if (!_validateInputs()) return;
 
@@ -166,7 +175,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
         if (earnedReward && mounted) {
           _showDailyRewardClaimedDialog(context);
         } else {
-          _navigateToDashboard();
+          _navigateToProfileDashboard();
         }
       }
     } else {
@@ -359,7 +368,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                 child: ElevatedButton(
                   onPressed: () {
                     Navigator.of(dialogCtx).pop();
-                    _navigateToDashboard();
+                    _navigateToProfileDashboard();
                   },
                   style: ElevatedButton.styleFrom(
                     padding: EdgeInsets.zero,

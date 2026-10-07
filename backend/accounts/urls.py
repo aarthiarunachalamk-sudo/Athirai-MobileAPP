@@ -30,6 +30,11 @@ from .views import (
     RechargeVerifyView,
     BuyGoldWithCoinsView,
     RewardsTodayView,
+    OrderCreateView,
+    OrderListView,
+    OrderDetailView,
+    OrderReceiptPdfView,
+    ManualCoinCreditView,
 )
 
 urlpatterns = [
@@ -63,6 +68,11 @@ urlpatterns = [
     path('jewels/<int:pk>/', JewelProductDetailView.as_view(), name='jewel_detail'),
     path('collections/', JewelCollectionListCreateView.as_view(), name='jewel_collections'),
     path('orders/', JewelOrderListView.as_view(), name='jewel_orders'),
+    path('orders/create/', OrderCreateView.as_view(), name='order_create'),
+    path('orders/my-orders/', OrderListView.as_view(), name='my_orders'),
+    path('orders/<str:order_id>/', OrderDetailView.as_view(), name='order_detail'),
+    path('orders/<str:order_id>/receipt/', OrderReceiptPdfView.as_view(), name='order_receipt_pdf'),
+    path('wallet/manual-credit/', ManualCoinCreditView.as_view(), name='wallet_manual_credit'),
     path('customers/', JewelCustomerListView.as_view(), name='jewel_customers'),
     path('vault/', JewelVaultListView.as_view(), name='jewel_vault'),
     path('analytics/summary/', AnalyticsSummaryView.as_view(), name='analytics_summary'),

@@ -5,6 +5,9 @@ import '../../../../core/constants/app_assets.dart';
 import '../../domain/shop_store.dart';
 import '../theme/heritage_theme.dart';
 import 'athirai_recharge_screen.dart';
+import 'athirai_order_summary_screen.dart';
+import 'athirai_profile_dashboard_screen.dart';
+import '../widgets/athirai_royal_drawer.dart';
 
 
 /// Screen 03: Collection Explorer ("Curated for Generations")
@@ -307,6 +310,42 @@ class _AthiraiCollectionScreenState extends State<AthiraiCollectionScreen> {
                       ),
                     ),
                 ],
+              ),
+              // Three-line menu button (☰) in top-right corner (Step 10 Point 2)
+              IconButton(
+                icon: const Icon(
+                  Icons.menu_rounded,
+                  color: HeritageTheme.goldBright,
+                  size: 23,
+                ),
+                tooltip: 'Menu (Order Summary & Vault)',
+                onPressed: () {
+                  AthiraiRoyalDrawer.show(
+                    context,
+                    store: widget.store,
+                    onSelectHome: widget.onBack,
+                    onSelectProfile: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => AthiraiProfileDashboardScreen(
+                            store: widget.store,
+                          ),
+                        ),
+                      );
+                    },
+                    onSelectOrders: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => AthiraiOrderSummaryScreen(
+                            store: widget.store,
+                          ),
+                        ),
+                      );
+                    },
+                    onSelectWishlist: widget.onOpenWishlist,
+                    onSelectCart: widget.onOpenBag,
+                  );
+                },
               ),
             ],
           ),

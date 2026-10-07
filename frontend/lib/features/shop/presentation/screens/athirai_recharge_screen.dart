@@ -3,6 +3,9 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../domain/shop_store.dart';
 import '../theme/heritage_theme.dart';
+import '../widgets/athirai_royal_drawer.dart';
+import 'athirai_order_summary_screen.dart';
+import 'athirai_profile_dashboard_screen.dart';
 
 /// Screen-accurate luxury Recharge & AUG Coins Wallet screen
 /// matching https://infisq.com/recharge with Athirai Royal heritage aesthetics:
@@ -480,6 +483,43 @@ class _AthiraiRechargeScreenState extends State<AthiraiRechargeScreen> {
                 ],
               ),
             ),
+          ),
+          const SizedBox(width: 4),
+          // Three-line menu button (☰) in top-right corner (Step 10 Point 2)
+          IconButton(
+            icon: const Icon(
+              Icons.menu_rounded,
+              color: Color(0xFFC7A45B),
+              size: 23,
+            ),
+            tooltip: 'Menu (Order Summary & Vault)',
+            onPressed: () {
+              AthiraiRoyalDrawer.show(
+                context,
+                store: widget.store,
+                onSelectHome: widget.onBack,
+                onSelectProfile: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => AthiraiProfileDashboardScreen(
+                        store: widget.store,
+                      ),
+                    ),
+                  );
+                },
+                onSelectOrders: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => AthiraiOrderSummaryScreen(
+                        store: widget.store,
+                      ),
+                    ),
+                  );
+                },
+                onSelectRecharge: () {},
+                onSelectCollections: widget.onBuyGoldWithCoins,
+              );
+            },
           ),
         ],
       ),

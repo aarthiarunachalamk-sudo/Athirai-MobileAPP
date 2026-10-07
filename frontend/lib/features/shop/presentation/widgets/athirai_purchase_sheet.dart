@@ -292,17 +292,12 @@ class _PurchaseSheetContentState extends State<_PurchaseSheetContent> {
                       if (!mounted) return;
 
                       if (ok) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            backgroundColor: const Color(0xFF061B16),
-                            content: Text(
-                              'Payment Successful! Credited ${(rechargeAmount * 100).toInt()} AUG Coins. Placing order...',
-                            ),
-                          ),
+                        _showRazorpayCoinsCreditedDialog(
+                          context,
+                          rechargeAmount,
+                          (rechargeAmount * 100).toInt(),
+                          _handleConfirmPurchase,
                         );
-
-                        // Step 10: Automatically place order using freshly credited coins!
-                        await _handleConfirmPurchase();
                       } else {
                         setState(() => _isProcessing = false);
                         ScaffoldMessenger.of(context).showSnackBar(
@@ -336,6 +331,67 @@ class _PurchaseSheetContentState extends State<_PurchaseSheetContent> {
             ),
           );
         },
+      ),
+    );
+  }
+
+  void _showRazorpayCoinsCreditedDialog(
+    BuildContext context,
+    double amountInr,
+    int coins,
+    VoidCallback onProceedToOrder,
+  ) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dCtx) => AlertDialog(
+        backgroundColor: const Color(0xFF061B16),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: const BorderSide(color: HeritageTheme.goldBorder, width: 1.1),
+        ),
+        title: Row(
+          children: [
+            const Icon(Icons.check_circle_rounded, color: Color(0xFF10B981), size: 24),
+            const SizedBox(width: 8),
+            Text(
+              'Coins Added via Razorpay!',
+              style: GoogleFonts.cormorantGaramond(
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+                color: HeritageTheme.textLight,
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Payment of ₹${amountInr.toInt()} Successful via Razorpay.',
+              style: GoogleFonts.inter(fontSize: 12, color: HeritageTheme.goldBright),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '+$coins AUG Coins credited to your vault. Click below to complete your jewellery purchase.',
+              style: GoogleFonts.inter(fontSize: 12.5, color: HeritageTheme.textLight, height: 1.4),
+            ),
+          ],
+        ),
+        actions: [
+          ElevatedButton(
+            onPressed: () {
+              Navigator.of(dCtx).pop();
+              onProceedToOrder();
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: HeritageTheme.goldPrimary,
+              foregroundColor: const Color(0xFF041814),
+            ),
+            child: const Text('Confirm Purchase / வாங்குக'),
+          ),
+        ],
       ),
     );
   }

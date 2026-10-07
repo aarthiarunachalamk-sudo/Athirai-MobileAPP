@@ -100,16 +100,161 @@ class _AthiraiOtpVerificationScreenState
     Future.delayed(const Duration(milliseconds: 600), () {
       if (!mounted) return;
       setState(() => _isVerifying = false);
-      if (widget.onVerified != null) {
-        widget.onVerified!();
-      } else {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(
-            builder: (_) => const AthiraiFlowContainer(initialScreenIndex: 9),
-          ),
-        );
-      }
+      _showRegistrationSuccessDialog(context);
     });
+  }
+
+  void _showRegistrationSuccessDialog(BuildContext context) {
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogCtx) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: const Color(0xFF061B18),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: const Color(0xFFD4AF37), width: 1.2),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFFD4AF37).withOpacity(0.25),
+                blurRadius: 30,
+                spreadRadius: 2,
+              ),
+              const BoxShadow(
+                color: Colors.black87,
+                blurRadius: 40,
+                offset: Offset(0, 10),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Golden Laurel & Check Icon
+              Container(
+                width: 72,
+                height: 72,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: const RadialGradient(
+                    colors: [
+                      Color(0xFFFFDF7A),
+                      Color(0xFFC7A45B),
+                      Color(0xFF8A623D),
+                    ],
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFFFFDF7A).withOpacity(0.4),
+                      blurRadius: 18,
+                      spreadRadius: 2,
+                    ),
+                  ],
+                ),
+                child: const Center(
+                  child: Icon(Icons.verified_rounded, color: Color(0xFF04120E), size: 40),
+                ),
+              ),
+              const SizedBox(height: 18),
+
+              // Title
+              Text(
+                'Registration Successful!',
+                style: GoogleFonts.cormorantGaramond(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w700,
+                  color: const Color(0xFFF7F2E8),
+                  letterSpacing: 0.5,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'பதிவு வெற்றிகரமாக முடிந்தது!',
+                style: GoogleFonts.inter(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: HeritageTheme.goldBright,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 12),
+
+              // Welcome Bonus Badge
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                decoration: BoxDecoration(
+                  color: const Color(0x33D4AF37),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: const Color(0xFFD4AF37), width: 0.8),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.stars_rounded, color: Color(0xFFFFDF7A), size: 16),
+                    const SizedBox(width: 6),
+                    Text(
+                      '+100 AUG Coins Welcome Gift (₹1)',
+                      style: GoogleFonts.inter(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: const Color(0xFFFFDF7A),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 14),
+
+              Text(
+                'Welcome, Royal Patron! Your account for ${widget.phoneNumber} is verified. Your AUG Coins vault is ready for gold purchases.',
+                style: GoogleFonts.inter(
+                  fontSize: 12.5,
+                  height: 1.45,
+                  color: const Color(0xFFD1DFDE),
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 20),
+
+              // Action: Go to Profile Dashboard
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.of(dialogCtx).pop();
+                    if (widget.onVerified != null) {
+                      widget.onVerified!();
+                    } else {
+                      Navigator.of(context).pushReplacement(
+                        MaterialPageRoute(
+                          builder: (_) => const AthiraiFlowContainer(initialScreenIndex: 9),
+                        ),
+                      );
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: HeritageTheme.goldPrimary,
+                    foregroundColor: const Color(0xFF041814),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                  ),
+                  child: Text(
+                    'Go to Profile Dashboard / தொடர்க',
+                    style: GoogleFonts.inter(fontSize: 13.5, fontWeight: FontWeight.w700),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   @override

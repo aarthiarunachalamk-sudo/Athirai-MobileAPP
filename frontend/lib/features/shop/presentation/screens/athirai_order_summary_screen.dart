@@ -299,22 +299,27 @@ class _AthiraiOrderSummaryScreenState extends State<AthiraiOrderSummaryScreen> {
     final createdAt = order['created_at']?.toString() ?? DateTime.now().toIso8601String();
     final productImage = order['product_image']?.toString() ?? '';
 
-    return Container(
-      decoration: BoxDecoration(
-        color: const Color(0xFF061814),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: HeritageTheme.goldBorderSubtle, width: 0.9),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.35),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
+        onTap: () => _showOrderDetailsPopup(context, order),
+        child: Container(
+          decoration: BoxDecoration(
+            color: const Color(0xFF061814),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: HeritageTheme.goldBorderSubtle, width: 0.9),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.35),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
           // Order Header with Invoice & Status
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
@@ -569,6 +574,166 @@ class _AthiraiOrderSummaryScreenState extends State<AthiraiOrderSummaryScreen> {
           ),
         ],
       ),
+    ),
+  ),
+);
+  }
+
+  void _showOrderDetailsPopup(BuildContext context, Map<String, dynamic> order) {
+    final invoiceNumber = order['invoice_number']?.toString() ?? 'ATH-INV';
+    final productName = order['product_name']?.toString() ?? 'Jewellery';
+    final totalAmount = (order['total_amount'] as num?)?.toInt() ?? 0;
+    final coinsUsed = (order['coins_used'] as num?)?.toInt() ?? (totalAmount * 100);
+    final purity = order['metal_purity']?.toString() ?? '22K Gold';
+    final weight = (order['weight_grams'] as num?)?.toDouble() ?? 10.0;
+    final deliveryName = order['delivery_name']?.toString() ?? 'Royal Patron';
+    final deliveryAddress = order['delivery_address']?.toString() ?? 'Default Address';
+    final createdAt = order['created_at']?.toString() ?? '';
+
+    showDialog(
+      context: context,
+      builder: (dCtx) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: Container(
+          padding: const EdgeInsets.all(22),
+          decoration: BoxDecoration(
+            color: const Color(0xFF041814),
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(color: HeritageTheme.goldBorder, width: 1.1),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFFD4AF37).withOpacity(0.22),
+                blurRadius: 24,
+                spreadRadius: 1,
+              ),
+              const BoxShadow(color: Colors.black87, blurRadius: 40, offset: Offset(0, 10)),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Order Details',
+                        style: GoogleFonts.cormorantGaramond(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w700,
+                          color: HeritageTheme.textLight,
+                        ),
+                      ),
+                      Text(
+                        'ஆர்டர் மற்றும் சான்றிதழ் விவரங்கள்',
+                        style: GoogleFonts.inter(fontSize: 11, color: HeritageTheme.goldBright),
+                      ),
+                    ],
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: const Color(0x3310B981),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: const Color(0xFF10B981), width: 0.8),
+                    ),
+                    child: const Text('CONFIRMED', style: TextStyle(color: Color(0xFF10B981), fontSize: 9.5, fontWeight: FontWeight.w700)),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF020B09),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: HeritageTheme.goldBorderSubtle, width: 0.6),
+                ),
+                child: Column(
+                  children: [
+                    _popupRow('Invoice', invoiceNumber),
+                    const SizedBox(height: 5),
+                    _popupRow('Jewellery', productName),
+                    const SizedBox(height: 5),
+                    _popupRow('Purity & Weight', '$purity • ${weight}g'),
+                    const SizedBox(height: 5),
+                    _popupRow('Paid with Coins', '🪙 ${_formatNumber(coinsUsed)} AUG Coins'),
+                    const SizedBox(height: 5),
+                    _popupRow('Invoice Value', rupees(totalAmount)),
+                    const SizedBox(height: 5),
+                    _popupRow('Date', createdAt.length >= 10 ? createdAt.substring(0, 10) : createdAt),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF03100D),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: const Color(0x33D4AF37), width: 0.5),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.location_on_outlined, color: HeritageTheme.goldPrimary, size: 16),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Delivery to: $deliveryName\n$deliveryAddress',
+                        style: GoogleFonts.inter(fontSize: 10.5, color: HeritageTheme.textMutedDark, height: 1.3),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 18),
+              ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.of(dCtx).pop();
+                  AthiraiReceiptHelper.downloadAndPrintReceipt(context, order);
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: HeritageTheme.goldPrimary,
+                  foregroundColor: const Color(0xFF041814),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                icon: const Icon(Icons.picture_as_pdf_rounded, size: 16),
+                label: Text(
+                  'Download Receipt (PDF)',
+                  style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700),
+                ),
+              ),
+              const SizedBox(height: 6),
+              TextButton(
+                onPressed: () => Navigator.of(dCtx).pop(),
+                child: Text('Close / மூடு', style: GoogleFonts.inter(fontSize: 12, color: HeritageTheme.textMutedDark)),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _popupRow(String label, String value) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(label, style: GoogleFonts.inter(fontSize: 11, color: HeritageTheme.textMutedDark)),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            value,
+            textAlign: TextAlign.end,
+            style: GoogleFonts.inter(fontSize: 11.5, fontWeight: FontWeight.w600, color: HeritageTheme.textLight),
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
     );
   }
 

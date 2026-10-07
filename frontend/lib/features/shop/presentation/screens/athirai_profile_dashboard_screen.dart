@@ -705,12 +705,7 @@ class _AthiraiProfileDashboardScreenState extends State<AthiraiProfileDashboardS
                       state: stateCtrl.text.trim(),
                     );
                     Navigator.of(ctx).pop();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        backgroundColor: Color(0xFF061B16),
-                        content: Text('Delivery Address updated successfully!'),
-                      ),
-                    );
+                    _showAddressSavedDialog(context);
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: HeritageTheme.goldPrimary,
@@ -727,6 +722,58 @@ class _AthiraiProfileDashboardScreenState extends State<AthiraiProfileDashboardS
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  void _showAddressSavedDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (dCtx) => AlertDialog(
+        backgroundColor: const Color(0xFF061B16),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: const BorderSide(color: HeritageTheme.goldBorder, width: 1.1),
+        ),
+        title: Row(
+          children: [
+            const Icon(Icons.check_circle_rounded, color: Color(0xFF10B981), size: 24),
+            const SizedBox(width: 8),
+            Text(
+              'Address Saved!',
+              style: GoogleFonts.cormorantGaramond(
+                fontSize: 22,
+                fontWeight: FontWeight.w700,
+                color: HeritageTheme.textLight,
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'விநியோக முகவரி வெற்றிகரமாக சேமிக்கப்பட்டது.',
+              style: GoogleFonts.inter(fontSize: 12, color: HeritageTheme.goldBright),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              '${widget.store.deliveryName} • ${widget.store.deliveryPhone}\n${widget.store.doorNo}, ${widget.store.streetName}, ${widget.store.city} - ${widget.store.pincode}',
+              style: GoogleFonts.inter(fontSize: 12.5, color: HeritageTheme.textLight, height: 1.4),
+            ),
+          ],
+        ),
+        actions: [
+          ElevatedButton(
+            onPressed: () => Navigator.of(dCtx).pop(),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: HeritageTheme.goldPrimary,
+              foregroundColor: const Color(0xFF041814),
+            ),
+            child: const Text('OK / சரி'),
+          ),
+        ],
       ),
     );
   }
@@ -830,18 +877,88 @@ class _AthiraiProfileDashboardScreenState extends State<AthiraiProfileDashboardS
                 source: descCtrl.text.trim(),
               );
               if (!mounted) return;
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  backgroundColor: const Color(0xFF030D0A),
-                  content: Text('Successfully generated & credited ${_formatCoins(amount)} AUG Coins!'),
-                ),
-              );
+              _showCoinGeneratedSuccessDialog(context, amount);
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: HeritageTheme.goldPrimary,
               foregroundColor: const Color(0xFF030D0A),
             ),
             child: const Text('Generate & Credit'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showCoinGeneratedSuccessDialog(BuildContext context, double amount) {
+    showDialog(
+      context: context,
+      builder: (dCtx) => AlertDialog(
+        backgroundColor: const Color(0xFF061B16),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: const BorderSide(color: HeritageTheme.goldBorder, width: 1.1),
+        ),
+        title: Row(
+          children: [
+            const Icon(Icons.stars_rounded, color: HeritageTheme.goldBright, size: 26),
+            const SizedBox(width: 8),
+            Text(
+              'AUG Coins Credited!',
+              style: GoogleFonts.cormorantGaramond(
+                fontSize: 22,
+                fontWeight: FontWeight.w700,
+                color: HeritageTheme.textLight,
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'AUG நாணயங்கள் கணக்கில் வரவு வைக்கப்பட்டது.',
+              style: GoogleFonts.inter(fontSize: 12, color: HeritageTheme.goldBright),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFF030D0A),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: HeritageTheme.goldBorderSubtle, width: 0.8),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '+${_formatCoins(amount)} AUG Coins',
+                    style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800, color: HeritageTheme.goldBright),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Gold Value: ₹${(amount / 100).toStringAsFixed(0)} (1 Rupee = 100 Coins)',
+                    style: GoogleFonts.inter(fontSize: 11.5, color: const Color(0xFF10B981)),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Total Vault: ${_formatCoins(widget.store.augCoins)} Coins',
+                    style: GoogleFonts.inter(fontSize: 11, color: HeritageTheme.textMutedDark),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          ElevatedButton(
+            onPressed: () => Navigator.of(dCtx).pop(),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: HeritageTheme.goldPrimary,
+              foregroundColor: const Color(0xFF041814),
+            ),
+            child: const Text('Done / முடிந்தது'),
           ),
         ],
       ),

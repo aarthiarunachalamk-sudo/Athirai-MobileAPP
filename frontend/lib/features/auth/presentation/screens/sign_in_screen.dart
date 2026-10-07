@@ -172,10 +172,8 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
           MaterialPageRoute(builder: (_) => const CompleteProfileScreen()),
         );
       } else {
-        if (earnedReward && mounted) {
-          _showDailyRewardClaimedDialog(context);
-        } else {
-          _navigateToProfileDashboard();
+        if (mounted) {
+          _showDailyRewardClaimedDialog(context, isNewClaim: earnedReward);
         }
       }
     } else {
@@ -186,7 +184,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
     }
   }
 
-  void _showDailyRewardClaimedDialog(BuildContext context) {
+  void _showDailyRewardClaimedDialog(BuildContext context, {bool isNewClaim = true}) {
     final store = ShopStore.session;
     showDialog<void>(
       context: context,
@@ -248,16 +246,25 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
 
               // Title
               Text(
-                'Royal Login Reward!',
+                isNewClaim ? 'Login Successful & Daily Reward!' : 'Welcome Back, Royal Patron!',
                 style: GoogleFonts.cormorantGaramond(
-                  fontSize: 26,
+                  fontSize: 24,
                   fontWeight: FontWeight.w700,
                   color: const Color(0xFFF7F2E8),
                   letterSpacing: 0.5,
                 ),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 4),
+              Text(
+                isNewClaim ? 'உள்நுழைவு வெற்றி & தினசரி AUG Coins வரவு' : 'சுயவிவர அறைக்குள் நுழைய தயாராக உள்ளது',
+                style: GoogleFonts.inter(
+                  fontSize: 11.5,
+                  color: const Color(0xFFFFDF7A),
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 10),
 
               // Credit Reward Badge
               Container(
@@ -273,9 +280,9 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                     const Icon(Icons.stars_rounded, color: Color(0xFFFFDF7A), size: 16),
                     const SizedBox(width: 6),
                     Text(
-                      '+1 AUG Coin Earned (1 Credit)',
+                      isNewClaim ? '+100 AUG Coins Earned (₹1 Reward)' : 'AUG Vault Active (1 Rupee = 100 Coins)',
                       style: GoogleFonts.inter(
-                        fontSize: 12.5,
+                        fontSize: 12,
                         fontWeight: FontWeight.w700,
                         color: const Color(0xFFFFDF7A),
                       ),
@@ -286,9 +293,11 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
               const SizedBox(height: 14),
 
               Text(
-                'Welcome to Athirai! As your daily patron privilege, 1 credit reward has been deposited into your vault.',
+                isNewClaim
+                    ? 'Welcome to Athirai! As your daily patron privilege, 100 AUG Coins reward has been deposited into your vault.'
+                    : 'Your session is active. You can now access your Profile Dashboard, jewellery collections, and purchase gold using AUG Coins.',
                 style: GoogleFonts.inter(
-                  fontSize: 13,
+                  fontSize: 12.5,
                   height: 1.45,
                   color: const Color(0xFFD1DFDE),
                 ),

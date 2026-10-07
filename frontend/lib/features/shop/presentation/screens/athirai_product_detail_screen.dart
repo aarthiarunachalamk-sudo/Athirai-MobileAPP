@@ -1437,19 +1437,8 @@ class _AthiraiProductDetailScreenState
                       borderRadius: BorderRadius.circular(24),
                       onTap: () {
                         widget.store.addToCart(productId, 1);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              'Added to Cart (Qty: ${widget.store.quantity(productId)})',
-                            ),
-                            duration: const Duration(seconds: 1),
-                            action: SnackBarAction(
-                              label: 'VIEW CART',
-                              textColor: HeritageTheme.goldBright,
-                              onPressed: widget.onOpenBag,
-                            ),
-                          ),
-                        );
+                        final prod = widget.product ?? widget.store.findProduct(productId) ?? widget.store.products.first;
+                        _showAddedToCartPopup(context, prod);
                       },
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -1552,6 +1541,133 @@ class _AthiraiProductDetailScreenState
           ),
         );
       },
+    );
+  }
+
+  void _showAddedToCartPopup(BuildContext context, ShopProduct product) {
+    final qty = widget.store.quantity(product.id);
+    final coinsNeeded = product.price * 100;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (bCtx) => Container(
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+        decoration: const BoxDecoration(
+          color: Color(0xFF041511),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          border: Border(top: BorderSide(color: HeritageTheme.goldBorder, width: 1.2)),
+        ),
+        child: SafeArea(
+          top: false,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Center(
+                child: Container(
+                  width: 44,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: HeritageTheme.goldBorderSubtle,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: const BoxDecoration(
+                      color: Color(0x2210B981),
+                      shape: BoxShape.circle,
+                      border: Border.fromBorderSide(
+                        BorderSide(color: Color(0xFF10B981), width: 1.2),
+                      ),
+                    ),
+                    child: const Icon(Icons.check_circle_rounded, color: Color(0xFF10B981), size: 22),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Added to Cart / கூடையில் சேர்க்கப்பட்டது',
+                          style: GoogleFonts.cormorantGaramond(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                            color: HeritageTheme.textLight,
+                          ),
+                        ),
+                        Text(
+                          '${product.name} (Qty: $qty)',
+                          style: GoogleFonts.inter(fontSize: 12, color: HeritageTheme.goldBright),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF07211B),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: HeritageTheme.goldBorderSubtle, width: 0.6),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Gold Value: ${product.item.priceFormatted}',
+                      style: GoogleFonts.inter(fontSize: 12, color: HeritageTheme.textLight),
+                    ),
+                    Text(
+                      '🪙 $coinsNeeded AUG Coins',
+                      style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700, color: HeritageTheme.goldBright),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 18),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.of(bCtx).pop(),
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: HeritageTheme.goldBorder),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: const Text('Continue Shopping', style: TextStyle(color: HeritageTheme.goldBright, fontSize: 12)),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.of(bCtx).pop();
+                        widget.onOpenBag();
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: HeritageTheme.goldPrimary,
+                        foregroundColor: const Color(0xFF041814),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: const Text('View Cart & Pay', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12)),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

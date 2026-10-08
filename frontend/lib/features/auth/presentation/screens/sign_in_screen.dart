@@ -96,6 +96,8 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
       final digits = id.replaceAll(RegExp(r'\D'), '');
       if (digits.length < 10) {
         idErr = 'Please enter a valid 10-digit phone number.';
+      } else if (digits.length == 10 && !RegExp(r'^[6-9]').hasMatch(digits)) {
+        idErr = 'Phone numbers must start with 6, 7, 8, or 9.';
       }
     } else if (id.length < 3) {
       idErr = 'Identifier must be at least 3 characters.';
@@ -1411,6 +1413,24 @@ class _ForgotPasswordSheetState extends State<_ForgotPasswordSheet> {
     if (identifier.isEmpty) {
       setState(() => _errorMessage = 'Please enter your email or mobile number.');
       return;
+    }
+
+    if (identifier.contains('@')) {
+      final emailRegex = RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$');
+      if (!emailRegex.hasMatch(identifier)) {
+        setState(() => _errorMessage = 'Please enter a valid email address.');
+        return;
+      }
+    } else {
+      final digits = identifier.replaceAll(RegExp(r'\D'), '');
+      if (digits.length < 10) {
+        setState(() => _errorMessage = 'Please enter a valid 10-digit mobile number.');
+        return;
+      }
+      if (digits.length == 10 && !RegExp(r'^[6-9]').hasMatch(digits)) {
+        setState(() => _errorMessage = 'Mobile numbers must start with 6, 7, 8, or 9.');
+        return;
+      }
     }
 
     setState(() {

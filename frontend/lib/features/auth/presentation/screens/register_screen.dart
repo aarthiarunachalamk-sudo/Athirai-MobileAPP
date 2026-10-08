@@ -104,6 +104,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       final digits = mobile.replaceAll(RegExp(r'\D'), '');
       if (digits.length < 10) {
         mobileErr = 'Please enter a valid 10-digit mobile number.';
+      } else if (digits.length == 10 && !RegExp(r'^[6-9]').hasMatch(digits)) {
+        mobileErr = 'Mobile number must start with 6, 7, 8, or 9.';
       }
     }
 

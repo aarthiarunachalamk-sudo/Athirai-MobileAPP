@@ -8,6 +8,7 @@ import 'core/theme/app_theme.dart';
 import 'features/auth/data/services/secure_storage_service.dart';
 import 'features/auth/presentation/controllers/auth_controller.dart';
 import 'features/vault_cms/presentation/screens/shell/vault_app_root.dart';
+import 'features/shop/presentation/screens/athirai_flow_container.dart';
 
 
 
@@ -125,12 +126,27 @@ class _AthiraiGatekeeperState extends ConsumerState<AthiraiGatekeeper> {
 
     // Responsive Experience Gatekeeper:
     // On web / desktop (width >= 800) -> Open Vault CMS & Platform
-    // On mobile devices -> Open mobile experience (with quick switcher to Vault CMS)
+    // On mobile devices (< 800) -> Open mobile client app directly
     return LayoutBuilder(
       builder: (context, constraints) {
         final isDesktopOrWeb = constraints.maxWidth >= 800;
-        return VaultAppRoot(
-          startInClientExperience: !isDesktopOrWeb && _isAuthenticated,
+        if (!isDesktopOrWeb) {
+          return AthiraiFlowContainer(
+            initialScreenIndex: _isAuthenticated ? 1 : 0,
+            onSignOut: () async {
+              final storage = SecureStorageService();
+              await storage.clearSession();
+              if (mounted) {
+                setState(() {
+                  _isAuthenticated = false;
+                });
+              }
+            },
+          );
+        }
+
+        return const VaultAppRoot(
+          startInClientExperience: false,
         );
       },
     );

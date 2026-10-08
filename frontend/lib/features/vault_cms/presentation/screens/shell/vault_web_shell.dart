@@ -300,65 +300,69 @@ class _VaultWebShellState extends State<VaultWebShell> {
           bottom: BorderSide(color: VaultTokens.borderGoldMuted, width: 1.0),
         ),
       ),
-      child: Row(
-        children: [
-          // Live Gold Ticker Pill
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-            decoration: BoxDecoration(
-              color: const Color(0x400A2520),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: VaultTokens.borderGoldMuted),
-            ),
-            child: Row(
-              children: [
-                const Icon(Icons.fiber_manual_record, color: Color(0xFF66BB6A), size: 10),
-                const SizedBox(width: 8),
-                Text(
-                  '22K GOLD: ₹${_metalRates.gold22k}/g  •  24K: ₹${_metalRates.gold24k}/g  •  SILVER: ₹${_metalRates.silver999}/g',
-                  style: GoogleFonts.inter(fontSize: 11.5, fontWeight: FontWeight.w600, color: VaultTokens.champagneGold),
-                ),
-              ],
-            ),
-          ),
-          const Spacer(),
-
-          // Switch to Client Experience Mode Button
-          LuxuryCapsuleButton(
-            label: 'Open Mobile Client App',
-            icon: Icons.phone_iphone,
-            onPressed: widget.onSwitchToClientExperience,
-          ),
-          const SizedBox(width: 14),
-
-          // User Profile Pill
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              color: const Color(0x400C2C24),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: VaultTokens.borderGoldMuted),
-            ),
-            child: Row(
-              children: [
-                ClipOval(
-                  child: Image.asset(
-                    'assets/images/athirai_profile_avatar.png',
-                    width: 28,
-                    height: 28,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) => const Icon(Icons.person, size: 20, color: VaultTokens.antiqueGold),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        physics: const BouncingScrollPhysics(),
+        child: Row(
+          children: [
+            // Live Gold Ticker Pill
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+              decoration: BoxDecoration(
+                color: const Color(0x400A2520),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: VaultTokens.borderGoldMuted),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.fiber_manual_record, color: Color(0xFF66BB6A), size: 10),
+                  const SizedBox(width: 8),
+                  Text(
+                    '22K GOLD: ₹${_metalRates.gold22k}/g  •  24K: ₹${_metalRates.gold24k}/g  •  SILVER: ₹${_metalRates.silver999}/g',
+                    style: GoogleFonts.inter(fontSize: 11.5, fontWeight: FontWeight.w600, color: VaultTokens.champagneGold),
                   ),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  'Ananya Sharma',
-                  style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: VaultTokens.warmIvory),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        ],
+            const SizedBox(width: 16),
+
+            // Switch to Client Experience Mode Button
+            LuxuryCapsuleButton(
+              label: 'Open Mobile Client App',
+              icon: Icons.phone_iphone,
+              onPressed: widget.onSwitchToClientExperience,
+            ),
+            const SizedBox(width: 14),
+
+            // User Profile Pill
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: const Color(0x400C2C24),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: VaultTokens.borderGoldMuted),
+              ),
+              child: Row(
+                children: [
+                  ClipOval(
+                    child: Image.asset(
+                      'assets/images/athirai_profile_avatar.png',
+                      width: 28,
+                      height: 28,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) => const Icon(Icons.person, size: 20, color: VaultTokens.antiqueGold),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Ananya Sharma',
+                    style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: VaultTokens.warmIvory),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

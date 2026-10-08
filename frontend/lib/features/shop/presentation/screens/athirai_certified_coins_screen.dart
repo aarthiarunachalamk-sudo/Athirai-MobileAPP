@@ -363,7 +363,7 @@ class _AthiraiCertifiedCoinsScreenState
 
   Widget _buildTopHeader() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: const BoxDecoration(
         color: Color(0xCC061B18),
         border: Border(bottom: BorderSide(color: Color(0x22C7A45B), width: 0.8)),
@@ -371,6 +371,8 @@ class _AthiraiCertifiedCoinsScreenState
       child: Row(
         children: [
           IconButton(
+            padding: const EdgeInsets.all(4),
+            constraints: const BoxConstraints(),
             icon: const Icon(
               Icons.arrow_back_ios_new_rounded,
               color: Color(0xFFC7A45B),
@@ -381,42 +383,50 @@ class _AthiraiCertifiedCoinsScreenState
           const SizedBox(width: 4),
 
           // Live Gold Rate Ticker in Header
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              color: const Color(0x26C7A45B),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0x4DC7A45B)),
-            ),
-            child: Row(
-              children: [
-                const Icon(Icons.show_chart_rounded, size: 13, color: Color(0xFFFFDF7A)),
-                const SizedBox(width: 5),
-                Text(
-                  "Today's Gold Rate 22K: Rs. ${_formatNumber(widget.store.rates.gold22k)}/-",
-                  style: GoogleFonts.inter(
-                    fontSize: 10.5,
-                    fontWeight: FontWeight.w700,
-                    color: const Color(0xFFFFDF7A),
-                  ),
+          Expanded(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: const Color(0x26C7A45B),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0x4DC7A45B)),
                 ),
-              ],
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.show_chart_rounded, size: 13, color: Color(0xFFFFDF7A)),
+                    const SizedBox(width: 5),
+                    Text(
+                      "Today's Gold Rate 22K: Rs. ${_formatNumber(widget.store.rates.gold22k)}/-",
+                      style: GoogleFonts.inter(
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w700,
+                        color: const Color(0xFFFFDF7A),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
-          const Spacer(),
+          const SizedBox(width: 6),
 
           // AUG Coin Pill
           InkWell(
             onTap: widget.onOpenRecharge,
             borderRadius: BorderRadius.circular(16),
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
                 color: const Color(0xFF0B2E28),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: const Color(0xFFD4AF37), width: 0.9),
               ),
               child: Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Container(
                     width: 14,
@@ -436,11 +446,11 @@ class _AthiraiCertifiedCoinsScreenState
                       ),
                     ),
                   ),
-                  const SizedBox(width: 6),
+                  const SizedBox(width: 5),
                   Text(
                     'AUG ${_formatNumber(widget.store.augCoins)}',
                     style: GoogleFonts.inter(
-                      fontSize: 11,
+                      fontSize: 10.5,
                       fontWeight: FontWeight.w800,
                       color: const Color(0xFFFFDF7A),
                     ),
@@ -449,10 +459,12 @@ class _AthiraiCertifiedCoinsScreenState
               ),
             ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 4),
 
           // Cart Icon
           IconButton(
+            padding: const EdgeInsets.all(4),
+            constraints: const BoxConstraints(),
             icon: Stack(
               clipBehavior: Clip.none,
               children: [
@@ -628,36 +640,40 @@ class _AthiraiCertifiedCoinsScreenState
   }
 
   Widget _buildFilterTabs() {
-    return Row(
-      children: _metalTabs.map((tab) {
-        final isSelected = _selectedTab == tab;
-        return Padding(
-          padding: const EdgeInsets.only(right: 8.0),
-          child: InkWell(
-            onTap: () => setState(() => _selectedTab = tab),
-            borderRadius: BorderRadius.circular(20),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              decoration: BoxDecoration(
-                color: isSelected ? const Color(0xFF0E3831) : const Color(0x33020907),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: isSelected ? const Color(0xFFD4AF37) : const Color(0x33C7A45B),
-                  width: isSelected ? 1.4 : 0.8,
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      physics: const BouncingScrollPhysics(),
+      child: Row(
+        children: _metalTabs.map((tab) {
+          final isSelected = _selectedTab == tab;
+          return Padding(
+            padding: const EdgeInsets.only(right: 8.0),
+            child: InkWell(
+              onTap: () => setState(() => _selectedTab = tab),
+              borderRadius: BorderRadius.circular(20),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  color: isSelected ? const Color(0xFF0E3831) : const Color(0x33020907),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: isSelected ? const Color(0xFFD4AF37) : const Color(0x33C7A45B),
+                    width: isSelected ? 1.4 : 0.8,
+                  ),
                 ),
-              ),
-              child: Text(
-                tab,
-                style: GoogleFonts.inter(
-                  fontSize: 12,
-                  fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
-                  color: isSelected ? const Color(0xFFFFDF7A) : const Color(0xFFA2B4AF),
+                child: Text(
+                  tab,
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                    color: isSelected ? const Color(0xFFFFDF7A) : const Color(0xFFA2B4AF),
+                  ),
                 ),
               ),
             ),
-          ),
-        );
-      }).toList(),
+          );
+        }).toList(),
+      ),
     );
   }
 
@@ -854,7 +870,7 @@ class _AthiraiCertifiedCoinsScreenState
       itemCount: coins.length,
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
-        childAspectRatio: 0.62,
+        childAspectRatio: 0.58,
         crossAxisSpacing: 12,
         mainAxisSpacing: 14,
       ),

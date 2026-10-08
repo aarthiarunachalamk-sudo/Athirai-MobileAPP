@@ -36,11 +36,17 @@ from .views import (
     OrderReceiptPdfView,
     ManualCoinCreditView,
 )
+from .registration_otp_views import (
+    RegistrationOTPResendView,
+    RegistrationOTPVerifyView,
+)
 
 urlpatterns = [
     # Core Authentication
     path('login/', LoginView.as_view(), name='auth_login'),
     path('register/', RegisterView.as_view(), name='auth_register'),
+    path('register/verify-otp/', RegistrationOTPVerifyView.as_view(), name='auth_register_verify_otp'),
+    path('register/resend-otp/', RegistrationOTPResendView.as_view(), name='auth_register_resend_otp'),
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('logout/', LogoutView.as_view(), name='auth_logout'),
     path('password/forgot/', ForgotPasswordRequestView.as_view(), name='auth_forgot_password'),
@@ -86,4 +92,3 @@ urlpatterns = [
     path('mock-idp/authorize/', MockIdPAuthorizeView.as_view(), name='mock_idp_authorize'),
     path('mock-idp/verify-mfa/', MockIdPVerifyMFAView.as_view(), name='mock_idp_verify_mfa'),
 ]
-

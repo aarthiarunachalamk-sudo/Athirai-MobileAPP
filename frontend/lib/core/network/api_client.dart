@@ -1,7 +1,9 @@
 import 'dart:convert';
 import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+
 import '../../features/auth/data/services/secure_storage_service.dart';
 import 'api_endpoints.dart';
 
@@ -24,8 +26,8 @@ class ApiClient {
   final http.Client _client;
 
   ApiClient({SecureStorageService? storage, http.Client? client})
-      : _storage = storage ?? SecureStorageService(),
-        _client = client ?? http.Client();
+    : _storage = storage ?? SecureStorageService(),
+      _client = client ?? http.Client();
 
   Map<String, String> _defaultHeaders([String? token]) {
     final headers = {
@@ -52,7 +54,8 @@ class ApiClient {
         final candidateUrl = currentUrl.startsWith(currentBase)
             ? currentUrl.replaceFirst(currentBase, candidate)
             : currentUrl;
-        final res = await execute(candidateUrl).timeout(const Duration(seconds: 4));
+        final res = await execute(candidateUrl)
+            .timeout(const Duration(seconds: 4));
         if (res.statusCode > 0) {
           ApiEndpoints.setBaseUrl(candidate);
           return res;
@@ -62,20 +65,23 @@ class ApiClient {
     return null;
   }
 
-  Future<ApiResponse<Map<String, dynamic>>> get(String url, {bool requireAuth = true}) async {
+  Future<ApiResponse<Map<String, dynamic>>> get(
+    String url, {
+    bool requireAuth = true,
+  }) async {
     try {
       String? token = await _storage.getAccessToken();
 
       http.Response response;
       try {
-        response = await _client.get(
-          Uri.parse(url),
-          headers: _defaultHeaders(token),
-        ).timeout(const Duration(seconds: 5));
+        response = await _client
+            .get(Uri.parse(url), headers: _defaultHeaders(token))
+            .timeout(const Duration(seconds: 5));
       } catch (_) {
         final fallback = await _retryFallback(
           url,
-          (target) => _client.get(Uri.parse(target), headers: _defaultHeaders(token)),
+          (target) =>
+              _client.get(Uri.parse(target), headers: _defaultHeaders(token)),
         );
         if (fallback != null) {
           response = fallback;
@@ -110,17 +116,20 @@ class ApiClient {
     String url, {
     Map<String, dynamic>? body,
     bool requireAuth = false,
+    Duration timeout = const Duration(seconds: 5),
   }) async {
     try {
       String? token = await _storage.getAccessToken();
 
       http.Response response;
       try {
-        response = await _client.post(
-          Uri.parse(url),
-          headers: _defaultHeaders(token),
-          body: jsonEncode(body ?? {}),
-        ).timeout(const Duration(seconds: 5));
+        response = await _client
+            .post(
+              Uri.parse(url),
+              headers: _defaultHeaders(token),
+              body: jsonEncode(body ?? {}),
+            )
+            .timeout(timeout);
       } catch (_) {
         final fallback = await _retryFallback(
           url,
@@ -170,11 +179,13 @@ class ApiClient {
 
       http.Response response;
       try {
-        response = await _client.put(
-          Uri.parse(url),
-          headers: _defaultHeaders(token),
-          body: jsonEncode(body ?? {}),
-        ).timeout(const Duration(seconds: 5));
+        response = await _client
+            .put(
+              Uri.parse(url),
+              headers: _defaultHeaders(token),
+              body: jsonEncode(body ?? {}),
+            )
+            .timeout(const Duration(seconds: 5));
       } catch (_) {
         final fallback = await _retryFallback(
           url,
@@ -240,7 +251,9 @@ class ApiClient {
         final file = await http.MultipartFile.fromPath(fileField, filePath);
         request.files.add(file);
 
-        final streamed = await _client.send(request).timeout(const Duration(seconds: 15));
+        final streamed = await _client
+            .send(request)
+            .timeout(const Duration(seconds: 15));
         return http.Response.fromStream(streamed);
       }
 
@@ -307,7 +320,9 @@ class ApiClient {
     try {
       final body = jsonDecode(response.body) as Map<String, dynamic>;
       final isSuccess = response.statusCode >= 200 && response.statusCode < 300;
-      final errorMessage = !isSuccess ? (body['message'] ?? body['detail'] ?? 'An error occurred') : null;
+      final errorMessage = !isSuccess
+          ? (body['message'] ?? body['detail'] ?? 'An error occurred')
+          : null;
 
       return ApiResponse(
         isSuccess: isSuccess,

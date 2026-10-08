@@ -19,92 +19,124 @@ void main() {
       store = ShopStore(autoLoadBackend: false);
     });
 
-    testWidgets('1. Registration Flow: Validations, Popups, and Welcome Bonus', (tester) async {
-      tester.view.physicalSize = const Size(800, 1600);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
-
-      await tester.pumpWidget(
-        const ProviderScope(
-          child: MaterialApp(
-            home: RegisterScreen(),
+    testWidgets(
+      'Signup OTP screen requires separate email and mobile codes',
+      (tester) async {
+        await tester.pumpWidget(
+          ProviderScope(
+            child: MaterialApp(
+              home: AthiraiOtpVerificationScreen(
+                registrationEmail: 'member@example.com',
+                mobileNumber: '9876543210',
+                phoneNumber: '+91 98765 43210',
+                emailInitiallySent: false,
+                mobileInitiallySent: false,
+              ),
+            ),
           ),
-        ),
-      );
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 300));
+        );
+        await tester.pump();
 
-      expect(find.text('Create Your Account'), findsOneWidget);
+        expect(find.text('Verify Your Email & Mobile'), findsOneWidget);
+        expect(find.text('EMAIL CODE'), findsOneWidget);
+        expect(find.text('SMS CODE'), findsOneWidget);
+        expect(find.textContaining('123456'), findsNothing);
+        expect(find.textContaining('Email code was not sent'), findsOneWidget);
+      },
+    );
 
-      // Verify OTP screen renders with registration bonus popup
-      await tester.pumpWidget(
-        MaterialApp(
-          home: AthiraiOtpVerificationScreen(
-            phoneNumber: '+91 98765 43210',
-            onVerified: () {},
+    testWidgets(
+      '1. Registration Flow: Validations, Popups, and Welcome Bonus',
+      (tester) async {
+        tester.view.physicalSize = const Size(800, 1600);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+
+        await tester.pumpWidget(
+          const ProviderScope(child: MaterialApp(home: RegisterScreen())),
+        );
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 300));
+
+        expect(find.text('Create Your Account'), findsOneWidget);
+
+        // Verify OTP screen renders with registration bonus popup
+        await tester.pumpWidget(
+          ProviderScope(
+            child: MaterialApp(
+              home: AthiraiOtpVerificationScreen(
+                phoneNumber: '+91 98765 43210',
+                onVerified: () {},
+              ),
+            ),
           ),
-        ),
-      );
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 300));
+        );
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 300));
 
-      expect(find.text('Verify Your Number'), findsOneWidget);
-      expect(find.textContaining('+91 98765 43210'), findsOneWidget);
-    });
+        expect(find.text('Verify Your Number'), findsOneWidget);
+        expect(find.textContaining('+91 98765 43210'), findsOneWidget);
+      },
+    );
 
-    testWidgets('2. Login Screen: UI elements, Remember Me, Forgot Password & Validation', (tester) async {
-      tester.view.physicalSize = const Size(800, 1600);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
+    testWidgets(
+      '2. Login Screen: UI elements, Remember Me, Forgot Password & Validation',
+      (tester) async {
+        tester.view.physicalSize = const Size(800, 1600);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
 
-      await tester.pumpWidget(
-        const ProviderScope(
-          child: MaterialApp(
-            home: SignInScreen(),
-          ),
-        ),
-      );
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 300));
+        await tester.pumpWidget(
+          const ProviderScope(child: MaterialApp(home: SignInScreen())),
+        );
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 300));
 
-      // Check login form elements
-      expect(find.text('Welcome Back'), findsOneWidget);
-      expect(find.text('Remember me'), findsOneWidget);
-      expect(find.text('Forgot Password?'), findsOneWidget);
+        // Check login form elements
+        expect(find.text('Welcome Back'), findsOneWidget);
+        expect(find.text('Remember me'), findsOneWidget);
+        expect(find.text('Forgot Password?'), findsOneWidget);
 
-      // Tap Forgot Password to open reset modal
-      await tester.tap(find.text('Forgot Password?'));
-      await tester.pumpAndSettle();
+        // Tap Forgot Password to open reset modal
+        await tester.tap(find.text('Forgot Password?'));
+        await tester.pumpAndSettle();
 
-      expect(find.text('Forgot Password'), findsOneWidget);
-      expect(find.text('Send Recovery Code'), findsOneWidget);
-    });
+        expect(find.text('Forgot Password'), findsOneWidget);
+        expect(find.text('Send Recovery Code'), findsOneWidget);
+      },
+    );
 
-    test('3. Daily Login Reward: 1 Credit = 100 AUG Coins generated upon login', () async {
-      final initialVault = store.augCoins;
-      final success = await store.claimDailyLoginReward();
+    test(
+      '3. Daily Login Reward: 1 Credit = 100 AUG Coins generated upon login',
+      () async {
+        final initialVault = store.augCoins;
+        final success = await store.claimDailyLoginReward();
 
-      expect(success, isTrue);
-      expect(store.augCoins, initialVault + 100.0);
-      expect(store.walletHistory.first['coins_credited'], 100.0);
-      expect(store.walletHistory.first['type'], 'reward');
-    });
+        expect(success, isTrue);
+        expect(store.augCoins, initialVault + 100.0);
+        expect(store.walletHistory.first['coins_credited'], 100.0);
+        expect(store.walletHistory.first['type'], 'reward');
+      },
+    );
 
-    test('4. AUG Coins Buying / Recharge via Razorpay (1 INR = 100 Coins)', () async {
-      final initialVault = store.augCoins;
-      // Buy 500 INR worth of coins = 50,000 AUG Coins
-      final ok = await store.buyAUGCoinsViaRazorpay(
-        amountInr: 500.0,
-        mobileNumber: '+91 98765 43210',
-      );
+    test(
+      '4. AUG Coins Buying / Recharge via Razorpay (1 INR = 100 Coins)',
+      () async {
+        final initialVault = store.augCoins;
+        // Buy 500 INR worth of coins = 50,000 AUG Coins
+        final ok = await store.buyAUGCoinsViaRazorpay(
+          amountInr: 500.0,
+          mobileNumber: '+91 98765 43210',
+        );
 
-      expect(ok, isTrue);
-      expect(store.augCoins, initialVault + 50000.0);
-      expect(store.todayCoins, 50000.0);
-      expect(store.todayRechargeAmount, 500.0);
-    });
+        expect(ok, isTrue);
+        expect(store.augCoins, initialVault + 50000.0);
+        expect(store.todayCoins, 50000.0);
+        expect(store.todayRechargeAmount, 500.0);
+      },
+    );
 
     test('5. Purchase using AUG Coins: Insufficient coins validation & successful order', () async {
       store.resetSessionForTest();
@@ -138,7 +170,9 @@ void main() {
       expect(store.myOrders.first['coins_used'], 300000.0);
     });
 
-    testWidgets('6. Profile Dashboard & Navigation: Vault and Orders', (tester) async {
+    testWidgets('6. Profile Dashboard & Navigation: Vault and Orders', (
+      tester,
+    ) async {
       tester.view.physicalSize = const Size(800, 1600);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
@@ -148,10 +182,7 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
-          home: AthiraiProfileDashboardScreen(
-            store: store,
-            onBack: () {},
-          ),
+          home: AthiraiProfileDashboardScreen(store: store, onBack: () {}),
         ),
       );
       await tester.pump();
@@ -176,10 +207,7 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
-          home: AthiraiOrderSummaryScreen(
-            store: store,
-            onBack: () {},
-          ),
+          home: AthiraiOrderSummaryScreen(store: store, onBack: () {}),
         ),
       );
       await tester.pump();
@@ -189,7 +217,9 @@ void main() {
       expect(find.text('Lotus Temple Necklace'), findsOneWidget);
       expect(find.text('Download Receipt'), findsOneWidget);
 
-      final pdfBytes = await AthiraiReceiptHelper.getOrGenerateReceiptPdf(store.myOrders.first);
+      final pdfBytes = await AthiraiReceiptHelper.getOrGenerateReceiptPdf(
+        store.myOrders.first,
+      );
       expect(pdfBytes, isNotEmpty);
       expect(pdfBytes.length, greaterThan(1000));
     });

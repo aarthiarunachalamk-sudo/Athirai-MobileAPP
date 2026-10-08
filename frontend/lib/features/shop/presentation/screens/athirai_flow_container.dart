@@ -8,6 +8,7 @@ import 'athirai_product_detail_screen.dart';
 import 'athirai_splash_screen.dart';
 import 'athirai_wishlist_screen.dart';
 import 'athirai_recharge_screen.dart';
+import 'athirai_certified_coins_screen.dart';
 import 'athirai_order_summary_screen.dart';
 import 'athirai_profile_dashboard_screen.dart';
 import '../widgets/athirai_purchase_sheet.dart';
@@ -95,6 +96,7 @@ class _AthiraiFlowContainerState extends State<AthiraiFlowContainer> {
       onSelectProfile: () => _navigateTo(9),
       onSelectOrders: () => _navigateTo(8),
       onSelectRecharge: () => _navigateTo(7),
+      onSelectCoins: () => _navigateTo(10),
       onSelectCollections: () => _navigateTo(2),
       onSelectWishlist: () => _navigateTo(6),
       onSelectCart: () => _navigateTo(4),
@@ -159,6 +161,7 @@ class _AthiraiFlowContainerState extends State<AthiraiFlowContainer> {
           onOpenWishlist: () => _navigateTo(6),
           onOpenSearch: () => _navigateTo(2),
           onOpenRecharge: () => _navigateTo(7),
+          onOpenCoins: () => _navigateTo(10),
           onLotusTap: () => _navigateTo(3),
           onOpenStudio: () => _navigateTo(3),
           onSignOut: _handleSignOut,
@@ -228,7 +231,7 @@ class _AthiraiFlowContainerState extends State<AthiraiFlowContainer> {
         return AthiraiRechargeScreen(
           store: store,
           onBack: _navigateBack,
-          onBuyGoldWithCoins: () => _navigateTo(2),
+          onBuyGoldWithCoins: () => _navigateTo(10),
         );
       case 8:
         return AthiraiOrderSummaryScreen(
@@ -247,6 +250,15 @@ class _AthiraiFlowContainerState extends State<AthiraiFlowContainer> {
           onOpenRecharge: () => _navigateTo(7),
           onSignOut: _handleSignOut,
         );
+      case 10:
+        return AthiraiCertifiedCoinsScreen(
+          store: store,
+          onBack: _navigateBack,
+          onOpenProduct: (product) => _navigateTo(3, product: product),
+          onOpenBag: () => _navigateTo(4),
+          onOpenWishlist: () => _navigateTo(6),
+          onOpenRecharge: () => _navigateTo(7),
+        );
       default:
         return AthiraiHomeScreen(
           store: store,
@@ -256,6 +268,7 @@ class _AthiraiFlowContainerState extends State<AthiraiFlowContainer> {
           onOpenWishlist: () => _navigateTo(6),
           onOpenSearch: () => _navigateTo(2),
           onOpenRecharge: () => _navigateTo(7),
+          onOpenCoins: () => _navigateTo(10),
           onLotusTap: () => _navigateTo(3),
           onOpenStudio: () => _navigateTo(3),
           onSignOut: _handleSignOut,
@@ -276,6 +289,7 @@ class _AthiraiFlowContainerState extends State<AthiraiFlowContainer> {
       '07 Recharge & AUG Coins',
       '08 Order Summary',
       '09 Profile Dashboard',
+      '10 Certified Coins',
     ];
 
 

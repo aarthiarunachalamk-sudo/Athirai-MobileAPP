@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/network/api_client.dart';
 import '../../data/models/organization_model.dart';
 import '../../data/models/user_model.dart';
 import '../../data/repositories/auth_repository.dart';
@@ -147,7 +148,7 @@ class AuthController extends Notifier<AuthState> {
     }
   }
 
-  Future<bool> register({
+  Future<Map<String, bool>?> register({
     required String firstName,
     required String lastName,
     required String email,
@@ -187,26 +188,71 @@ class AuthController extends Notifier<AuthState> {
 
       state = state.copyWith(isLoading: false);
       if (response.isSuccess && response.data != null) {
-        final userData = response.data!['user'];
-        final user = userData != null ? UserModel.fromJson(userData) : null;
-        state = state.copyWith(
-          isAuthenticated: true,
-          currentUser: user,
-        );
-        return true;
+        final delivery = response.data!['delivery'];
+        if (delivery is Map) {
+          return {
+            'email_sent': delivery['email_sent'] == true,
+            'mobile_sent': delivery['mobile_sent'] == true,
+          };
+        }
+        return {'email_sent': false, 'mobile_sent': false};
       } else {
         state = state.copyWith(
           errorMessage: response.errorMessage ?? 'Registration failed.',
         );
-        return false;
+        return null;
       }
     } catch (_) {
       state = state.copyWith(
         isLoading: false,
         errorMessage: 'Could not connect to registration service.',
       );
+      return null;
+    }
+  }
+
+  Future<bool> verifyRegistrationOtp({
+    required String email,
+    required String mobileNumber,
+    required String emailOtp,
+    required String mobileOtp,
+  }) async {
+    state = state.copyWith(isLoading: true, clearError: true);
+    late final ApiResponse<Map<String, dynamic>> response;
+    try {
+      response = await _repository.verifyRegistrationOtp(
+        email: email,
+        mobileNumber: mobileNumber,
+        emailOtp: emailOtp,
+        mobileOtp: mobileOtp,
+      );
+    } on Exception catch (error) {
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: 'Could not verify your codes: $error',
+      );
       return false;
     }
+
+    if (response.isSuccess && response.data != null) {
+      final userData = response.data!['user'];
+      final user = userData is Map<String, dynamic>
+          ? UserModel.fromJson(userData)
+          : null;
+      state = state.copyWith(
+        isLoading: false,
+        isAuthenticated: true,
+        currentUser: user,
+        requiresProfileCompletion: user != null && !user.isProfileCompleted,
+      );
+      return true;
+    }
+
+    state = state.copyWith(
+      isLoading: false,
+      errorMessage: response.errorMessage ?? 'Unable to verify your codes.',
+    );
+    return false;
   }
 
   Future<bool> discoverSSO(String email) async {

@@ -175,7 +175,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     final firstName = parts.first;
     final lastName = parts.length > 1 ? parts.sublist(1).join(' ') : 'Customer';
 
-    final ok = await ref.read(authControllerProvider.notifier).register(
+    final delivery = await ref.read(authControllerProvider.notifier).register(
       firstName: firstName,
       lastName: lastName,
       email: email,
@@ -186,11 +186,15 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     if (!mounted) return;
     setState(() => _isLoading = false);
 
-    if (ok) {
+    if (delivery != null) {
       Navigator.of(context).push(
         MaterialPageRoute(
           builder: (_) => AthiraiOtpVerificationScreen(
             phoneNumber: mobile.startsWith('+') ? mobile : '+91 $mobile',
+            registrationEmail: email,
+            mobileNumber: mobile,
+            emailInitiallySent: delivery['email_sent'] ?? false,
+            mobileInitiallySent: delivery['mobile_sent'] ?? false,
           ),
         ),
       );

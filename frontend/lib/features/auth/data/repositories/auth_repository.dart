@@ -76,22 +76,60 @@ class AuthRepository {
         'district': district,
         'state': state,
       },
+      timeout: const Duration(seconds: 30),
+    );
+
+    return response;
+  }
+
+  Future<ApiResponse<Map<String, dynamic>>> verifyRegistrationOtp({
+    required String email,
+    required String mobileNumber,
+    required String emailOtp,
+    required String mobileOtp,
+  }) async {
+    final response = await _apiClient.post(
+      ApiEndpoints.registerVerifyOtp,
+      body: {
+        'email': email,
+        'mobile_number': mobileNumber,
+        'email_otp': emailOtp,
+        'mobile_otp': mobileOtp,
+      },
     );
 
     if (response.isSuccess && response.data != null) {
-      final tokens = response.data!['tokens'];
+      final tokens = response.data!['tokens'] as Map<String, dynamic>?;
       if (tokens != null) {
         await _storage.saveTokens(
-          accessToken: tokens['access'] ?? '',
-          refreshToken: tokens['refresh'] ?? '',
+          accessToken: tokens['access']?.toString() ?? '',
+          refreshToken: tokens['refresh']?.toString() ?? '',
         );
+      }
+      final user = response.data!['user'] as Map<String, dynamic>?;
+      final userEmail = user?['email']?.toString();
+      if (userEmail != null && userEmail.isNotEmpty) {
+        await _storage.saveUserEmail(userEmail);
       }
     }
 
     return response;
   }
 
-  Future<ApiResponse<Map<String, dynamic>>> requestPasswordReset(String identifier) async {
+  Future<ApiResponse<Map<String, dynamic>>> resendRegistrationOtp({
+    required String email,
+    required String mobileNumber,
+  }) async {
+    return _apiClient.post(
+      ApiEndpoints.registerResendOtp,
+      body: {'email': email, 'mobile_number': mobileNumber},
+      timeout: const Duration(seconds: 30),
+    );
+  }
+
+  Future<ApiResponse<Map<String, dynamic>>> requestPasswordReset(
+    String identifier,
+  ) async {
     return await _apiClient.post(
       ApiEndpoints.forgotPassword,
       body: {'identifier': identifier},
@@ -105,11 +143,7 @@ class AuthRepository {
   }) async {
     return await _apiClient.post(
       ApiEndpoints.resetPassword,
-      body: {
-        'identifier': identifier,
-        'otp': otp,
-        'new_password': newPassword,
-      },
+      body: {'identifier': identifier, 'otp': otp, 'new_password': newPassword},
     );
   }
 

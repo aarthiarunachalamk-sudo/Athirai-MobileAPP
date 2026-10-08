@@ -51,11 +51,23 @@ class Command(BaseCommand):
             )
             self.stdout.write(f"  Created patron user: ananya.sharma@athirai.com ({phone})")
 
-        # 3. Seed Live Metal Rates
-        rate, _ = MetalRate.objects.get_or_create(
-            is_active=True,
-            defaults={'gold_24k': 7980, 'gold_22k': 7450, 'gold_18k': 6100, 'silver_999': 98.50}
-        )
+        # 3. Seed Live Metal Rates matching Web Video (22K Gold Rs. 14,250, Silver 999 Rs. 275)
+        rate = MetalRate.objects.filter(is_active=True).first()
+        if not rate:
+            rate = MetalRate.objects.create(
+                is_active=True,
+                gold_24k=15500,
+                gold_22k=14250,
+                gold_18k=11600,
+                silver_999=275.00,
+            )
+        else:
+            rate.gold_24k = 15500
+            rate.gold_22k = 14250
+            rate.gold_18k = 11600
+            rate.silver_999 = 275.00
+            rate.save()
+        self.stdout.write(f"  Live Metal Rates: 22K=Rs.{rate.gold_22k}, Silver 999=Rs.{rate.silver_999}")
 
         # 4. Seed Collections
         collections_data = [
@@ -334,6 +346,103 @@ class Command(BaseCommand):
                 'tags': 'Bangles, Kada, 22K Gold, Elephant, Nakshi',
                 'image_url': 'assets/images/shop_bangle.png',
                 'lifestyle_image_url': 'assets/images/athirai_pedestal_necklace.jpg',
+                'is_featured': True,
+            },
+            # ── Certified Coins from Video Recording ────────────────────────
+            {
+                'name': '50 gm Silver Bar',
+                'category': cat_map['Coins'],
+                'collection': col_map['Heritage Collection'],
+                'sku': 'ATH-SLV-BAR-50G',
+                'short_description': '50.0000 g INCL. 3% GST • Silver 999 Limited Bar',
+                'description': 'Certified 50g Fine Silver 999 Investment Bar stamped with sacred Lakshmi motif and BIS hallmark.',
+                'metal': 'Silver',
+                'purity': 'Silver 999',
+                'weight_grams': 50.000,
+                'making_charge_percent': 5.00,
+                'stone_price': 0,
+                'base_price_override': 14729,
+                'certification': 'BIS Hallmarked Silver 999',
+                'hallmark': 'BIS 999 Silver',
+                'craftsmanship': 'Minted Investment Bullion Bar',
+                'origin': 'Athirai Royal Mint',
+                'stock_quantity': 25,
+                'status': 'Published',
+                'availability': 'In Stock',
+                'tags': 'Silver, Coins, Bar, 50g, 999, Limited',
+                'image_url': 'assets/images/athirai_gold_lotus_1791280119191.jpg',
+                'is_featured': True,
+            },
+            {
+                'name': '2 gm Silver Coin',
+                'category': cat_map['Coins'],
+                'collection': col_map['Heritage Collection'],
+                'sku': 'ATH-SLV-COIN-02G',
+                'short_description': '10.0000 g INCL. 3% GST • Silver 999 Bestseller Coin',
+                'description': 'Certified fine Silver 999 collector coin with traditional peacock and temple filigree medallion.',
+                'metal': 'Silver',
+                'purity': 'Silver 999',
+                'weight_grams': 10.000,
+                'making_charge_percent': 6.00,
+                'stone_price': 0,
+                'base_price_override': 2974,
+                'certification': 'BIS Hallmarked Silver 999',
+                'hallmark': 'BIS 999 Silver',
+                'craftsmanship': 'Temple Medallion Minting',
+                'origin': 'Athirai Royal Mint',
+                'stock_quantity': 50,
+                'status': 'Published',
+                'availability': 'In Stock',
+                'tags': 'Silver, Coins, 2g, 10g, 999, Bestseller',
+                'image_url': 'assets/images/athirai_emerald_crest_1791280010754.jpg',
+                'is_featured': True,
+            },
+            {
+                'name': '50 mg Silver Coin',
+                'category': cat_map['Coins'],
+                'collection': col_map['Heritage Collection'],
+                'sku': 'ATH-SLV-COIN-50M',
+                'short_description': '50.0000 g INCL. 3% GST • Silver 999 Limited Coin',
+                'description': 'Certified fine Silver 999 coin featuring divine Lakshmi medallion and auspicious Kalash motif.',
+                'metal': 'Silver',
+                'purity': 'Silver 999',
+                'weight_grams': 50.000,
+                'making_charge_percent': 5.00,
+                'stone_price': 0,
+                'base_price_override': 14729,
+                'certification': 'BIS Hallmarked Silver 999',
+                'hallmark': 'BIS 999 Silver',
+                'craftsmanship': 'Lakshmi Deity Medallion',
+                'origin': 'Athirai Royal Mint',
+                'stock_quantity': 30,
+                'status': 'Published',
+                'availability': 'In Stock',
+                'tags': 'Silver, Coins, 50g, 999, Limited',
+                'image_url': 'assets/images/athirai_gold_lotus_1791280119191.jpg',
+                'is_featured': True,
+            },
+            {
+                'name': '50 mg Gold Coin',
+                'category': cat_map['Coins'],
+                'collection': col_map['Temple Collection'],
+                'sku': 'ATH-GLD-COIN-50M',
+                'short_description': '10.0000 g INCL. 3% GST • Gold 999 Sacred Deity Coin',
+                'description': 'Certified 24K 999 Pure Gold Coin struck with Lord Ganesha & Lakshmi divine blessings.',
+                'metal': 'Gold',
+                'purity': 'Gold 999',
+                'weight_grams': 10.000,
+                'making_charge_percent': 6.00,
+                'stone_price': 0,
+                'base_price_override': 2974,
+                'certification': 'BIS Hallmarked 24K 999 Gold',
+                'hallmark': 'BIS 999 Gold',
+                'craftsmanship': 'Temple Deity Minting',
+                'origin': 'Athirai Royal Mint',
+                'stock_quantity': 40,
+                'status': 'Published',
+                'availability': 'In Stock',
+                'tags': 'Gold, Coins, 50mg, 10g, 999, Gold Coins, Bestseller',
+                'image_url': 'assets/images/athirai_login_temple_glow_1791285812754.jpg',
                 'is_featured': True,
             },
         ]

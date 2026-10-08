@@ -40,6 +40,8 @@ class ApiEndpoints {
 
   static String get login => '$baseUrl/api/auth/login/';
   static String get register => '$baseUrl/api/auth/register/';
+  static String get registerVerifyOtp => '$baseUrl/api/auth/register/verify-otp/';
+  static String get registerResendOtp => '$baseUrl/api/auth/register/resend-otp/';
   static String get ssoDiscover => '$baseUrl/api/auth/sso/discover/';
   static String get ssoCallback => '$baseUrl/api/auth/sso/callback/';
   static String get tokenRefresh => '$baseUrl/api/auth/token/refresh/';
@@ -78,4 +80,3 @@ class ApiEndpoints {
   static String orderReceiptPdf(String id) => '$baseUrl/api/orders/$id/receipt/';
   static String get manualCoinCredit => '$baseUrl/api/wallet/manual-credit/';
 }
-

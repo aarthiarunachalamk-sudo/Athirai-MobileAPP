@@ -73,6 +73,20 @@ class User(AbstractUser):
         return self.email or self.mobile_number or f'User {self.id}'
 
 
+class RegistrationOTP(models.Model):
+    user = models.OneToOneField(
+        User,
+        on_delete=models.CASCADE,
+        related_name='registration_otp',
+    )
+    email_code_hash = models.CharField(max_length=128)
+    mobile_code_hash = models.CharField(max_length=128)
+    expires_at = models.DateTimeField()
+    failed_attempts = models.PositiveSmallIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+
 class Organization(models.Model):
     """
     Enterprise SSO Organization configuration.
@@ -551,4 +565,3 @@ class WalletTransaction(models.Model):
 
     def __str__(self):
         return f"{self.user} | {self.direction} | {self.coins_credited} Coins ({self.type})"
-

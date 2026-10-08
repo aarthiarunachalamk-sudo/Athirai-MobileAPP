@@ -1423,12 +1423,15 @@ class _ForgotPasswordSheetState extends State<_ForgotPasswordSheet> {
       if (!mounted) return;
 
       if (res.isSuccess) {
-        final token = res.data != null ? res.data!['reset_token']?.toString() : null;
+        final token = (res.data != null
+                ? (res.data!['reset_token'] ?? res.data!['otp'])?.toString()
+                : null) ??
+            '123456';
         setState(() {
           _step = 2;
           _isLoading = false;
           _demoTokenHint = token;
-          if (token != null && token.isNotEmpty) {
+          if (token.isNotEmpty) {
             _tokenCtrl.text = token;
           }
         });

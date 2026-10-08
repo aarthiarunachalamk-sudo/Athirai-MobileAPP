@@ -78,7 +78,7 @@ class RegisterRequestSerializer(serializers.Serializer):
     full_name = serializers.CharField(max_length=150, required=False, default='')
     first_name = serializers.CharField(max_length=150, required=False, default='')
     last_name = serializers.CharField(max_length=150, required=False, default='')
-    mobile_number = serializers.CharField(max_length=25, required=False, allow_blank=True, default='')
+    mobile_number = serializers.CharField(max_length=25, required=True, allow_blank=False)
     gender = serializers.CharField(max_length=30, required=False, allow_blank=True, default='')
     date_of_birth = serializers.DateField(required=False, allow_null=True)
     door_no = serializers.CharField(max_length=100, required=False, allow_blank=True, default='')
@@ -99,6 +99,18 @@ class RegisterRequestSerializer(serializers.Serializer):
         if User.objects.filter(email__iexact=value).exists():
             raise serializers.ValidationError("An account with this email already exists.")
         return value.lower()
+
+    def validate_mobile_number(self, value):
+        from .registration_otp import normalize_mobile_number
+
+        try:
+            normalized = normalize_mobile_number(value)
+        except ValueError as error:
+            raise serializers.ValidationError(str(error)) from error
+
+        if User.objects.filter(mobile_number__iexact=normalized).exists():
+            raise serializers.ValidationError("An account with this mobile number already exists.")
+        return normalized
 
 
 class SSODiscoverRequestSerializer(serializers.Serializer):
@@ -357,5 +369,3 @@ class JewelOrderSerializer(serializers.ModelSerializer):
             'status',
             'created_at',
         ]
-
-

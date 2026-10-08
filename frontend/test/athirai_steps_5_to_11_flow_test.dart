@@ -174,6 +174,11 @@ void main() {
     });
 
     testWidgets('Step 10 Point 2: AthiraiRoyalDrawer renders all required tabs', (tester) async {
+      tester.view.physicalSize = const Size(1080, 1920);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -183,6 +188,7 @@ void main() {
               onSelectProfile: () {},
               onSelectOrders: () {},
               onSelectRecharge: () {},
+              onSelectCoins: () {},
               onSelectCollections: () {},
               onSelectWishlist: () {},
               onSelectCart: () {},
@@ -196,6 +202,7 @@ void main() {
       expect(find.text('Profile Dashboard'), findsOneWidget);
       expect(find.text('Order Summary'), findsOneWidget);
       expect(find.text('Buy AUG Coins'), findsOneWidget);
+      expect(find.text('Certified Coins'), findsOneWidget);
       expect(find.text('Jewellery Collections'), findsOneWidget);
       expect(find.text('Royal Wishlist'), findsOneWidget);
       expect(find.text('Jewel Vault Bag'), findsOneWidget);

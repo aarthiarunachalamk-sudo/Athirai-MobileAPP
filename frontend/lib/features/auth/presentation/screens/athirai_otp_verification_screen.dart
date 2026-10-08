@@ -1,40 +1,54 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../../../core/constants/app_assets.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../controllers/auth_controller.dart';
 import '../../../shop/presentation/theme/heritage_theme.dart';
 import '../../../shop/presentation/screens/athirai_flow_container.dart';
 
 /// Screen 4 (Image 2): Verify Your Number (OTP)
 /// Displays 6-digit verification code input with countdown timer,
 /// luxury gold styling, and the illuminated sacred deity artwork at the bottom.
-class AthiraiOtpVerificationScreen extends StatefulWidget {
+class AthiraiOtpVerificationScreen extends ConsumerStatefulWidget {
   const AthiraiOtpVerificationScreen({
     super.key,
     this.phoneNumber = '+91 98765 43210',
+    this.registrationEmail,
+    this.mobileNumber,
+    this.emailInitiallySent = true,
+    this.mobileInitiallySent = true,
     this.onVerified,
   });
 
   final String phoneNumber;
+  final String? registrationEmail;
+  final String? mobileNumber;
+  final bool emailInitiallySent;
+  final bool mobileInitiallySent;
   final VoidCallback? onVerified;
 
   @override
-  State<AthiraiOtpVerificationScreen> createState() =>
+  ConsumerState<AthiraiOtpVerificationScreen> createState() =>
       _AthiraiOtpVerificationScreenState();
 }
 
 class _AthiraiOtpVerificationScreenState
-    extends State<AthiraiOtpVerificationScreen> {
+    extends ConsumerState<AthiraiOtpVerificationScreen> {
   final List<TextEditingController> _controllers =
-      List.generate(6, (_) => TextEditingController());
-  final List<FocusNode> _focusNodes = List.generate(6, (_) => FocusNode());
+      List.generate(12, (_) => TextEditingController());
+  final List<FocusNode> _focusNodes = List.generate(12, (_) => FocusNode());
 
   int _resendSeconds = 45;
   Timer? _timer;
   bool _isVerifying = false;
+  bool _isResending = false;
   String? _errorMessage;
+
+  bool get _isRegistration =>
+      widget.registrationEmail != null && widget.mobileNumber != null;
 
   @override
   void initState() {
@@ -46,9 +60,9 @@ class _AthiraiOtpVerificationScreenState
     });
   }
 
-  void _startTimer() {
+  void _startTimer({int seconds = 45}) {
     _timer?.cancel();
-    setState(() => _resendSeconds = 45);
+    setState(() => _resendSeconds = seconds);
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (_resendSeconds > 0) {
         setState(() => _resendSeconds--);
@@ -75,7 +89,8 @@ class _AthiraiOtpVerificationScreenState
       if (value.length > 1) {
         _controllers[index].text = value.substring(value.length - 1);
       }
-      if (index < 5) {
+      final lastDigitIndex = _isRegistration ? 11 : 5;
+      if (index < lastDigitIndex) {
         _focusNodes[index + 1].requestFocus();
       } else {
         _focusNodes[index].unfocus();
@@ -91,17 +106,90 @@ class _AthiraiOtpVerificationScreenState
     }
   }
 
-  void _verifyCode() {
+  Future<void> _verifyCode() async {
+    final digitCount = _isRegistration ? 12 : 6;
+    if (_controllers.take(digitCount).any((controller) => controller.text.isEmpty)) {
+      setState(() => _errorMessage = _isRegistration
+          ? 'Enter both 6-digit codes to continue.'
+          : 'Enter the 6-digit code to continue.');
+      return;
+    }
+    if (_isVerifying) return;
+
     setState(() {
       _isVerifying = true;
       _errorMessage = null;
     });
 
-    Future.delayed(const Duration(milliseconds: 600), () {
+    if (_isRegistration) {
+      bool verified;
+      try {
+        verified = await ref
+            .read(authControllerProvider.notifier)
+            .verifyRegistrationOtp(
+              email: widget.registrationEmail!,
+              mobileNumber: widget.mobileNumber!,
+              emailOtp: _controllers
+                  .take(6)
+                  .map((controller) => controller.text)
+                  .join(),
+              mobileOtp: _controllers
+                  .skip(6)
+                  .take(6)
+                  .map((controller) => controller.text)
+                  .join(),
+            );
+      } on Exception catch (error) {
+        if (!mounted) return;
+        setState(() {
+          _isVerifying = false;
+          _errorMessage = 'Could not verify your codes: $error';
+        });
+        return;
+      }
       if (!mounted) return;
-      setState(() => _isVerifying = false);
+      setState(() {
+        _isVerifying = false;
+        if (!verified) {
+          _errorMessage = ref.read(authControllerProvider).errorMessage;
+        }
+      });
+      if (!verified) return;
       _showRegistrationSuccessDialog(context);
+      return;
+    }
+
+    await Future<void>.delayed(const Duration(milliseconds: 600));
+    if (!mounted) return;
+    setState(() => _isVerifying = false);
+    _showRegistrationSuccessDialog(context);
+  }
+
+  Future<void> _resendRegistrationCodes() async {
+    if (!_isRegistration || _isResending) return;
+    setState(() {
+      _isResending = true;
+      _errorMessage = null;
     });
+    final response = await ref
+        .read(authRepositoryProvider)
+        .resendRegistrationOtp(
+          email: widget.registrationEmail!,
+          mobileNumber: widget.mobileNumber!,
+        );
+    if (!mounted) return;
+    setState(() => _isResending = false);
+    _startTimer();
+    if (response.isSuccess) {
+      for (final controller in _controllers) {
+        controller.clear();
+      }
+      _focusNodes[0].requestFocus();
+    } else {
+      setState(() {
+        _errorMessage = response.errorMessage ?? 'Could not resend verification codes.';
+      });
+    }
   }
 
   void _showRegistrationSuccessDialog(BuildContext context) {
@@ -210,7 +298,9 @@ class _AthiraiOtpVerificationScreenState
               const SizedBox(height: 14),
 
               Text(
-                'Welcome, Royal Patron! Your account for ${widget.phoneNumber} is verified. Your AUG Coins vault is ready for gold purchases.',
+                _isRegistration
+                    ? 'Your email and mobile number are verified. Your Athirai account and AUG Coins vault are ready.'
+                    : 'Welcome, Royal Patron! Your account for ${widget.phoneNumber} is verified. Your AUG Coins vault is ready for gold purchases.',
                 style: GoogleFonts.inter(
                   fontSize: 12.5,
                   height: 1.45,
@@ -348,9 +438,11 @@ class _AthiraiOtpVerificationScreenState
 
                   const SizedBox(height: 26),
 
-                  // Title: "Verify Your Number"
+                  // Title
                   Text(
-                    'Verify Your Number',
+                    _isRegistration
+                        ? 'Verify Your Email & Mobile'
+                        : 'Verify Your Number',
                     textAlign: TextAlign.center,
                     style: GoogleFonts.cormorantGaramond(
                       fontSize: 30,
@@ -362,9 +454,10 @@ class _AthiraiOtpVerificationScreenState
 
                   const SizedBox(height: 8),
 
-                  // Subtitle: "We have sent a 6 digit code to +91 98765 43210"
                   Text(
-                    'We have sent a 6 digit code to\n${widget.phoneNumber}',
+                    _isRegistration
+                        ? 'Enter the separate 6-digit codes sent to\n${widget.registrationEmail}\nand ${widget.phoneNumber}'
+                        : 'We have sent a 6 digit code to\n${widget.phoneNumber}',
                     textAlign: TextAlign.center,
                     style: GoogleFonts.inter(
                       fontSize: 13.5,
@@ -373,13 +466,35 @@ class _AthiraiOtpVerificationScreenState
                     ),
                   ),
 
-                  const SizedBox(height: 32),
+                  if (_isRegistration &&
+                      (!widget.emailInitiallySent || !widget.mobileInitiallySent)) ...[
+                    const SizedBox(height: 12),
+                    Text(
+                      [
+                        if (!widget.emailInitiallySent) 'Email code was not sent',
+                        if (!widget.mobileInitiallySent) 'SMS code was not sent',
+                        'check delivery settings, then resend both codes',
+                      ].join('. '),
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.inter(
+                        fontSize: 12,
+                        color: AppColors.error,
+                        height: 1.4,
+                      ),
+                    ),
+                  ],
 
-                  // 6 OTP Digit Boxes
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: List.generate(6, (index) => _buildOtpBox(index)),
-                  ),
+                  const SizedBox(height: 24),
+
+                  if (_isRegistration) ...[
+                    _buildCodeGroup('EMAIL CODE', 0),
+                    const SizedBox(height: 20),
+                    _buildCodeGroup('SMS CODE', 6),
+                  ] else
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: List.generate(6, (index) => _buildOtpBox(index)),
+                    ),
 
                   if (_errorMessage != null) ...[
                     const SizedBox(height: 10),
@@ -394,15 +509,33 @@ class _AthiraiOtpVerificationScreenState
 
                   const SizedBox(height: 22),
 
-                  // "Resend code in 00:45"
-                  Text(
-                    'Resend code in ${_formatTimer(_resendSeconds)}',
-                    style: GoogleFonts.inter(
-                      fontSize: 12.5,
-                      color: HeritageTheme.textMutedDark,
-                      letterSpacing: 0.2,
+                  if (_isRegistration)
+                    TextButton(
+                      onPressed: _resendSeconds == 0 && !_isResending
+                          ? _resendRegistrationCodes
+                          : null,
+                      child: Text(
+                        _isResending
+                            ? 'Sending new codes...'
+                            : _resendSeconds == 0
+                                ? 'Resend both codes'
+                                : 'Resend codes in ${_formatTimer(_resendSeconds)}',
+                        style: GoogleFonts.inter(
+                          fontSize: 12.5,
+                          color: HeritageTheme.goldPrimary,
+                          letterSpacing: 0.2,
+                        ),
+                      ),
+                    )
+                  else
+                    Text(
+                      'Resend code in ${_formatTimer(_resendSeconds)}',
+                      style: GoogleFonts.inter(
+                        fontSize: 12.5,
+                        color: HeritageTheme.textMutedDark,
+                        letterSpacing: 0.2,
+                      ),
                     ),
-                  ),
 
                   const SizedBox(height: 24),
 
@@ -447,7 +580,9 @@ class _AthiraiOtpVerificationScreenState
                   GestureDetector(
                     onTap: () => Navigator.of(context).maybePop(),
                     child: Text(
-                      'Change Mobile Number',
+                      _isRegistration
+                          ? 'Change Email or Mobile Number'
+                          : 'Change Mobile Number',
                       style: GoogleFonts.inter(
                         fontSize: 13,
                         fontWeight: FontWeight.w500,
@@ -464,6 +599,31 @@ class _AthiraiOtpVerificationScreenState
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildCodeGroup(String label, int startIndex) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: GoogleFonts.inter(
+            fontSize: 10.5,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 1.5,
+            color: HeritageTheme.goldPrimary,
+          ),
+        ),
+        const SizedBox(height: 10),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: List.generate(
+            6,
+            (index) => _buildOtpBox(startIndex + index),
+          ),
+        ),
+      ],
     );
   }
 
@@ -504,7 +664,7 @@ class _AthiraiOtpVerificationScreenState
   Widget _buildOtpBox(int index) {
     final isFocused = _focusNodes[index].hasFocus;
     return Container(
-      width: 48,
+      width: _isRegistration ? 42 : 48,
       height: 54,
       decoration: BoxDecoration(
         color: const Color(0x38061A14),

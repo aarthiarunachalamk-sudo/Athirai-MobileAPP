@@ -28,6 +28,7 @@ class AthiraiHomeScreen extends StatelessWidget {
     required this.onOpenWishlist,
     required this.onOpenSearch,
     this.onOpenRecharge,
+    this.onOpenCoins,
     this.onLotusTap,
     this.onOpenStudio,
     this.onOpenPriceList,
@@ -44,6 +45,7 @@ class AthiraiHomeScreen extends StatelessWidget {
   final VoidCallback onOpenWishlist;
   final VoidCallback onOpenSearch;
   final VoidCallback? onOpenRecharge;
+  final VoidCallback? onOpenCoins;
   final VoidCallback? onLotusTap;
   final VoidCallback? onOpenStudio;
   final VoidCallback? onOpenPriceList;
@@ -186,11 +188,20 @@ class AthiraiHomeScreen extends StatelessWidget {
               physics: const BouncingScrollPhysics(),
               child: Row(
                 children: [
-                  _rateBadge('22K', '₹${store.rates.gold22k}/g'),
+                  GestureDetector(
+                    onTap: onOpenCoins ?? onOpenCollection,
+                    child: _rateBadge('22K', '₹${store.rates.gold22k}/g'),
+                  ),
                   const SizedBox(width: 6),
-                  _rateBadge('24K', '₹${store.rates.gold24k}/g'),
+                  GestureDetector(
+                    onTap: onOpenCoins ?? onOpenCollection,
+                    child: _rateBadge('24K', '₹${store.rates.gold24k}/g'),
+                  ),
                   const SizedBox(width: 6),
-                  _rateBadge('Silver', '₹${store.rates.silver999.toStringAsFixed(1)}/g'),
+                  GestureDetector(
+                    onTap: onOpenCoins ?? onOpenCollection,
+                    child: _rateBadge('Silver', '₹${store.rates.silver999.toStringAsFixed(1)}/g'),
+                  ),
                 ],
               ),
             ),
@@ -621,6 +632,7 @@ class AthiraiHomeScreen extends StatelessWidget {
                   }
                 },
                 onSelectRecharge: onOpenRecharge,
+                onSelectCoins: onOpenCoins,
                 onSelectCollections: onOpenCollection,
                 onSelectWishlist: onOpenWishlist,
                 onSelectCart: onOpenBag,
@@ -844,7 +856,13 @@ class AthiraiHomeScreen extends StatelessWidget {
             };
 
             return GestureDetector(
-              onTap: onOpenCollection,
+              onTap: () {
+                if (cat.name.toLowerCase().contains('coin') && onOpenCoins != null) {
+                  onOpenCoins!();
+                } else {
+                  onOpenCollection();
+                }
+              },
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
                 decoration: BoxDecoration(

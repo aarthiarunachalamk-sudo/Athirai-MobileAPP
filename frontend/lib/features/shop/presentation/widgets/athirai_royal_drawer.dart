@@ -5,12 +5,14 @@ import '../theme/heritage_theme.dart';
 import '../screens/athirai_profile_dashboard_screen.dart';
 import '../screens/athirai_order_summary_screen.dart';
 import '../screens/athirai_recharge_screen.dart';
+import '../screens/athirai_certified_coins_screen.dart';
 
 /// Luxury Royal Three-line (☰) Menu Drawer (Step 10 Point 2)
 /// Allows instant navigation to:
 /// - Profile Dashboard (Step 6)
 /// - Order Summary (Step 10 & 11)
 /// - Buy AUG Coins (Step 9)
+/// - Certified Coins (Silver & Gold)
 /// - Jewellery Collections & Royal Wishlist
 class AthiraiRoyalDrawer extends StatelessWidget {
   const AthiraiRoyalDrawer({
@@ -20,6 +22,7 @@ class AthiraiRoyalDrawer extends StatelessWidget {
     this.onSelectProfile,
     this.onSelectOrders,
     this.onSelectRecharge,
+    this.onSelectCoins,
     this.onSelectCollections,
     this.onSelectWishlist,
     this.onSelectCart,
@@ -31,6 +34,7 @@ class AthiraiRoyalDrawer extends StatelessWidget {
   final VoidCallback? onSelectProfile;
   final VoidCallback? onSelectOrders;
   final VoidCallback? onSelectRecharge;
+  final VoidCallback? onSelectCoins;
   final VoidCallback? onSelectCollections;
   final VoidCallback? onSelectWishlist;
   final VoidCallback? onSelectCart;
@@ -44,6 +48,7 @@ class AthiraiRoyalDrawer extends StatelessWidget {
     VoidCallback? onSelectProfile,
     VoidCallback? onSelectOrders,
     VoidCallback? onSelectRecharge,
+    VoidCallback? onSelectCoins,
     VoidCallback? onSelectCollections,
     VoidCallback? onSelectWishlist,
     VoidCallback? onSelectCart,
@@ -111,6 +116,18 @@ class AthiraiRoyalDrawer extends StatelessWidget {
             Navigator.of(context).push(
               MaterialPageRoute(
                 builder: (_) => AthiraiRechargeScreen(store: store),
+              ),
+            );
+          }
+        },
+        onSelectCoins: () {
+          Navigator.of(ctx).pop();
+          if (onSelectCoins != null) {
+            onSelectCoins();
+          } else {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => AthiraiCertifiedCoinsScreen(store: store),
               ),
             );
           }
@@ -254,6 +271,13 @@ class AthiraiRoyalDrawer extends StatelessWidget {
                     subtitle: 'Recharge vault via Razorpay (1 ₹ = 100 Coins)',
                     badge: 'Step 9',
                     onTap: onSelectRecharge,
+                  ),
+                  _drawerItem(
+                    icon: Icons.monetization_on_outlined,
+                    title: 'Certified Coins',
+                    subtitle: 'Silver & Gold coins from Rs. 275/gm',
+                    badge: 'Certified',
+                    onTap: onSelectCoins,
                   ),
                   _drawerItem(
                     icon: Icons.diamond_outlined,

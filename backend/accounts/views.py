@@ -9,6 +9,7 @@ from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
 
 from .models import Organization, SSOState
+from .registration_otp import deliver_registration_codes, issue_registration_codes
 from .serializers import (
     UserSerializer,
     LoginRequestSerializer,
@@ -52,6 +53,11 @@ class LoginView(APIView):
             user = User.objects.filter(mobile_number__icontains=clean_phone[-10:]).first()
 
         if user:
+            if not user.is_active:
+                return Response({
+                    'success': False,
+                    'message': 'Verify your email and mobile number before signing in.'
+                }, status=status.HTTP_403_FORBIDDEN)
             if password and (
                 not user.has_usable_password() or not user.check_password(password)
             ):
@@ -73,7 +79,7 @@ class LoginView(APIView):
 
         from .models import UserWallet
         wallet, _ = UserWallet.objects.get_or_create(user=user)
-        reward_earned, new_balance = wallet.claim_daily_reward(coins=1.0)
+        reward_earned, new_balance = wallet.claim_daily_reward(coins=100.0)
 
         tokens = get_tokens_for_user(user)
         return Response({
@@ -83,9 +89,9 @@ class LoginView(APIView):
             'user': UserSerializer(user).data,
             'requires_profile_completion': not user.is_profile_completed,
             'reward_earned': reward_earned,
-            'reward_coins': 1.0 if reward_earned else 0.0,
+            'reward_coins': 100.0 if reward_earned else 0.0,
             'balance_coins': float(wallet.balance_coins),
-            'reward_message': 'Royal Daily Login Bonus! +1 AUG Coin added to your Vault.' if reward_earned else 'Welcome back to Athirai Vault.'
+            'reward_message': 'Royal Daily Login Bonus! +100 AUG Coins (1 Credit = ₹1) added to your Vault.' if reward_earned else 'Welcome back to Athirai Vault.'
         }, status=status.HTTP_200_OK)
 
 
@@ -126,15 +132,17 @@ class RegisterView(APIView):
             city=data.get('city', ''),
             district=data.get('district', ''),
             state=data.get('state', ''),
-            is_profile_completed=True
+            is_profile_completed=True,
+            is_active=False,
         )
 
-        tokens = get_tokens_for_user(user)
+        _, email_code, mobile_code = issue_registration_codes(user)
+        delivery = deliver_registration_codes(user, email_code, mobile_code)
         return Response({
             'success': True,
-            'message': 'Account created successfully',
-            'tokens': tokens,
-            'user': UserSerializer(user).data
+            'message': 'Account created. Verify both your email and mobile number to continue.',
+            'user': UserSerializer(user).data,
+            'delivery': delivery,
         }, status=status.HTTP_201_CREATED)
 
 
@@ -304,10 +312,31 @@ class ForgotPasswordRequestView(APIView):
             user = User.objects.filter(mobile_number__icontains=clean_phone[-10:]).first()
 
         otp = "123456"
+        print(f"\n[ATHIRAI AUTH] ****************************************")
+        print(f"[ATHIRAI AUTH] Verification code for {identifier}: {otp}")
+        print(f"[ATHIRAI AUTH] ****************************************\n")
+
+        # Optional email notification if recipient is an email address
+        recipient_email = identifier if '@' in identifier else (user.email if user and user.email else None)
+        if recipient_email:
+            try:
+                from django.core.mail import send_mail
+                from django.conf import settings
+                send_mail(
+                    subject="Your Athirai Verification Code",
+                    message=f"Greetings from Athirai Jewels.\n\nYour account verification code is: {otp}\nThis code is valid for 10 minutes.\n\nAthirai Luxury Jewels",
+                    from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', 'no-reply@athirai.com'),
+                    recipient_list=[recipient_email],
+                    fail_silently=True,
+                )
+            except Exception as e:
+                print(f"[ATHIRAI AUTH] Email dispatch skipped: {e}")
+
         return Response({
             'success': True,
             'message': f"A 6-digit recovery code has been sent to {identifier}.",
             'otp': otp,
+            'reset_token': otp,
             'user_exists': user is not None
         }, status=status.HTTP_200_OK)
 
@@ -1599,4 +1628,3 @@ class ManualCoinCreditView(APIView):
             'message': f'Successfully credited {coins} AUG Coins.',
             'balance_coins': new_bal
         }, status=status.HTTP_200_OK)
-

@@ -235,10 +235,10 @@ class ShopStore extends ChangeNotifier {
   String? backendError;
 
   MetalRates _rates = MetalRates(
-    gold22k: 7450,
-    gold24k: 7980,
-    gold18k: 6100,
-    silver999: 98.50,
+    gold22k: 14250,
+    gold24k: 15500,
+    gold18k: 11600,
+    silver999: 275.00,
     lastUpdated: DateTime.now(),
   );
 
@@ -385,6 +385,8 @@ class ShopStore extends ChangeNotifier {
   List<ShopProduct> get products => List.unmodifiable(_products);
   List<JewelCategory> get categories => List.unmodifiable(_categories);
   MetalRates get rates => _rates;
+  String get userPhone =>
+      _deliveryPhone.isNotEmpty ? _deliveryPhone : '+91 63852 57541';
 
   /// Dynamic Price List of all jewellery calculated using current live rates
   List<JewelPriceBreakdown> get priceList =>
@@ -1093,6 +1095,75 @@ class ShopStore extends ChangeNotifier {
 
 /// Coins catalog dynamically calculated from rates
 List<ShopProduct> _coinProducts() => [
+  // ── Video Certified Coins (Silver Coins / Gold Coins) ──
+  ShopProduct(
+    const JewelleryItem(
+      id: 'slv-bar-50g',
+      name: '50 gm Silver Bar',
+      category: 'Silver Coins',
+      purity: '999',
+      weightGrams: 50.0,
+      priceFormatted: '₹14,729',
+      description: 'Certified 50g Fine Silver 999 Investment Bar stamped with sacred Lakshmi motif and BIS hallmark.',
+      posX: 0,
+      posZ: 0,
+      assetPreview: 'assets/images/athirai_gold_lotus_1791280119191.jpg',
+    ),
+    'Certified Coin Collection',
+    metal: 'Silver',
+    customPriceOverride: 14729,
+  ),
+  ShopProduct(
+    const JewelleryItem(
+      id: 'slv-coin-2g',
+      name: '2 gm Silver Coin',
+      category: 'Silver Coins',
+      purity: '999',
+      weightGrams: 10.0,
+      priceFormatted: '₹2,974',
+      description: 'Certified fine Silver 999 collector coin with traditional peacock and temple filigree medallion.',
+      posX: 0,
+      posZ: 0,
+      assetPreview: 'assets/images/athirai_emerald_crest_1791280010754.jpg',
+    ),
+    'Certified Coin Collection',
+    metal: 'Silver',
+    customPriceOverride: 2974,
+  ),
+  ShopProduct(
+    const JewelleryItem(
+      id: 'slv-coin-50mg',
+      name: '50 mg Silver Coin',
+      category: 'Silver Coins',
+      purity: '999',
+      weightGrams: 50.0,
+      priceFormatted: '₹14,729',
+      description: 'Certified fine Silver 999 coin featuring divine Lakshmi medallion and auspicious Kalash motif.',
+      posX: 0,
+      posZ: 0,
+      assetPreview: 'assets/images/athirai_gold_lotus_1791280119191.jpg',
+    ),
+    'Certified Coin Collection',
+    metal: 'Silver',
+    customPriceOverride: 14729,
+  ),
+  ShopProduct(
+    const JewelleryItem(
+      id: 'gld-coin-50mg',
+      name: '50 mg Gold Coin',
+      category: 'Gold Coins',
+      purity: '999',
+      weightGrams: 10.0,
+      priceFormatted: '₹2,974',
+      description: 'Certified 24K 999 Pure Gold Coin struck with Lord Ganesha & Lakshmi divine blessings.',
+      posX: 0,
+      posZ: 0,
+      assetPreview: 'assets/images/athirai_login_temple_glow_1791285812754.jpg',
+    ),
+    'Certified Coin Collection',
+    metal: 'Gold',
+    customPriceOverride: 2974,
+  ),
   for (final metal in ['Gold', 'Silver'])
     for (final purity in metal == 'Gold' ? ['22K', '24K'] : ['999'])
       for (final weight

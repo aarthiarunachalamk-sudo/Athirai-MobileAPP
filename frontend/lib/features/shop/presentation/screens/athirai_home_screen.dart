@@ -9,6 +9,8 @@ import 'athirai_recharge_screen.dart';
 import 'athirai_order_summary_screen.dart';
 import 'athirai_profile_dashboard_screen.dart';
 import '../widgets/athirai_royal_drawer.dart';
+import '../widgets/athirai_collections_megamenu_sheet.dart';
+import '../../domain/models/athirai_collections_catalog.dart';
 
 /// Screen 02: Home / Experience Dashboard ("Discover Your Legacy")
 /// Exact match for Mockup Screen 02:
@@ -36,6 +38,7 @@ class AthiraiHomeScreen extends StatelessWidget {
     this.onOpenProfile,
     this.onOpenMenu,
     this.onSignOut,
+    this.onOpenCollectionWithFilter,
   });
 
   final ShopStore store;
@@ -53,6 +56,7 @@ class AthiraiHomeScreen extends StatelessWidget {
   final VoidCallback? onOpenProfile;
   final VoidCallback? onOpenMenu;
   final VoidCallback? onSignOut;
+  final void Function(String collection, String item)? onOpenCollectionWithFilter;
 
 
   @override
@@ -103,6 +107,11 @@ class AthiraiHomeScreen extends StatelessWidget {
 
                         // Live Rates Ticker Bar (connected to backend)
                         _buildLiveRatesBar(context),
+
+                        const SizedBox(height: 10),
+
+                        // Megamenu Category Navigation Tabs Bar (matching reference screenshot)
+                        _buildCategoryTabsBar(context),
 
                         const SizedBox(height: 14),
 
@@ -241,6 +250,111 @@ class AthiraiHomeScreen extends StatelessWidget {
           fontWeight: FontWeight.w600,
           color: HeritageTheme.textLight,
         ),
+      ),
+    );
+  }
+
+  /// Megamenu Category Navigation Tabs Bar matching reference website screenshot:
+  /// ALL JEWELLERY | GOLD | SILVER | COINS | OFFERS | TEAM369-LIVE | WEDDING | GIFTING | NEARBY SHOP
+  Widget _buildCategoryTabsBar(BuildContext context) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      physics: const BouncingScrollPhysics(),
+      child: Row(
+        children: AthiraiCollectionsCatalog.categoryTabs.map((tab) {
+          final isPrimary = tab == 'ALL JEWELLERY';
+          return Padding(
+            padding: const EdgeInsets.only(right: 6),
+            child: InkWell(
+              onTap: () {
+                if (tab == 'OFFERS') {
+                  onOpenCollection();
+                } else if (tab == 'TEAM369-LIVE') {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Row(
+                        children: [
+                          const Icon(Icons.videocam_rounded, color: HeritageTheme.goldBright, size: 16),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'TEAM369-LIVE: Join daily jewellery showcase live!',
+                              style: GoogleFonts.inter(fontSize: 12, color: Colors.white),
+                            ),
+                          ),
+                        ],
+                      ),
+                      backgroundColor: const Color(0xFF071F1A),
+                      duration: const Duration(seconds: 2),
+                    ),
+                  );
+                } else if (tab == 'NEARBY SHOP') {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Row(
+                        children: [
+                          const Icon(Icons.location_on_rounded, color: HeritageTheme.goldBright, size: 16),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Athirai Jewellers: 108 Heritage Boulevard, Madurai & Chennai',
+                              style: GoogleFonts.inter(fontSize: 12, color: Colors.white),
+                            ),
+                          ),
+                        ],
+                      ),
+                      backgroundColor: const Color(0xFF071F1A),
+                      duration: const Duration(seconds: 2),
+                    ),
+                  );
+                } else {
+                  AthiraiCollectionsMegamenuSheet.show(
+                    context,
+                    store: store,
+                    initialTab: tab,
+                    onSelectItem: (collection, item) {
+                      if (onOpenCollectionWithFilter != null) {
+                        onOpenCollectionWithFilter!(collection, item);
+                      } else {
+                        onOpenCollection();
+                      }
+                    },
+                  );
+                }
+              },
+              borderRadius: BorderRadius.circular(16),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  color: isPrimary ? const Color(0xFF0E3831) : const Color(0x33061C17),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: isPrimary ? HeritageTheme.goldBright : const Color(0x33C7A45B),
+                    width: isPrimary ? 1.1 : 0.7,
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (isPrimary) ...[
+                      const Icon(Icons.grid_view_rounded, size: 11, color: HeritageTheme.goldBright),
+                      const SizedBox(width: 4),
+                    ],
+                    Text(
+                      tab,
+                      style: GoogleFonts.inter(
+                        fontSize: 10,
+                        fontWeight: isPrimary ? FontWeight.w800 : FontWeight.w600,
+                        letterSpacing: 0.7,
+                        color: isPrimary ? HeritageTheme.goldBright : HeritageTheme.textLight,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        }).toList(),
       ),
     );
   }
@@ -930,6 +1044,83 @@ class AthiraiHomeScreen extends StatelessWidget {
               ),
             );
           },
+        ),
+        const SizedBox(height: 14),
+        // Complete Megamenu Collections Catalog Banner matching reference design
+        InkWell(
+          onTap: () {
+            AthiraiCollectionsMegamenuSheet.show(
+              context,
+              store: store,
+              initialTab: 'ALL JEWELLERY',
+              onSelectItem: (col, item) {
+                if (onOpenCollectionWithFilter != null) {
+                  onOpenCollectionWithFilter!(col, item);
+                } else {
+                  onOpenCollection();
+                }
+              },
+            );
+          },
+          borderRadius: BorderRadius.circular(16),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFF0F3A30), Color(0xFF071F1A)],
+              ),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFFD4AF37), width: 1.1),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFFD4AF37).withOpacity(0.18),
+                  blurRadius: 10,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: const Color(0x33D4AF37),
+                    shape: BoxShape.circle,
+                    border: Border.all(color: HeritageTheme.goldBright, width: 1),
+                  ),
+                  child: const Center(
+                    child: Icon(Icons.grid_view_rounded, color: HeritageTheme.goldBright, size: 18),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Complete Jewellery Directory',
+                        style: GoogleFonts.inter(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w700,
+                          color: HeritageTheme.textLight,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '8 Curated Collections • 74 Sub-Items (Gold, Silver, Coins & Bars...)',
+                        style: GoogleFonts.inter(
+                          fontSize: 10,
+                          color: HeritageTheme.goldPrimary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Icon(Icons.arrow_forward_ios_rounded, color: HeritageTheme.goldBright, size: 14),
+              ],
+            ),
+          ),
         ),
       ],
     );

@@ -69,8 +69,64 @@ class Command(BaseCommand):
             rate.save()
         self.stdout.write(f"  Live Metal Rates: 22K=Rs.{rate.gold_22k}, Silver 999=Rs.{rate.silver_999}")
 
-        # 4. Seed Collections
+        # 4. Seed Collections matching Megamenu Catalog
         collections_data = [
+            {
+                'name': 'Gold Jewellery',
+                'description': 'Pure 22K & 24K gold ornaments, bangles, necklaces, and heirlooms.',
+                'cover_image_url': 'assets/images/heritage_necklace.png',
+                'banner_image_url': 'assets/images/heritage_home.png',
+                'is_featured': True,
+            },
+            {
+                'name': 'Silver Jewellery',
+                'description': '999 fine silver anklets, rings, bracelets, and sacred temple articles.',
+                'cover_image_url': 'assets/images/shop_silver_coins.png',
+                'banner_image_url': 'assets/images/shop_silver_coins.png',
+                'is_featured': True,
+            },
+            {
+                'name': 'Coins & Bars',
+                'description': 'Certified gold & silver bullion, minted coins, and investment bars.',
+                'cover_image_url': 'assets/images/shop_gold_coins.png',
+                'banner_image_url': 'assets/images/shop_gold_coins.png',
+                'is_featured': True,
+            },
+            {
+                'name': 'Daily Wear',
+                'description': 'Lightweight elegance, minimal geometry, and versatile daily jewels.',
+                'cover_image_url': 'assets/images/shop_ring.png',
+                'banner_image_url': 'assets/images/shop_bangle.png',
+                'is_featured': True,
+            },
+            {
+                'name': 'Wedding Jewellery',
+                'description': 'Regal bridal sets, antique temple carvings, and Kundan polki masterpieces.',
+                'cover_image_url': 'assets/images/shop_necklace.png',
+                'banner_image_url': 'assets/images/athirai_vault_mannequin.jpg',
+                'is_featured': True,
+            },
+            {
+                'name': 'Gifting Collection',
+                'description': 'Curated tokens of fortune for milestones, birthdays, and anniversaries.',
+                'cover_image_url': 'assets/images/athirai_hero_sphere_necklace.jpg',
+                'banner_image_url': 'assets/images/athirai_temple_arch_chandelier.jpg',
+                'is_featured': True,
+            },
+            {
+                'name': 'Mangalsutra',
+                'description': 'Sacred black bead chains, traditional thali filigree, and contemporary solitaires.',
+                'cover_image_url': 'assets/images/heritage_necklace.png',
+                'banner_image_url': 'assets/images/heritage_onboarding.png',
+                'is_featured': True,
+            },
+            {
+                'name': 'Other Jewellery',
+                'description': 'Nose pins, toe rings, cufflinks, brooches, and bespoke accessories.',
+                'cover_image_url': 'assets/images/athirai_pedestal_necklace.jpg',
+                'banner_image_url': 'assets/images/heritage_home.png',
+                'is_featured': True,
+            },
             {
                 'name': 'Heritage Collection',
                 'description': 'Masterpieces inspired by ancient sanctums and enduring dynastic regalia.',
@@ -119,10 +175,18 @@ class Command(BaseCommand):
             {'name': 'Rings', 'display_order': 2},
             {'name': 'Bangles', 'display_order': 3},
             {'name': 'Earrings', 'display_order': 4},
-            {'name': 'Heritage', 'display_order': 5},
-            {'name': 'Contemporary', 'display_order': 6},
-            {'name': 'Chains', 'display_order': 7},
-            {'name': 'Coins', 'display_order': 8},
+            {'name': 'Pendants', 'display_order': 5},
+            {'name': 'Chains', 'display_order': 6},
+            {'name': 'Coins', 'display_order': 7},
+            {'name': 'Mangalsutra', 'display_order': 8},
+            {'name': 'Bracelets', 'display_order': 9},
+            {'name': 'Anklets', 'display_order': 10},
+            {'name': 'Bridal Sets', 'display_order': 11},
+            {'name': 'Daily Wear', 'display_order': 12},
+            {'name': 'Gold Jewellery', 'display_order': 13},
+            {'name': 'Silver Jewellery', 'display_order': 14},
+            {'name': 'Gifting', 'display_order': 15},
+            {'name': 'Other', 'display_order': 16},
         ]
         cat_map = {}
         for cdata in categories_data:

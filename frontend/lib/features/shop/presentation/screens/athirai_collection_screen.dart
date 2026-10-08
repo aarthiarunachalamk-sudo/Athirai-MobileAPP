@@ -8,6 +8,7 @@ import 'athirai_recharge_screen.dart';
 import 'athirai_order_summary_screen.dart';
 import 'athirai_profile_dashboard_screen.dart';
 import '../widgets/athirai_royal_drawer.dart';
+import '../widgets/athirai_collections_megamenu_sheet.dart';
 
 
 /// Screen 03: Collection Explorer ("Curated for Generations")
@@ -27,6 +28,8 @@ class AthiraiCollectionScreen extends StatefulWidget {
     required this.onOpenBag,
     this.onOpenWishlist,
     this.onBuyNow,
+    this.initialCategory,
+    this.initialSubItem,
   });
 
   final ShopStore store;
@@ -35,6 +38,8 @@ class AthiraiCollectionScreen extends StatefulWidget {
   final VoidCallback onOpenBag;
   final VoidCallback? onOpenWishlist;
   final ValueChanged<ShopProduct>? onBuyNow;
+  final String? initialCategory;
+  final String? initialSubItem;
 
   @override
   State<AthiraiCollectionScreen> createState() =>
@@ -42,14 +47,58 @@ class AthiraiCollectionScreen extends StatefulWidget {
 }
 
 class _AthiraiCollectionScreenState extends State<AthiraiCollectionScreen> {
-  String _selectedCategory = 'Necklaces';
+  late String _selectedCategory;
+  String? _selectedSubItem;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedCategory = widget.initialCategory ?? 'All';
+    _selectedSubItem = widget.initialSubItem;
+  }
+
+  @override
+  void didUpdateWidget(AthiraiCollectionScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.initialCategory != oldWidget.initialCategory ||
+        widget.initialSubItem != oldWidget.initialSubItem) {
+      if (widget.initialCategory != null) {
+        _selectedCategory = widget.initialCategory!;
+      }
+      _selectedSubItem = widget.initialSubItem;
+    }
+  }
 
   List<String> get _categories {
-    final list = <String>['All'];
-    for (final c in widget.store.categories) {
-      if (!list.contains(c.name)) list.add(c.name);
-    }
-    return list;
+    return const [
+      'All',
+      'Necklaces',
+      'Gold',
+      'Silver',
+      'Coins & Bars',
+      'Daily Wear',
+      'Wedding',
+      'Gifting',
+      'Mangalsutra',
+      'Other',
+      'Rings',
+      'Bangles',
+      'Earrings',
+    ];
+  }
+
+  void _openDirectory([String initialTab = 'ALL JEWELLERY']) {
+    AthiraiCollectionsMegamenuSheet.show(
+      context,
+      store: widget.store,
+      initialTab: initialTab,
+      onSelectItem: (collection, item) {
+        setState(() {
+          _selectedCategory = collection;
+          _selectedSubItem = item == 'All' ? null : item;
+        });
+      },
+    );
   }
 
   @override
@@ -57,20 +106,45 @@ class _AthiraiCollectionScreenState extends State<AthiraiCollectionScreen> {
     return AnimatedBuilder(
       animation: widget.store,
       builder: (context, _) {
-        final categories = _categories;
-        if (!categories.contains(_selectedCategory)) {
-          _selectedCategory = 'All';
-        }
-
-        final filtered = _selectedCategory == 'All'
-            ? widget.store.products
-            : widget.store.products
-                .where((p) =>
-                    p.category.toLowerCase() == _selectedCategory.toLowerCase() ||
-                    (_selectedCategory.toLowerCase() == 'coins' &&
-                        (p.category.toLowerCase().contains('coin') ||
-                            p.name.toLowerCase().contains('coin'))))
-                .toList();
+        final filtered = widget.store.products.where((p) {
+          if (_selectedSubItem != null && _selectedSubItem!.isNotEmpty) {
+            final query = _selectedSubItem!.toLowerCase();
+            return p.name.toLowerCase().contains(query) ||
+                p.category.toLowerCase().contains(query) ||
+                p.item.description.toLowerCase().contains(query) ||
+                p.collection.toLowerCase().contains(query);
+          }
+          if (_selectedCategory == 'All') return true;
+          final cat = _selectedCategory.toLowerCase();
+          if (cat.contains('gold')) {
+            return p.metal.toLowerCase() == 'gold' || p.name.toLowerCase().contains('gold');
+          }
+          if (cat.contains('silver')) {
+            return p.metal.toLowerCase() == 'silver' || p.name.toLowerCase().contains('silver');
+          }
+          if (cat.contains('coin') || cat.contains('bar')) {
+            return p.category.toLowerCase().contains('coin') ||
+                p.name.toLowerCase().contains('coin') ||
+                p.name.toLowerCase().contains('bar') ||
+                p.item.name.toLowerCase().contains('bar');
+          }
+          if (cat.contains('daily')) {
+            return p.collection.toLowerCase().contains('contemporary') || p.item.weightGrams <= 20.0;
+          }
+          if (cat.contains('wedding')) {
+            return p.collection.toLowerCase().contains('royal') ||
+                p.collection.toLowerCase().contains('heritage') ||
+                p.name.toLowerCase().contains('kundan') ||
+                p.name.toLowerCase().contains('bridal');
+          }
+          if (cat.contains('mangal')) {
+            return p.category.toLowerCase().contains('mangal') || p.name.toLowerCase().contains('mangal');
+          }
+          if (cat.contains('gift')) {
+            return p.item.weightGrams <= 25.0 || p.name.toLowerCase().contains('emerald') || p.name.toLowerCase().contains('ring');
+          }
+          return p.category.toLowerCase() == cat || p.collection.toLowerCase().contains(cat);
+        }).toList();
         final effectiveProducts = filtered.isNotEmpty ? filtered : widget.store.products;
 
 
@@ -357,56 +431,135 @@ class _AthiraiCollectionScreenState extends State<AthiraiCollectionScreen> {
   /// Horizontal category filter chips
   Widget _buildFilterChips() {
     return SizedBox(
-      height: 36,
-      child: ListView.separated(
+      height: 38,
+      child: ListView(
         scrollDirection: Axis.horizontal,
         physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        itemCount: _categories.length,
-        separatorBuilder: (context, index) => const SizedBox(width: 8),
-        itemBuilder: (context, index) {
-          final cat = _categories[index];
-          final isSelected = cat == _selectedCategory;
-          return GestureDetector(
-            onTap: () => setState(() => _selectedCategory = cat),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
-              decoration: BoxDecoration(
-                color: isSelected ? const Color(0x33D4AF37) : const Color(0x80071C17),
-                borderRadius: BorderRadius.circular(18),
-                border: Border.all(
-                  color: isSelected
-                      ? HeritageTheme.goldPrimary
-                      : HeritageTheme.goldBorderSubtle,
-                  width: isSelected ? 1.2 : 0.8,
+        padding: const EdgeInsets.symmetric(horizontal: 14),
+        children: [
+          // ── Megamenu Directory Launcher Pill ──
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: GestureDetector(
+              onTap: () => _openDirectory(),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF0D332B), Color(0xFF08221D)],
+                  ),
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(color: const Color(0xFFD4AF37), width: 1.2),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFFD4AF37).withOpacity(0.25),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
-                boxShadow: isSelected
-                    ? [
-                        BoxShadow(
-                          color: HeritageTheme.goldPrimary.withOpacity(0.2),
-                          blurRadius: 8,
-                          spreadRadius: 1,
-                        ),
-                      ]
-                    : null,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.grid_view_rounded, size: 14, color: Color(0xFFFFDF7A)),
+                    const SizedBox(width: 6),
+                    Text(
+                      'All Collections ▾',
+                      style: GoogleFonts.inter(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w800,
+                        color: const Color(0xFFFFDF7A),
+                        letterSpacing: 0.3,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              child: Center(
-                child: Text(
-                  cat,
-                  style: GoogleFonts.inter(
-                    fontSize: 12,
-                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                    color: isSelected
-                        ? HeritageTheme.goldBright
-                        : HeritageTheme.textMutedDark,
-                    letterSpacing: 0.3,
+            ),
+          ),
+
+          // ── Active Sub-Item Badge (if selected) ──
+          if (_selectedSubItem != null)
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: GestureDetector(
+                onTap: () => setState(() => _selectedSubItem = null),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF0E3831),
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(color: const Color(0xFFD4AF37), width: 1.2),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        '$_selectedCategory: $_selectedSubItem',
+                        style: GoogleFonts.inter(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w700,
+                          color: const Color(0xFFFFDF7A),
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      const Icon(Icons.close_rounded, size: 14, color: Color(0xFFFFDF7A)),
+                    ],
                   ),
                 ),
               ),
             ),
-          );
-        },
+
+          // ── Category Filter Chips ──
+          ..._categories.map((cat) {
+            final isSelected = cat == _selectedCategory && _selectedSubItem == null;
+            return Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: GestureDetector(
+                onTap: () => setState(() {
+                  _selectedCategory = cat;
+                  _selectedSubItem = null;
+                }),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
+                  decoration: BoxDecoration(
+                    color: isSelected ? const Color(0x33D4AF37) : const Color(0x80071C17),
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(
+                      color: isSelected
+                          ? HeritageTheme.goldPrimary
+                          : HeritageTheme.goldBorderSubtle,
+                      width: isSelected ? 1.2 : 0.8,
+                    ),
+                    boxShadow: isSelected
+                        ? [
+                            BoxShadow(
+                              color: HeritageTheme.goldPrimary.withOpacity(0.2),
+                              blurRadius: 8,
+                              spreadRadius: 1,
+                            ),
+                          ]
+                        : null,
+                  ),
+                  child: Center(
+                    child: Text(
+                      cat,
+                      style: GoogleFonts.inter(
+                        fontSize: 12,
+                        fontWeight: isSelected ? FontWeight.w700 : FontWeight.w400,
+                        color: isSelected
+                            ? HeritageTheme.goldBright
+                            : HeritageTheme.textMutedDark,
+                        letterSpacing: 0.3,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            );
+          }),
+        ],
       ),
     );
   }

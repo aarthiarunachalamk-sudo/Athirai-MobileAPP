@@ -54,6 +54,8 @@ class _AthiraiFlowContainerState extends State<AthiraiFlowContainer> {
   late final ShopStore store = widget.store ?? ShopStore.session;
   late int _currentScreen; // 0: Splash, 1: Home, 2: Collection, 3: Product, 4: Vault/Checkout, 5: OTP, 6: Wishlist, 7: Recharge, 8: Orders, 9: Profile
   ShopProduct? _activeProduct;
+  String? _collectionCategory;
+  String? _collectionSubItem;
   final List<int> _screenHistory = [];
 
   @override
@@ -69,13 +71,20 @@ class _AthiraiFlowContainerState extends State<AthiraiFlowContainer> {
     store.loadOrders();
   }
 
-  void _navigateTo(int screenIndex, {ShopProduct? product}) {
+  void _navigateTo(
+    int screenIndex, {
+    ShopProduct? product,
+    String? collectionCategory,
+    String? collectionSubItem,
+  }) {
     if (screenIndex != _currentScreen) {
       _screenHistory.add(_currentScreen);
     }
     setState(() {
       _currentScreen = screenIndex;
       if (product != null) _activeProduct = product;
+      _collectionCategory = collectionCategory;
+      _collectionSubItem = collectionSubItem;
     });
   }
 
@@ -156,6 +165,11 @@ class _AthiraiFlowContainerState extends State<AthiraiFlowContainer> {
         return AthiraiHomeScreen(
           store: store,
           onOpenCollection: () => _navigateTo(2),
+          onOpenCollectionWithFilter: (col, item) => _navigateTo(
+            2,
+            collectionCategory: col,
+            collectionSubItem: item == 'All' ? null : item,
+          ),
           onOpenProduct: (product) => _navigateTo(3, product: product),
           onOpenBag: () => _navigateTo(4),
           onOpenWishlist: () => _navigateTo(6),
@@ -169,6 +183,8 @@ class _AthiraiFlowContainerState extends State<AthiraiFlowContainer> {
       case 2:
         return AthiraiCollectionScreen(
           store: store,
+          initialCategory: _collectionCategory,
+          initialSubItem: _collectionSubItem,
           onBack: _navigateBack,
           onOpenProduct: (product) => _navigateTo(3, product: product),
           onOpenBag: () => _navigateTo(4),
@@ -263,6 +279,11 @@ class _AthiraiFlowContainerState extends State<AthiraiFlowContainer> {
         return AthiraiHomeScreen(
           store: store,
           onOpenCollection: () => _navigateTo(2),
+          onOpenCollectionWithFilter: (col, item) => _navigateTo(
+            2,
+            collectionCategory: col,
+            collectionSubItem: item == 'All' ? null : item,
+          ),
           onOpenProduct: (product) => _navigateTo(3, product: product),
           onOpenBag: () => _navigateTo(4),
           onOpenWishlist: () => _navigateTo(6),

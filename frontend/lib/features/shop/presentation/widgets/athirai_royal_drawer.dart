@@ -6,6 +6,7 @@ import '../screens/athirai_profile_dashboard_screen.dart';
 import '../screens/athirai_order_summary_screen.dart';
 import '../screens/athirai_recharge_screen.dart';
 import '../screens/athirai_certified_coins_screen.dart';
+import 'athirai_collections_megamenu_sheet.dart';
 
 /// Luxury Royal Three-line (☰) Menu Drawer (Step 10 Point 2)
 /// Allows instant navigation to:
@@ -278,6 +279,23 @@ class AthiraiRoyalDrawer extends StatelessWidget {
                     subtitle: 'Silver & Gold coins from Rs. 275/gm',
                     badge: 'Certified',
                     onTap: onSelectCoins,
+                  ),
+                  _drawerItem(
+                    icon: Icons.grid_view_rounded,
+                    title: 'All Jewellery Directory',
+                    subtitle: '8 Categories • 74 Sub-Items (Megamenu)',
+                    badge: 'Directory',
+                    isHighlighted: true,
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      AthiraiCollectionsMegamenuSheet.show(
+                        context,
+                        store: store,
+                        onSelectItem: (col, item) {
+                          onSelectCollections?.call();
+                        },
+                      );
+                    },
                   ),
                   _drawerItem(
                     icon: Icons.diamond_outlined,

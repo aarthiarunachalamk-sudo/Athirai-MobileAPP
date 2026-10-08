@@ -31,6 +31,21 @@ class AppTheme {
         ),
         iconTheme: IconThemeData(color: AppColors.goldPrimary),
       ),
+      snackBarTheme: SnackBarThemeData(
+        backgroundColor: const Color(0xFF051C16),
+        contentTextStyle: GoogleFonts.inter(
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+          color: const Color(0xFFF7F2E8),
+        ),
+        actionTextColor: const Color(0xFFFFDF7A),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: const BorderSide(color: Color(0xFFD4AF37), width: 1.2),
+        ),
+        elevation: 10,
+      ),
       textTheme: TextTheme(
         // Serif Display & Titles (Luxury jewelry aesthetic)
         displayLarge: GoogleFonts.cormorantGaramond(

@@ -841,15 +841,14 @@ class _AthiraiCollectionScreenState extends State<AthiraiCollectionScreen> {
                               onTap: () {
                                 widget.store.toggleWishlist(product.id);
                                 final isSaved = widget.store.isSaved(product.id);
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                      isSaved
-                                          ? 'Added "${product.name}" to Wishlist'
-                                          : 'Removed from Wishlist',
-                                    ),
-                                    duration: const Duration(seconds: 1),
-                                  ),
+                                AthiraiSnackBar.show(
+                                  context,
+                                  message: isSaved
+                                      ? 'Added "${product.name}" to Wishlist'
+                                      : 'Removed from Wishlist',
+                                  icon: isSaved
+                                      ? Icons.favorite_rounded
+                                      : Icons.favorite_border_rounded,
                                 );
                               },
                               child: Icon(
@@ -890,18 +889,12 @@ class _AthiraiCollectionScreenState extends State<AthiraiCollectionScreen> {
                                 borderRadius: BorderRadius.circular(17),
                                 onTap: () {
                                   widget.store.addToCart(product.id, 1);
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                        'Added "${product.name}" to Cart',
-                                      ),
-                                      duration: const Duration(seconds: 1),
-                                      action: SnackBarAction(
-                                        label: 'VIEW CART',
-                                        textColor: HeritageTheme.goldBright,
-                                        onPressed: widget.onOpenBag,
-                                      ),
-                                    ),
+                                  AthiraiSnackBar.show(
+                                    context,
+                                    message: 'Added "${product.name}" to Cart',
+                                    icon: Icons.shopping_bag_outlined,
+                                    actionLabel: 'VIEW CART',
+                                    onAction: widget.onOpenBag,
                                   );
                                 },
                                 child: Center(
@@ -1116,15 +1109,14 @@ class _AthiraiCollectionScreenState extends State<AthiraiCollectionScreen> {
                               onTap: () {
                                 widget.store.toggleWishlist(item.id);
                                 final isSaved = widget.store.isSaved(item.id);
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                      isSaved
-                                          ? 'Added "${item.name}" to Wishlist'
-                                          : 'Removed from Wishlist',
-                                    ),
-                                    duration: const Duration(seconds: 1),
-                                  ),
+                                AthiraiSnackBar.show(
+                                  context,
+                                  message: isSaved
+                                      ? 'Added "${item.name}" to Wishlist'
+                                      : 'Removed from Wishlist',
+                                  icon: isSaved
+                                      ? Icons.favorite_rounded
+                                      : Icons.favorite_border_rounded,
                                 );
                               },
                               child: Icon(
@@ -1163,16 +1155,12 @@ class _AthiraiCollectionScreenState extends State<AthiraiCollectionScreen> {
                                     borderRadius: BorderRadius.circular(14),
                                     onTap: () {
                                       widget.store.addToCart(item.id, 1);
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(
-                                          content: Text('Added "${item.name}" to Cart'),
-                                          duration: const Duration(seconds: 1),
-                                          action: SnackBarAction(
-                                            label: 'CART',
-                                            textColor: HeritageTheme.goldBright,
-                                            onPressed: widget.onOpenBag,
-                                          ),
-                                        ),
+                                      AthiraiSnackBar.show(
+                                        context,
+                                        message: 'Added "${item.name}" to Cart',
+                                        icon: Icons.shopping_bag_outlined,
+                                        actionLabel: 'VIEW CART',
+                                        onAction: widget.onOpenBag,
                                       );
                                     },
                                     child: const Center(

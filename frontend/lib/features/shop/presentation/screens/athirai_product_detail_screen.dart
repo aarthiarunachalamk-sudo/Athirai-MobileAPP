@@ -1379,22 +1379,16 @@ class _AthiraiProductDetailScreenState
                     onTap: () {
                       widget.store.toggleWishlist(productId);
                       final nowWishlisted = widget.store.isSaved(productId);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            nowWishlisted
-                                ? 'Added "$productName" to Wishlist'
-                                : 'Removed from Wishlist',
-                          ),
-                          duration: const Duration(seconds: 1),
-                          action: nowWishlisted && widget.onOpenWishlist != null
-                              ? SnackBarAction(
-                                  label: 'VIEW',
-                                  textColor: HeritageTheme.goldBright,
-                                  onPressed: widget.onOpenWishlist!,
-                                )
-                              : null,
-                        ),
+                      AthiraiSnackBar.show(
+                        context,
+                        message: nowWishlisted
+                            ? 'Added "$productName" to Wishlist'
+                            : 'Removed from Wishlist',
+                        icon: nowWishlisted
+                            ? Icons.favorite_rounded
+                            : Icons.favorite_border_rounded,
+                        actionLabel: nowWishlisted && widget.onOpenWishlist != null ? 'VIEW' : null,
+                        onAction: widget.onOpenWishlist,
                       );
                     },
                     child: Center(

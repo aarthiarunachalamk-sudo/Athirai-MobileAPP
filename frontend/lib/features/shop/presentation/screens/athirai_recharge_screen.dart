@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../domain/shop_store.dart';
+import '../../../../core/utils/numeric_utils.dart';
 import '../theme/heritage_theme.dart';
 import '../widgets/athirai_royal_drawer.dart';
 import 'athirai_certified_coins_screen.dart';
@@ -84,11 +85,11 @@ class _AthiraiRechargeScreenState extends State<AthiraiRechargeScreen> {
   Future<void> _handleRecharge() async {
     final amt = _currentAmount;
     if (amt <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter a valid recharge amount'),
-          backgroundColor: Color(0xFFC92035),
-        ),
+      AthiraiSnackBar.show(
+        context,
+        message: 'Please enter a valid recharge amount',
+        isError: true,
+        icon: Icons.error_outline_rounded,
       );
       return;
     }
@@ -355,16 +356,12 @@ class _AthiraiRechargeScreenState extends State<AthiraiRechargeScreen> {
                 child: ElevatedButton(
                   onPressed: () {
                     Navigator.of(ctx).pop();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        backgroundColor: const Color(0xFF061B18),
-                        content: Text(
-                          _autopayActive
-                              ? 'Autopay Gold SIP mandate enabled!'
-                              : 'Autopay Gold SIP mandate disabled.',
-                          style: const TextStyle(color: Color(0xFFFFDF7A)),
-                        ),
-                      ),
+                    AthiraiSnackBar.show(
+                      context,
+                      message: _autopayActive
+                          ? 'Autopay Gold SIP mandate enabled!'
+                          : 'Autopay Gold SIP mandate disabled.',
+                      icon: Icons.autorenew_rounded,
                     );
                   },
                   style: ElevatedButton.styleFrom(
@@ -1144,10 +1141,10 @@ class _AthiraiRechargeScreenState extends State<AthiraiRechargeScreen> {
             separatorBuilder: (_, _) => const SizedBox(height: 8),
             itemBuilder: (context, index) {
               final tx = filtered[index];
-              final isCredit = tx['direction'] == 'credit';
-              final type = tx['type'] as String? ?? 'recharge';
-              final coins = (tx['coins_credited'] as num?)?.toDouble() ?? 1.0;
-              final source = tx['source'] as String? ?? 'Athirai Vault';
+              final isCredit = tx['direction']?.toString().toLowerCase() == 'credit';
+              final type = tx['type']?.toString() ?? 'recharge';
+              final coins = parseDouble(tx['coins_credited'], 1.0);
+              final source = tx['source']?.toString() ?? 'Athirai Vault';
 
               return Container(
                 padding: const EdgeInsets.all(12),

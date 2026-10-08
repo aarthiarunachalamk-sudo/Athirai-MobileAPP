@@ -8,6 +8,7 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import '../theme/heritage_theme.dart';
 import '../../domain/shop_store.dart';
+import '../../../../core/utils/numeric_utils.dart';
 
 /// Helper to download, view, or share Athirai Gold & Jewellery Tax Receipt PDFs
 class AthiraiReceiptHelper {
@@ -160,11 +161,11 @@ class AthiraiReceiptHelper {
       _showDownloadSuccessSheet(context, order, savedFile, pdfBytes);
     } catch (e) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          backgroundColor: Colors.red.shade900,
-          content: Text('Could not download receipt: $e'),
-        ),
+      AthiraiSnackBar.show(
+        context,
+        message: 'Could not download receipt: $e',
+        isError: true,
+        icon: Icons.error_outline_rounded,
       );
     }
   }
@@ -375,9 +376,9 @@ class AthiraiReceiptHelper {
     final orderId = order['order_id']?.toString() ?? 'ATH-ORD';
     final productName = order['product_name']?.toString() ?? 'Royal Heritage Jewellery';
     final purity = order['metal_purity']?.toString() ?? '22K Gold (916 Hallmarked)';
-    final weight = (order['weight_grams'] as num?)?.toDouble() ?? 10.0;
-    final totalAmount = (order['total_amount'] as num?)?.toInt() ?? 0;
-    final coinsUsed = (order['coins_used'] as num?)?.toInt() ?? (totalAmount * 100);
+    final weight = parseDouble(order['weight_grams'], 10.0);
+    final totalAmount = parseInt(order['total_amount'], 0);
+    final coinsUsed = parseInt(order['coins_used'], totalAmount * 100);
     final deliveryName = order['delivery_name']?.toString() ?? 'Royal Patron';
     final deliveryPhone = order['delivery_phone']?.toString() ?? '+91 98765 43210';
     final deliveryAddress = order['delivery_address']?.toString() ?? 'Athirai Vault Delivery';

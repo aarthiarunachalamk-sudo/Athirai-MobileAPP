@@ -118,11 +118,11 @@ class _PurchaseSheetContentState extends State<_PurchaseSheetContent> {
       _showSuccessCelebrationDialog(order);
       widget.onOrderCompleted?.call();
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          backgroundColor: Colors.red.shade900,
-          content: Text('Purchase could not be processed: ${res['error'] ?? 'Unknown error'}'),
-        ),
+      AthiraiSnackBar.show(
+        context,
+        message: 'Purchase could not be processed: ${res['error'] ?? 'Unknown error'}',
+        isError: true,
+        icon: Icons.error_outline_rounded,
       );
     }
   }
@@ -300,11 +300,11 @@ class _PurchaseSheetContentState extends State<_PurchaseSheetContent> {
                         );
                       } else {
                         setState(() => _isProcessing = false);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            backgroundColor: Colors.red.shade900,
-                            content: const Text('Razorpay payment cancelled or failed.'),
-                          ),
+                        AthiraiSnackBar.show(
+                          context,
+                          message: 'Razorpay payment cancelled or failed.',
+                          isError: true,
+                          icon: Icons.cancel_outlined,
                         );
                       }
                     },

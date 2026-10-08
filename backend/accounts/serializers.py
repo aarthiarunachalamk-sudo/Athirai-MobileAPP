@@ -305,6 +305,9 @@ class ResetPasswordConfirmSerializer(serializers.Serializer):
 
 
 class WalletTransactionSerializer(serializers.ModelSerializer):
+    amount_paid = serializers.FloatField(read_only=True)
+    coins_credited = serializers.FloatField(read_only=True)
+
     class Meta:
         from .models import WalletTransaction
         model = WalletTransaction
@@ -339,6 +342,10 @@ class UserWalletSerializer(serializers.ModelSerializer):
 
 
 class JewelOrderSerializer(serializers.ModelSerializer):
+    weight_grams = serializers.FloatField(read_only=True)
+    total_amount = serializers.FloatField(read_only=True)
+    coins_used = serializers.FloatField(read_only=True)
+
     class Meta:
         from .models import JewelOrder
         model = JewelOrder

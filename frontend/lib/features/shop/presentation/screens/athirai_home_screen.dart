@@ -218,11 +218,11 @@ class AthiraiHomeScreen extends StatelessWidget {
           GestureDetector(
             onTap: () {
               store.loadFromBackend();
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Syncing live rates & products from backend...'),
-                  duration: Duration(seconds: 1),
-                ),
+              AthiraiSnackBar.show(
+                context,
+                message: 'Syncing live rates & products from backend...',
+                icon: Icons.sync_rounded,
+                duration: const Duration(seconds: 1),
               );
             },
             child: Icon(
@@ -270,42 +270,18 @@ class AthiraiHomeScreen extends StatelessWidget {
                 if (tab == 'OFFERS') {
                   onOpenCollection();
                 } else if (tab == 'TEAM369-LIVE') {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Row(
-                        children: [
-                          const Icon(Icons.videocam_rounded, color: HeritageTheme.goldBright, size: 16),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              'TEAM369-LIVE: Join daily jewellery showcase live!',
-                              style: GoogleFonts.inter(fontSize: 12, color: Colors.white),
-                            ),
-                          ),
-                        ],
-                      ),
-                      backgroundColor: const Color(0xFF071F1A),
-                      duration: const Duration(seconds: 2),
-                    ),
+                  AthiraiSnackBar.show(
+                    context,
+                    message: 'TEAM369-LIVE: Join daily jewellery showcase live!',
+                    icon: Icons.videocam_rounded,
+                    duration: const Duration(seconds: 2),
                   );
                 } else if (tab == 'NEARBY SHOP') {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Row(
-                        children: [
-                          const Icon(Icons.location_on_rounded, color: HeritageTheme.goldBright, size: 16),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              'Athirai Jewellers: 108 Heritage Boulevard, Madurai & Chennai',
-                              style: GoogleFonts.inter(fontSize: 12, color: Colors.white),
-                            ),
-                          ),
-                        ],
-                      ),
-                      backgroundColor: const Color(0xFF071F1A),
-                      duration: const Duration(seconds: 2),
-                    ),
+                  AthiraiSnackBar.show(
+                    context,
+                    message: 'Athirai Jewellers: 108 Heritage Boulevard, Madurai & Chennai',
+                    icon: Icons.location_on_rounded,
+                    duration: const Duration(seconds: 3),
                   );
                 } else {
                   AthiraiCollectionsMegamenuSheet.show(
@@ -1623,11 +1599,11 @@ class AthiraiHomeScreen extends StatelessWidget {
         );
       }
       if (parentContext.mounted) {
-        ScaffoldMessenger.of(parentContext).showSnackBar(
-          const SnackBar(
-            content: Text('Signed out successfully.'),
-            duration: Duration(seconds: 2),
-          ),
+        AthiraiSnackBar.show(
+          parentContext,
+          message: 'Signed out successfully.',
+          icon: Icons.check_circle_outline_rounded,
+          duration: const Duration(seconds: 2),
         );
       }
     }

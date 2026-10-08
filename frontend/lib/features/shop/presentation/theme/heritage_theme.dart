@@ -224,3 +224,82 @@ class _LotusPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
+
+/// Royal Luxury SnackBar / Notification System matching the Athirai dark emerald & gold theme
+class AthiraiSnackBar {
+  AthiraiSnackBar._();
+
+  static void show(
+    BuildContext context, {
+    required String message,
+    String? actionLabel,
+    VoidCallback? onAction,
+    Duration duration = const Duration(seconds: 2),
+    IconData? icon,
+    bool isError = false,
+  }) {
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.hideCurrentSnackBar();
+    messenger.showSnackBar(
+      SnackBar(
+        backgroundColor: const Color(0xFF041914),
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        elevation: 12,
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(
+            color: isError ? const Color(0xFFEF4444) : const Color(0xFFD4AF37),
+            width: 1.1,
+          ),
+        ),
+        content: Row(
+          children: [
+            if (icon != null) ...[
+              Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: isError ? const Color(0x33EF4444) : const Color(0x33D4AF37),
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: isError ? const Color(0xFFEF4444) : const Color(0xFFFFDF7A),
+                    width: 0.8,
+                  ),
+                ),
+                child: Center(
+                  child: Icon(
+                    icon,
+                    color: isError ? const Color(0xFFFCA5A5) : const Color(0xFFFFDF7A),
+                    size: 16,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+            ],
+            Expanded(
+              child: Text(
+                message,
+                style: GoogleFonts.inter(
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFFF7F2E8),
+                  letterSpacing: 0.2,
+                ),
+              ),
+            ),
+          ],
+        ),
+        action: actionLabel != null
+            ? SnackBarAction(
+                label: actionLabel,
+                textColor: const Color(0xFFFFDF7A),
+                onPressed: onAction ?? () {},
+              )
+            : null,
+        duration: duration,
+      ),
+    );
+  }
+}

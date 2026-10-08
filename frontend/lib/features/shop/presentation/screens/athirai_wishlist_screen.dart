@@ -223,11 +223,11 @@ class AthiraiWishlistScreen extends StatelessWidget {
               onSelected: (value) {
                 if (value == 'clear') {
                   store.clearWishlist();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Wishlist cleared'),
-                      duration: Duration(seconds: 1),
-                    ),
+                  AthiraiSnackBar.show(
+                    context,
+                    message: 'Wishlist cleared',
+                    icon: Icons.delete_outline_rounded,
+                    duration: const Duration(seconds: 2),
                   );
                 }
               },
@@ -516,18 +516,13 @@ class AthiraiWishlistScreen extends StatelessWidget {
                 TextButton.icon(
                   onPressed: () {
                     store.addAllWishlistToCart();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          'All ${items.length} items added to your Cart!',
-                        ),
-                        duration: const Duration(seconds: 2),
-                        action: SnackBarAction(
-                          label: 'VIEW CART',
-                          textColor: HeritageTheme.goldBright,
-                          onPressed: onOpenBag,
-                        ),
-                      ),
+                    AthiraiSnackBar.show(
+                      context,
+                      message: 'All ${items.length} items added to your Cart!',
+                      icon: Icons.shopping_bag_outlined,
+                      actionLabel: 'VIEW CART',
+                      onAction: onOpenBag,
+                      duration: const Duration(seconds: 2),
                     );
                   },
                   icon: const Icon(
@@ -711,11 +706,11 @@ class AthiraiWishlistScreen extends StatelessWidget {
                     tooltip: 'Remove from Wishlist',
                     onPressed: () {
                       store.removeFromWishlist(product.id);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Removed "${product.name}" from Wishlist'),
-                          duration: const Duration(seconds: 1),
-                        ),
+                      AthiraiSnackBar.show(
+                        context,
+                        message: 'Removed "${product.name}" from Wishlist',
+                        icon: Icons.heart_broken_rounded,
+                        duration: const Duration(seconds: 2),
                       );
                     },
                   ),
@@ -756,18 +751,13 @@ class AthiraiWishlistScreen extends StatelessWidget {
                           borderRadius: BorderRadius.circular(20),
                           onTap: () {
                             store.addToCart(product.id, 1);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  'Added "${product.name}" to Cart (Qty: ${store.quantity(product.id)})',
-                                ),
-                                duration: const Duration(seconds: 1),
-                                action: SnackBarAction(
-                                  label: 'VIEW CART',
-                                  textColor: HeritageTheme.goldBright,
-                                  onPressed: onOpenBag,
-                                ),
-                              ),
+                            AthiraiSnackBar.show(
+                              context,
+                              message: 'Added "${product.name}" to Cart',
+                              icon: Icons.shopping_bag_outlined,
+                              actionLabel: 'VIEW CART',
+                              onAction: onOpenBag,
+                              duration: const Duration(seconds: 2),
                             );
                           },
                           child: Center(

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../domain/shop_store.dart';
+import '../../../../core/utils/numeric_utils.dart';
 import '../theme/heritage_theme.dart';
 import '../widgets/athirai_receipt_helper.dart';
 
@@ -151,8 +152,8 @@ class _AthiraiOrderSummaryScreenState extends State<AthiraiOrderSummaryScreen> {
     int totalCoins = 0;
     int totalInr = 0;
     for (final o in orders) {
-      final coins = (o['coins_used'] as num?)?.toInt() ?? 0;
-      final inr = (o['total_amount'] as num?)?.toInt() ?? 0;
+      final coins = parseInt(o['coins_used']);
+      final inr = parseInt(o['total_amount']);
       totalCoins += coins;
       totalInr += inr;
     }
@@ -289,11 +290,11 @@ class _AthiraiOrderSummaryScreenState extends State<AthiraiOrderSummaryScreen> {
   Widget _buildOrderCard(Map<String, dynamic> order) {
     final invoiceNumber = order['invoice_number']?.toString() ?? 'INV-ATH-${order['order_id']}';
     final productName = order['product_name']?.toString() ?? 'Handcrafted Temple Jewellery';
-    final totalAmount = (order['total_amount'] as num?)?.toInt() ?? 0;
-    final coinsUsed = (order['coins_used'] as num?)?.toInt() ?? (totalAmount * 100);
+    final totalAmount = parseInt(order['total_amount']);
+    final coinsUsed = parseInt(order['coins_used'], totalAmount * 100);
     final status = order['status']?.toString() ?? 'Confirmed';
     final purity = order['metal_purity']?.toString() ?? '22K Gold';
-    final weight = (order['weight_grams'] as num?)?.toDouble() ?? 10.0;
+    final weight = parseDouble(order['weight_grams'], 10.0);
     final deliveryName = order['delivery_name']?.toString() ?? 'Royal Patron';
     final deliveryAddress = order['delivery_address']?.toString() ?? 'Delivery Address Confirmed';
     final createdAt = order['created_at']?.toString() ?? DateTime.now().toIso8601String();
@@ -582,10 +583,10 @@ class _AthiraiOrderSummaryScreenState extends State<AthiraiOrderSummaryScreen> {
   void _showOrderDetailsPopup(BuildContext context, Map<String, dynamic> order) {
     final invoiceNumber = order['invoice_number']?.toString() ?? 'ATH-INV';
     final productName = order['product_name']?.toString() ?? 'Jewellery';
-    final totalAmount = (order['total_amount'] as num?)?.toInt() ?? 0;
-    final coinsUsed = (order['coins_used'] as num?)?.toInt() ?? (totalAmount * 100);
+    final totalAmount = parseInt(order['total_amount']);
+    final coinsUsed = parseInt(order['coins_used'], totalAmount * 100);
     final purity = order['metal_purity']?.toString() ?? '22K Gold';
-    final weight = (order['weight_grams'] as num?)?.toDouble() ?? 10.0;
+    final weight = parseDouble(order['weight_grams'], 10.0);
     final deliveryName = order['delivery_name']?.toString() ?? 'Royal Patron';
     final deliveryAddress = order['delivery_address']?.toString() ?? 'Default Address';
     final createdAt = order['created_at']?.toString() ?? '';

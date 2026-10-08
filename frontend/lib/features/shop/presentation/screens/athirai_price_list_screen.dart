@@ -139,11 +139,10 @@ class _AthiraiPriceListScreenState extends State<AthiraiPriceListScreen> {
                     Navigator.pop(ctx);
                     setState(() {});
 
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        backgroundColor: const Color(0xFF073B3F),
-                        content: Text('Updated live metal rates! 22K is now ₹${widget.store.rates.gold22k}/g'),
-                      ),
+                    AthiraiSnackBar.show(
+                      context,
+                      message: 'Updated live metal rates! 22K is now ₹${widget.store.rates.gold22k}/g',
+                      icon: Icons.currency_rupee_rounded,
                     );
                   },
                   child: const Text('Save Rates & Recalculate All Prices', style: TextStyle(fontWeight: FontWeight.bold)),
@@ -575,12 +574,13 @@ class _AthiraiPriceListScreenState extends State<AthiraiPriceListScreen> {
                     icon: const Icon(Icons.add_shopping_cart_rounded, color: HeritageTheme.maroon, size: 20),
                     onPressed: () {
                       widget.store.addToCart(product.id);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          backgroundColor: HeritageTheme.maroon,
-                          duration: const Duration(seconds: 1),
-                          content: Text('Added "${product.name}" to Bag!'),
-                        ),
+                      AthiraiSnackBar.show(
+                        context,
+                        message: 'Added "${product.name}" to Bag!',
+                        icon: Icons.shopping_bag_outlined,
+                        actionLabel: 'VIEW BAG',
+                        onAction: widget.onOpenBag,
+                        duration: const Duration(seconds: 2),
                       );
                     },
                   ),

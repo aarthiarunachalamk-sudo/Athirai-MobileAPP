@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 
 import '../../showroom/data/jewellery_data.dart';
 import '../../showroom/domain/models/jewellery_item.dart';
+import '../../../core/utils/numeric_utils.dart';
 import '../data/shop_api_service.dart';
 
 String rupees(int amount) {
@@ -435,13 +436,13 @@ class ShopStore extends ChangeNotifier {
       final walletData = await _api.fetchWallet();
       if (walletData != null) {
         if (walletData['balance_coins'] != null) {
-          _augCoins = (walletData['balance_coins'] as num).toDouble();
+          _augCoins = parseDouble(walletData['balance_coins'], _augCoins);
         }
         if (walletData['today_coins'] != null) {
-          _todayCoins = (walletData['today_coins'] as num).toDouble();
+          _todayCoins = parseDouble(walletData['today_coins'], _todayCoins);
         }
         if (walletData['today_amount'] != null) {
-          _todayRechargeAmount = (walletData['today_amount'] as num).toDouble();
+          _todayRechargeAmount = parseDouble(walletData['today_amount'], _todayRechargeAmount);
         }
         if (walletData['history'] is List) {
           _walletHistory = List<Map<String, dynamic>>.from(walletData['history']);
@@ -622,6 +623,11 @@ class ShopStore extends ChangeNotifier {
   List<Map<String, dynamic>> _walletHistory = [];
   List<Map<String, dynamic>> get walletHistory => List.unmodifiable(_walletHistory);
 
+  void setWalletHistoryForTesting(List<Map<String, dynamic>> history) {
+    _walletHistory = List.from(history);
+    notifyListeners();
+  }
+
   void toggleUseCoinsInCheckout() {
     _useCoinsInCheckout = !_useCoinsInCheckout;
     notifyListeners();
@@ -671,7 +677,7 @@ class ShopStore extends ChangeNotifier {
       final res = await _api.claimDailyReward();
       if (res != null) {
         final claimed = res['claimed'] as bool? ?? false;
-        final newBal = (res['balance_coins'] as num?)?.toDouble();
+        final newBal = res['balance_coins'] != null ? parseDouble(res['balance_coins']) : null;
         if (newBal != null) {
           _augCoins = newBal;
         } else if (claimed) {
@@ -723,7 +729,7 @@ class ShopStore extends ChangeNotifier {
     if (autoLoadBackend) {
       _api.rechargeWallet(amount: amount, coins: coins, paymentMethod: paymentMethod).then((res) {
         if (res != null && res['new_balance'] != null) {
-          _augCoins = (res['new_balance'] as num).toDouble();
+          _augCoins = parseDouble(res['new_balance'], _augCoins);
           notifyListeners();
         }
       }).catchError((_) {});
@@ -904,7 +910,7 @@ class ShopStore extends ChangeNotifier {
     }
 
     if (res != null && res['remaining_coins'] != null) {
-      _augCoins = (res['remaining_coins'] as num).toDouble();
+      _augCoins = parseDouble(res['remaining_coins'], _augCoins);
     } else {
       _augCoins = (_augCoins - coinsNeeded).clamp(0.0, double.infinity);
     }
@@ -989,7 +995,7 @@ class ShopStore extends ChangeNotifier {
         source: source,
       );
       if (res != null && res['balance_coins'] != null) {
-        _augCoins = (res['balance_coins'] as num).toDouble();
+        _augCoins = parseDouble(res['balance_coins'], _augCoins);
       } else {
         _augCoins += coins;
       }

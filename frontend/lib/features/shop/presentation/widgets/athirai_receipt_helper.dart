@@ -121,30 +121,11 @@ class AthiraiReceiptHelper {
   ) async {
     final invoiceNo = order['invoice_number']?.toString() ?? order['order_id']?.toString() ?? 'ATH-INV';
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        backgroundColor: const Color(0xFF041814),
-        content: Row(
-          children: [
-            const SizedBox(
-              width: 16,
-              height: 16,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                color: Color(0xFFD4AF37),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                'Downloading Receipt $invoiceNo...',
-                style: const TextStyle(color: Color(0xFFF7F2E8), fontSize: 13),
-              ),
-            ),
-          ],
-        ),
-        duration: const Duration(milliseconds: 1400),
-      ),
+    AthiraiSnackBar.show(
+      context,
+      message: 'Downloading Receipt $invoiceNo...',
+      icon: Icons.downloading_rounded,
+      duration: const Duration(milliseconds: 1200),
     );
 
     try {
@@ -159,6 +140,15 @@ class AthiraiReceiptHelper {
       if (!context.mounted) return;
 
       _showDownloadSuccessSheet(context, order, savedFile, pdfBytes);
+
+      AthiraiSnackBar.show(
+        context,
+        message: 'Receipt Downloaded Successfully!',
+        icon: Icons.check_circle_rounded,
+        actionLabel: savedFile != null ? 'OPEN' : null,
+        onAction: savedFile != null ? () => openSavedFile(savedFile) : null,
+        duration: const Duration(seconds: 4),
+      );
     } catch (e) {
       if (!context.mounted) return;
       AthiraiSnackBar.show(
@@ -232,18 +222,40 @@ class AthiraiReceiptHelper {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            'Receipt Downloaded!',
-                            style: GoogleFonts.cormorantGaramond(
-                              fontSize: 20,
-                              fontWeight: FontWeight.w700,
-                              color: HeritageTheme.textLight,
-                            ),
+                          Row(
+                            children: [
+                              Text(
+                                'Downloaded Successfully!',
+                                style: GoogleFonts.cormorantGaramond(
+                                  fontSize: 21,
+                                  fontWeight: FontWeight.w700,
+                                  color: HeritageTheme.textLight,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: const Color(0x3310B981),
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(color: const Color(0xFF10B981), width: 0.8),
+                                ),
+                                child: Text(
+                                  'SAVED',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.w800,
+                                    color: const Color(0xFF4ADE80),
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                           Text(
                             'ரசீது வெற்றிகரமாக பதிவிறக்கம் செய்யப்பட்டது',
                             style: GoogleFonts.inter(
-                              fontSize: 11,
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w600,
                               color: HeritageTheme.goldBright,
                             ),
                           ),

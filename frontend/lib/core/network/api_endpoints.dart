@@ -9,11 +9,13 @@ class ApiEndpoints {
 
   /// Candidate backend URLs for Android devices:
   /// 1. http://127.0.0.1:8000 (USB debugging via adb reverse)
-  /// 2. http://192.168.0.104:8000 (Local Wi-Fi network)
-  /// 3. http://10.0.2.2:8000 (Android Emulator)
+  /// 2. http://192.168.0.103:8000 (Current active local machine Wi-Fi network)
+  /// 3. http://192.168.0.104:8000 (Previous Wi-Fi lease)
+  /// 4. http://10.0.2.2:8000 (Android Emulator)
   static const List<String> androidCandidates = [
-    'http://192.168.0.104:8000',
+    'http://192.168.0.103:8000',
     'http://127.0.0.1:8000',
+    'http://192.168.0.104:8000',
     'http://10.0.2.2:8000',
     'http://192.168.0.105:8000',
     'http://192.168.0.100:8000',
@@ -27,8 +29,8 @@ class ApiEndpoints {
 
     if (kIsWeb) return 'http://127.0.0.1:8000';
     if (Platform.isAndroid) {
-      // Default to active local machine Wi-Fi host IP
-      return 'http://192.168.0.104:8000';
+      // Direct local Wi-Fi host IP where Django is running on 0.0.0.0:8000
+      return 'http://192.168.0.103:8000';
     }
     return 'http://127.0.0.1:8000';
   }

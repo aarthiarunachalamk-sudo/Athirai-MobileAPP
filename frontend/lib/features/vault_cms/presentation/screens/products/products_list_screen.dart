@@ -14,12 +14,14 @@ class ProductsListScreen extends StatefulWidget {
   const ProductsListScreen({
     super.key,
     required this.apiService,
+    this.initialCategory,
     required this.onCreateNew,
     required this.onSelectProduct,
     required this.onEditProduct,
   });
 
   final VaultApiService apiService;
+  final String? initialCategory;
   final VoidCallback onCreateNew;
   final ValueChanged<VaultProduct> onSelectProduct;
   final ValueChanged<VaultProduct> onEditProduct;
@@ -43,10 +45,16 @@ class _ProductsListScreenState extends State<ProductsListScreen> {
 
   final List<String> _categories = [
     'All',
-    'Necklace',
+    'Necklaces',
+    'Bridal Chokers',
     'Rings',
     'Bangles',
     'Earrings',
+    'Chains',
+    'Coins & Bars',
+    'Pendants',
+    'Temple',
+    'Daily Wear',
     'Bridal Sets',
   ];
 
@@ -62,6 +70,9 @@ class _ProductsListScreenState extends State<ProductsListScreen> {
   @override
   void initState() {
     super.initState();
+    if (widget.initialCategory != null && widget.initialCategory!.isNotEmpty) {
+      _selectedCategory = widget.initialCategory!;
+    }
     _loadProducts();
   }
 
@@ -71,16 +82,52 @@ class _ProductsListScreenState extends State<ProductsListScreen> {
     if (mounted) {
       setState(() {
         _allProducts = list;
+        _updateDynamicCategories();
         _applyFilters();
         _isLoading = false;
       });
     }
   }
 
+  void _updateDynamicCategories() {
+    final extracted = _allProducts
+        .map((p) => p.category.trim())
+        .where((c) => c.isNotEmpty)
+        .toSet();
+    final allCats = <String>{
+      'All',
+      'Necklaces',
+      'Bridal Chokers',
+      'Rings',
+      'Bangles',
+      'Earrings',
+      'Chains',
+      'Coins & Bars',
+      'Pendants',
+      'Temple',
+      'Daily Wear',
+      'Bridal Sets',
+      ...extracted,
+    };
+    if (!_categories.contains(_selectedCategory) && _selectedCategory != 'All') {
+      allCats.add(_selectedCategory);
+    }
+    _categories
+      ..clear()
+      ..addAll(allCats);
+  }
+
   void _applyFilters() {
     _filteredProducts = _allProducts.where((p) {
-      if (_selectedCategory != 'All' && p.category.toLowerCase() != _selectedCategory.toLowerCase()) {
-        return false;
+      if (_selectedCategory != 'All') {
+        final f = _selectedCategory.toLowerCase();
+        final c = p.category.toLowerCase();
+        final matches = c == f ||
+            (f.endsWith('s') && c == f.substring(0, f.length - 1)) ||
+            (c.endsWith('s') && f == c.substring(0, c.length - 1)) ||
+            c.contains(f) ||
+            f.contains(c);
+        if (!matches) return false;
       }
       if (_selectedCollection != 'All' && p.collection.toLowerCase() != _selectedCollection.toLowerCase()) {
         return false;

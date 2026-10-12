@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:athirai_mobile/features/vault_cms/data/services/vault_api_service.dart';
 import 'package:athirai_mobile/features/shop/presentation/screens/athirai_flow_container.dart';
-import '../auth/vault_login_screen.dart';
+import '../auth/admin_login_screen.dart';
 
 
 import 'vault_web_shell.dart';
@@ -45,8 +45,9 @@ class _VaultAppRootState extends State<VaultAppRoot> {
   @override
   Widget build(BuildContext context) {
     if (!_isAuthenticated) {
-      return VaultLoginScreen(
+      return AdminLoginScreen(
         onLoginSuccess: _handleLoginSuccess,
+        onReturnToStore: () => setState(() => _showClientMobileExperience = true),
       );
     }
 

@@ -39,11 +39,13 @@ class UserSerializer(serializers.ModelSerializer):
             'sso_provider',
             'organization_domain',
             'is_profile_completed',
+            'is_staff',
+            'is_superuser',
             'balance_coins',
             'aug_coins',
             'created_at',
         ]
-        read_only_fields = ['id', 'is_sso_user', 'sso_provider', 'organization_domain', 'created_at']
+        read_only_fields = ['id', 'is_sso_user', 'sso_provider', 'organization_domain', 'is_staff', 'is_superuser', 'created_at']
 
 
 

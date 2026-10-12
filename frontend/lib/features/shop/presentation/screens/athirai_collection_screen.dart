@@ -69,8 +69,9 @@ class _AthiraiCollectionScreenState extends State<AthiraiCollectionScreen> {
   String _searchQuery = '';
   _SortOption _currentSort = _SortOption.curated;
   String _selectedMetalFilter = 'All'; // All, 22K Gold, 18K Gold, Silver
-  String _selectedPriceRange = 'All'; // All, <1L, 1L-3L, 3L+
+  String _selectedPriceRange = 'All'; // All, < ₹1L, ₹1L - ₹3L, ₹3L+
   bool _isGridView = true; // true: 2-column grid, false: detailed list
+  bool _isCategoryGroupedView = false; // true: display products grouped by category sections
 
   @override
   void initState() {
@@ -103,29 +104,94 @@ class _AthiraiCollectionScreenState extends State<AthiraiCollectionScreen> {
     }
   }
 
-  static const List<Map<String, String>> _categoryTabs = [
-    {'name': 'All', 'icon': '💎'},
-    {'name': 'Necklaces', 'icon': '👑'},
-    {'name': 'Rings', 'icon': '💍'},
-    {'name': 'Bangles', 'icon': '✨'},
-    {'name': 'Earrings', 'icon': '🌸'},
-    {'name': 'Chains', 'icon': '⛓️'},
-    {'name': 'Coins & Bars', 'icon': '🪙'},
-    {'name': 'Daily Wear', 'icon': '💛'},
-    {'name': 'Wedding', 'icon': '🏛️'},
-    {'name': 'Gifting', 'icon': '🎁'},
-    {'name': 'Mangalsutra', 'icon': '📿'},
-    {'name': 'Gold', 'icon': '🏆'},
-    {'name': 'Silver', 'icon': '🌙'},
-  ];
+  static String _getCategoryIcon(String cat) {
+    final c = cat.toLowerCase();
+    if (c.contains('choker') || c.contains('bridal')) return '👑';
+    if (c.contains('necklace')) return '👑';
+    if (c.contains('ring')) return '💍';
+    if (c.contains('bangle') || c.contains('bracelet') || c.contains('kada')) return '✨';
+    if (c.contains('earring') || c.contains('jhumka')) return '🌸';
+    if (c.contains('chain')) return '⛓️';
+    if (c.contains('coin') || c.contains('bar')) return '🪙';
+    if (c.contains('pendant')) return '💎';
+    if (c.contains('anklet')) return '💫';
+    if (c.contains('temple')) return '🏛️';
+    if (c.contains('mangal')) return '📿';
+    if (c.contains('gold')) return '🏆';
+    if (c.contains('silver')) return '🌙';
+    if (c.contains('gift')) return '🎁';
+    if (c.contains('daily')) return '💛';
+    return '💎';
+  }
+
+  List<Map<String, dynamic>> _getCategoryTabs(List<ShopProduct> allProducts) {
+    final list = <Map<String, dynamic>>[
+      {'name': 'All', 'icon': '💎', 'count': allProducts.length},
+      {'name': 'Bridal Chokers', 'icon': '👑'},
+      {'name': 'Necklaces', 'icon': '👑'},
+      {'name': 'Rings', 'icon': '💍'},
+      {'name': 'Bangles', 'icon': '✨'},
+      {'name': 'Earrings', 'icon': '🌸'},
+      {'name': 'Chains', 'icon': '⛓️'},
+      {'name': 'Coins & Bars', 'icon': '🪙'},
+      {'name': 'Daily Wear', 'icon': '💛'},
+      {'name': 'Wedding', 'icon': '🏛️'},
+      {'name': 'Gifting', 'icon': '🎁'},
+      {'name': 'Mangalsutra', 'icon': '📿'},
+      {'name': 'Gold', 'icon': '🏆'},
+      {'name': 'Silver', 'icon': '🌙'},
+    ];
+
+    final existingNames = list.map((e) => (e['name'] as String).toLowerCase()).toSet();
+
+    // Dynamically incorporate categories from store.categories
+    for (final c in widget.store.categories) {
+      if (!existingNames.contains(c.name.toLowerCase())) {
+        existingNames.add(c.name.toLowerCase());
+        list.add({
+          'name': c.name,
+          'icon': _getCategoryIcon(c.name),
+        });
+      }
+    }
+
+    // Also incorporate categories from products
+    for (final p in allProducts) {
+      if (p.category.isNotEmpty && !existingNames.contains(p.category.toLowerCase())) {
+        existingNames.add(p.category.toLowerCase());
+        list.add({
+          'name': p.category,
+          'icon': _getCategoryIcon(p.category),
+        });
+      }
+    }
+
+    for (final tab in list) {
+      final name = tab['name'] as String;
+      if (name != 'All') {
+        tab['count'] = allProducts.where((p) => _matchesCategory(p, name)).length;
+      }
+    }
+
+    return list;
+  }
 
   bool _matchesCategory(ShopProduct p, String cat) {
     if (cat == 'All') return true;
-    final c = cat.toLowerCase();
-    final pCat = p.category.toLowerCase();
-    final pName = p.name.toLowerCase();
-    final pCol = p.collection.toLowerCase();
-    final pMetal = p.metal.toLowerCase();
+    final c = cat.toLowerCase().trim();
+    final pCat = p.category.toLowerCase().trim();
+    final pName = p.name.toLowerCase().trim();
+    final pCol = p.collection.toLowerCase().trim();
+    final pMetal = p.metal.toLowerCase().trim();
+
+    // 1. Direct or singular/plural equivalence
+    if (pCat == c || pCat == '${c}s' || '${pCat}s' == c) return true;
+    if (pCat.replaceAll(' ', '') == c.replaceAll(' ', '')) return true;
+
+    // 2. Chokers / Bridal Chokers
+    if (c.contains('choker')) {
+      return pCat.contains('choker') || pName.contains('choker') || pCat.contains('bridal');
+    }
 
     if (c == 'necklaces' || c == 'necklace') {
       return pCat.contains('necklace') ||
@@ -189,7 +255,17 @@ class _AthiraiCollectionScreenState extends State<AthiraiCollectionScreen> {
           pName.contains('emerald') ||
           pName.contains('ring');
     }
-    return pCat == c || pCol.contains(c) || pName.contains(c);
+    if (c.contains('temple')) {
+      return pCat.contains('temple') || pName.contains('temple') || pCol.contains('temple');
+    }
+    if (c.contains('pendant')) {
+      return pCat.contains('pendant') || pName.contains('pendant');
+    }
+    if (c.contains('anklet')) {
+      return pCat.contains('anklet') || pName.contains('anklet');
+    }
+
+    return pCat.contains(c) || c.contains(pCat) || pCol.contains(c) || pName.contains(c);
   }
 
   List<ShopProduct> _getFilteredProducts(List<ShopProduct> allProducts) {
@@ -579,12 +655,13 @@ class _AthiraiCollectionScreenState extends State<AthiraiCollectionScreen> {
                                       const SizedBox(height: 14),
                                     ],
 
-                                    // Dynamic Product Presentation: 2-Column Grid or Detailed List
-                                    if (_isGridView)
+                                    // Dynamic Product Presentation: Category-Wise Sections, 2-Column Grid or Detailed List
+                                    if (_isCategoryGroupedView && _selectedCategory == 'All' && _searchQuery.isEmpty)
+                                      _buildCategoryWiseSections(context, sortedProducts)
+                                    else if (_isGridView)
                                       _buildTwoColumnGrid(context, remainingProducts)
                                     else
                                       _buildDetailedListView(context, remainingProducts),
-
                                     const SizedBox(height: 32),
                                   ],
                                 ),
@@ -951,10 +1028,11 @@ class _AthiraiCollectionScreenState extends State<AthiraiCollectionScreen> {
               ),
             ),
 
-          // Category Pills
-          ..._categoryTabs.map((tab) {
-            final cat = tab['name']!;
-            final icon = tab['icon']!;
+          // Category Pills with dynamic count badges
+          ..._getCategoryTabs(widget.store.products).map((tab) {
+            final cat = tab['name'] as String;
+            final icon = tab['icon'] as String;
+            final count = tab['count'] as int?;
             final isSelected = cat == _selectedCategory && _selectedSubItem == null;
 
             return Padding(
@@ -1006,6 +1084,19 @@ class _AthiraiCollectionScreenState extends State<AthiraiCollectionScreen> {
                               : const Color(0xFFA2B4AF),
                         ),
                       ),
+                      if (cat != 'All' && count != null && count > 0) ...[
+                        const SizedBox(width: 4),
+                        Text(
+                          '($count)',
+                          style: GoogleFonts.inter(
+                            fontSize: 10,
+                            fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                            color: isSelected
+                                ? const Color(0xFF04100D).withOpacity(0.85)
+                                : const Color(0xFFC7A45B),
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -1102,6 +1193,44 @@ class _AthiraiCollectionScreenState extends State<AthiraiCollectionScreen> {
 
           const SizedBox(width: 6),
 
+          // Category-Wise Grouping Switcher
+          InkWell(
+            onTap: () => setState(() => _isCategoryGroupedView = !_isCategoryGroupedView),
+            borderRadius: BorderRadius.circular(14),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 5),
+              decoration: BoxDecoration(
+                color: _isCategoryGroupedView ? const Color(0x33D4AF37) : const Color(0x44051814),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: _isCategoryGroupedView ? const Color(0xFFFFDF7A) : const Color(0x33C7A45B),
+                  width: 0.8,
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.auto_awesome_mosaic_outlined,
+                    size: 13,
+                    color: _isCategoryGroupedView ? const Color(0xFFFFDF7A) : const Color(0xFFA2B4AF),
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    'Category View',
+                    style: GoogleFonts.inter(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                      color: _isCategoryGroupedView ? const Color(0xFFFFDF7A) : const Color(0xFFA2B4AF),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          const SizedBox(width: 6),
+
           // Layout Switcher (Grid ⊞ vs List ☰)
           InkWell(
             onTap: () => setState(() => _isGridView = !_isGridView),
@@ -1170,6 +1299,110 @@ class _AthiraiCollectionScreenState extends State<AthiraiCollectionScreen> {
                   ),
                 ),
               ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Category-Wise Grouped Masterpiece Layout
+  Widget _buildCategoryWiseSections(BuildContext context, List<ShopProduct> products) {
+    final Map<String, List<ShopProduct>> sections = {};
+    for (final p in products) {
+      final cat = p.category.trim().isNotEmpty ? p.category.trim() : 'Jewellery';
+      sections.putIfAbsent(cat, () => []).add(p);
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        for (final entry in sections.entries) ...[
+          _buildCategorySectionHeader(entry.key, entry.value.length),
+          const SizedBox(height: 12),
+          if (_isGridView)
+            _buildTwoColumnGrid(context, entry.value)
+          else
+            _buildDetailedListView(context, entry.value),
+          const SizedBox(height: 28),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildCategorySectionHeader(String category, int count) {
+    final icon = _getCategoryIcon(category);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0x330E3328), Color(0x1A051814)],
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+        ),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0x44D4AF37), width: 0.9),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(
+            children: [
+              Text(icon, style: const TextStyle(fontSize: 16)),
+              const SizedBox(width: 8),
+              Text(
+                category.toUpperCase(),
+                style: GoogleFonts.cormorantGaramond(
+                  fontSize: 16.5,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1.5,
+                  color: const Color(0xFFFFDF7A),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                decoration: BoxDecoration(
+                  color: const Color(0x22D4AF37),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: const Color(0x33D4AF37), width: 0.6),
+                ),
+                child: Text(
+                  '$count items',
+                  style: GoogleFonts.inter(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xFFC7A45B),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          InkWell(
+            onTap: () {
+              setState(() {
+                _selectedCategory = category;
+                _selectedSubItem = null;
+                _isCategoryGroupedView = false;
+              });
+            },
+            borderRadius: BorderRadius.circular(8),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+              child: Row(
+                children: [
+                  Text(
+                    'Explore Category',
+                    style: GoogleFonts.inter(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: const Color(0xFFD4AF37),
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  const Icon(Icons.arrow_forward_ios_rounded, size: 10, color: Color(0xFFD4AF37)),
+                ],
+              ),
             ),
           ),
         ],

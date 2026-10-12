@@ -7,6 +7,8 @@ import '../screens/athirai_order_summary_screen.dart';
 import '../screens/athirai_recharge_screen.dart';
 import '../screens/athirai_certified_coins_screen.dart';
 import 'athirai_collections_megamenu_sheet.dart';
+import '../../../vault_cms/presentation/screens/auth/admin_login_screen.dart';
+import '../../../vault_cms/presentation/screens/shell/vault_app_root.dart';
 
 /// Luxury Royal Three-line (☰) Menu Drawer (Step 10 Point 2)
 /// Allows instant navigation to:
@@ -314,6 +316,32 @@ class AthiraiRoyalDrawer extends StatelessWidget {
                     title: 'Jewel Vault Bag',
                     subtitle: 'Cart & checkout ready',
                     onTap: onSelectCart,
+                  ),
+                  const Divider(color: HeritageTheme.goldBorderSubtle, height: 24),
+                  _drawerItem(
+                    icon: Icons.admin_panel_settings_rounded,
+                    title: 'Admin Module & Atelier',
+                    subtitle: 'Add products, categories & live gold rates',
+                    badge: 'Admin',
+                    isHighlighted: true,
+                    color: const Color(0xFFFFDF7A),
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => AdminLoginScreen(
+                            onLoginSuccess: () {
+                              Navigator.of(context).pushAndRemoveUntil(
+                                MaterialPageRoute(
+                                  builder: (_) => const VaultAppRoot(startInClientExperience: false),
+                                ),
+                                (route) => false,
+                              );
+                            },
+                          ),
+                        ),
+                      );
+                    },
                   ),
                   if (onSignOut != null) ...[
                     const Divider(color: HeritageTheme.goldBorderSubtle, height: 24),

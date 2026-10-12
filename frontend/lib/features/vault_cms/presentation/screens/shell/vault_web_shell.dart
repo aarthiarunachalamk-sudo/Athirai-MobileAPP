@@ -39,6 +39,7 @@ class VaultWebShell extends StatefulWidget {
 class _VaultWebShellState extends State<VaultWebShell> {
   late int _selectedPageIndex;
   bool _isSidebarCollapsed = false;
+  String? _selectedCategoryFilter;
 
   // Sub-navigation overlays for Product Detail and Workflow
   VaultProduct? _viewingProduct;
@@ -65,6 +66,9 @@ class _VaultWebShellState extends State<VaultWebShell> {
       _viewingProduct = null;
       _editingProduct = null;
       _isInWorkflow = (index == 2);
+      if (index != 1) {
+        _selectedCategoryFilter = null;
+      }
     });
   }
 
@@ -95,44 +99,58 @@ class _VaultWebShellState extends State<VaultWebShell> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: VaultTokens.surfaceBlack,
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          // Background Gradient Canvas
-          Container(
-            decoration: const BoxDecoration(
-              gradient: VaultTokens.emeraldCanvasGradient,
-            ),
-          ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isMobile = constraints.maxWidth < 850;
 
-          // Main Responsive Shell Layout
-          Row(
+        return Scaffold(
+          backgroundColor: VaultTokens.surfaceBlack,
+          drawer: isMobile
+              ? Drawer(
+                  backgroundColor: const Color(0xFF04120E),
+                  child: SafeArea(
+                    child: _buildSidebar(isDrawer: true),
+                  ),
+                )
+              : null,
+          body: Stack(
+            fit: StackFit.expand,
             children: [
-              // ── Collapsible Luxury Sidebar ─────────────────────────────────
-              _buildSidebar(),
-
-              // ── Main Content Area ──────────────────────────────────────────
-              Expanded(
-                child: Column(
-                  children: [
-                    _buildTopHeaderBar(),
-                    Expanded(
-                      child: _buildMainBody(),
-                    ),
-                  ],
+              // Background Gradient Canvas
+              Container(
+                decoration: const BoxDecoration(
+                  gradient: VaultTokens.emeraldCanvasGradient,
                 ),
+              ),
+
+              // Main Responsive Shell Layout
+              Row(
+                children: [
+                  // ── Collapsible Luxury Sidebar (Desktop / Wide screens) ─────
+                  if (!isMobile) _buildSidebar(isDrawer: false),
+
+                  // ── Main Content Area ──────────────────────────────────────────
+                  Expanded(
+                    child: Column(
+                      children: [
+                        _buildTopHeaderBar(isMobile: isMobile),
+                        Expanded(
+                          child: _buildMainBody(),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
-  Widget _buildSidebar() {
-    final sidebarWidth = _isSidebarCollapsed ? 76.0 : 256.0;
+  Widget _buildSidebar({bool isDrawer = false}) {
+    final sidebarWidth = isDrawer ? 280.0 : (_isSidebarCollapsed ? 76.0 : 256.0);
 
     final navItems = [
       {'index': 0, 'label': 'Experience Dashboard', 'icon': Icons.dashboard_outlined},
@@ -152,9 +170,12 @@ class _VaultWebShellState extends State<VaultWebShell> {
       duration: const Duration(milliseconds: 200),
       width: sidebarWidth,
       decoration: BoxDecoration(
-        color: const Color(0x8004120E),
-        border: const Border(
-          right: BorderSide(color: VaultTokens.borderGoldMuted, width: 1.0),
+        color: const Color(0x9504120E),
+        border: Border(
+          right: BorderSide(
+            color: isDrawer ? Colors.transparent : VaultTokens.borderGoldMuted,
+            width: 1.0,
+          ),
         ),
       ),
       child: Column(
@@ -165,36 +186,54 @@ class _VaultWebShellState extends State<VaultWebShell> {
             padding: const EdgeInsets.symmetric(horizontal: 16),
             alignment: Alignment.center,
             child: Row(
-              mainAxisAlignment: _isSidebarCollapsed ? MainAxisAlignment.center : MainAxisAlignment.start,
+              mainAxisAlignment: (!isDrawer && _isSidebarCollapsed)
+                  ? MainAxisAlignment.center
+                  : MainAxisAlignment.spaceBetween,
               children: [
-                Image.asset(
-                  'assets/images/athirai_emerald_crest.png',
-                  height: 40,
-                  fit: BoxFit.contain,
-                  errorBuilder: (context, error, stackTrace) => const Icon(Icons.diamond, color: VaultTokens.antiqueGold, size: 30),
-                ),
-                if (!_isSidebarCollapsed) ...[
-                  const SizedBox(width: 12),
-                  Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'ATHIRAI',
-                        style: GoogleFonts.cormorantGaramond(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 2.5,
-                          color: VaultTokens.warmIvory,
-                        ),
-                      ),
-                      Text(
-                        'JEWEL VAULT CMS',
-                        style: VaultTokens.brandLabel(fontSize: 8.5, letterSpacing: 1.5, color: VaultTokens.champagneGold),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Image.asset(
+                      'assets/images/athirai_emerald_crest.png',
+                      height: 40,
+                      fit: BoxFit.contain,
+                      errorBuilder: (context, error, stackTrace) =>
+                          const Icon(Icons.diamond, color: VaultTokens.antiqueGold, size: 30),
+                    ),
+                    if (isDrawer || !_isSidebarCollapsed) ...[
+                      const SizedBox(width: 12),
+                      Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'ATHIRAI',
+                            style: GoogleFonts.cormorantGaramond(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 2.5,
+                              color: VaultTokens.warmIvory,
+                            ),
+                          ),
+                          Text(
+                            'JEWEL VAULT CMS',
+                            style: VaultTokens.brandLabel(
+                              fontSize: 8.5,
+                              letterSpacing: 1.5,
+                              color: VaultTokens.champagneGold,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
+                  ],
+                ),
+                if (isDrawer)
+                  IconButton(
+                    icon: const Icon(Icons.close, color: VaultTokens.champagneGold, size: 20),
+                    tooltip: 'Close Menu',
+                    onPressed: () => Navigator.of(context).pop(),
                   ),
-                ],
               ],
             ),
           ),
@@ -208,14 +247,19 @@ class _VaultWebShellState extends State<VaultWebShell> {
               itemBuilder: (context, index) {
                 final item = navItems[index];
                 final itemIdx = item['index'] as int;
-                final isSelected = !_isInWorkflow && _viewingProduct == null && _selectedPageIndex == itemIdx;
+                final isSelected = !_isInWorkflow &&
+                    _viewingProduct == null &&
+                    _selectedPageIndex == itemIdx;
                 final icon = item['icon'] as IconData;
                 final label = item['label'] as String;
 
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 4),
                   child: InkWell(
-                    onTap: () => _navigateToPage(itemIdx),
+                    onTap: () {
+                      if (isDrawer) Navigator.of(context).pop();
+                      _navigateToPage(itemIdx);
+                    },
                     borderRadius: BorderRadius.circular(12),
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 160),
@@ -230,14 +274,16 @@ class _VaultWebShellState extends State<VaultWebShell> {
                         ),
                       ),
                       child: Row(
-                        mainAxisAlignment: _isSidebarCollapsed ? MainAxisAlignment.center : MainAxisAlignment.start,
+                        mainAxisAlignment: (!isDrawer && _isSidebarCollapsed)
+                            ? MainAxisAlignment.center
+                            : MainAxisAlignment.start,
                         children: [
                           Icon(
                             icon,
                             size: 20,
                             color: isSelected ? VaultTokens.champagneGold : VaultTokens.sageMuted,
                           ),
-                          if (!_isSidebarCollapsed) ...[
+                          if (isDrawer || !_isSidebarCollapsed) ...[
                             const SizedBox(width: 12),
                             Expanded(
                               child: Text(
@@ -261,39 +307,78 @@ class _VaultWebShellState extends State<VaultWebShell> {
             ),
           ),
 
-          // Bottom Collapse Toggle & Sign Out
+          // Bottom Section
           const Divider(color: VaultTokens.borderGoldMuted, height: 1),
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: Row(
-              mainAxisAlignment: _isSidebarCollapsed ? MainAxisAlignment.center : MainAxisAlignment.spaceBetween,
-              children: [
-                IconButton(
-                  icon: Icon(
-                    _isSidebarCollapsed ? Icons.chevron_right : Icons.chevron_left,
-                    color: VaultTokens.sageLight,
+          if (isDrawer)
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  LuxuryGoldPillButton(
+                    label: '🛍️ CUSTOMER STORE',
+                    height: 38,
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      widget.onSwitchToClientExperience();
+                    },
                   ),
-                  onPressed: () => setState(() => _isSidebarCollapsed = !_isSidebarCollapsed),
-                  tooltip: _isSidebarCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar',
-                ),
-                if (!_isSidebarCollapsed)
+                  const SizedBox(height: 10),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Exit Vault Admin',
+                        style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFFE57373)),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.logout, color: Color(0xFFE57373), size: 18),
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                          widget.onSignOut();
+                        },
+                        tooltip: 'Sign Out',
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            )
+          else
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Row(
+                mainAxisAlignment: _isSidebarCollapsed
+                    ? MainAxisAlignment.center
+                    : MainAxisAlignment.spaceBetween,
+                children: [
                   IconButton(
-                    icon: const Icon(Icons.logout, color: Color(0xFFE57373), size: 18),
-                    onPressed: widget.onSignOut,
-                    tooltip: 'Sign Out',
+                    icon: Icon(
+                      _isSidebarCollapsed ? Icons.chevron_right : Icons.chevron_left,
+                      color: VaultTokens.sageLight,
+                    ),
+                    onPressed: () =>
+                        setState(() => _isSidebarCollapsed = !_isSidebarCollapsed),
+                    tooltip: _isSidebarCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar',
                   ),
-              ],
+                  if (!_isSidebarCollapsed)
+                    IconButton(
+                      icon: const Icon(Icons.logout, color: Color(0xFFE57373), size: 18),
+                      onPressed: widget.onSignOut,
+                      tooltip: 'Sign Out',
+                    ),
+                ],
+              ),
             ),
-          ),
         ],
       ),
     );
   }
 
-  Widget _buildTopHeaderBar() {
+  Widget _buildTopHeaderBar({bool isMobile = false}) {
     return Container(
       height: 64,
-      padding: const EdgeInsets.symmetric(horizontal: 24),
+      padding: EdgeInsets.symmetric(horizontal: isMobile ? 12 : 24),
       decoration: const BoxDecoration(
         color: Color(0x6604120E),
         border: Border(
@@ -305,6 +390,18 @@ class _VaultWebShellState extends State<VaultWebShell> {
         physics: const BouncingScrollPhysics(),
         child: Row(
           children: [
+            // Mobile Menu Hamburger Button
+            if (isMobile) ...[
+              Builder(
+                builder: (drawerCtx) => IconButton(
+                  icon: const Icon(Icons.menu, color: VaultTokens.champagneGold, size: 24),
+                  tooltip: 'Open Vault Menu',
+                  onPressed: () => Scaffold.of(drawerCtx).openDrawer(),
+                ),
+              ),
+              const SizedBox(width: 8),
+            ],
+
             // Live Gold Ticker Pill
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
@@ -319,7 +416,11 @@ class _VaultWebShellState extends State<VaultWebShell> {
                   const SizedBox(width: 8),
                   Text(
                     '22K GOLD: ₹${_metalRates.gold22k}/g  •  24K: ₹${_metalRates.gold24k}/g  •  SILVER: ₹${_metalRates.silver999}/g',
-                    style: GoogleFonts.inter(fontSize: 11.5, fontWeight: FontWeight.w600, color: VaultTokens.champagneGold),
+                    style: GoogleFonts.inter(
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w600,
+                      color: VaultTokens.champagneGold,
+                    ),
                   ),
                 ],
               ),
@@ -328,7 +429,7 @@ class _VaultWebShellState extends State<VaultWebShell> {
 
             // Switch to Client Experience Mode Button
             LuxuryCapsuleButton(
-              label: 'Open Mobile Client App',
+              label: isMobile ? 'Customer Store' : 'Open Mobile Client App',
               icon: Icons.phone_iphone,
               onPressed: widget.onSwitchToClientExperience,
             ),
@@ -350,13 +451,18 @@ class _VaultWebShellState extends State<VaultWebShell> {
                       width: 28,
                       height: 28,
                       fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) => const Icon(Icons.person, size: 20, color: VaultTokens.antiqueGold),
+                      errorBuilder: (context, error, stackTrace) =>
+                          const Icon(Icons.person, size: 20, color: VaultTokens.antiqueGold),
                     ),
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    'Ananya Sharma',
-                    style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: VaultTokens.warmIvory),
+                    'Admin Atelier',
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: VaultTokens.warmIvory,
+                    ),
                   ),
                 ],
               ),
@@ -404,12 +510,14 @@ class _VaultWebShellState extends State<VaultWebShell> {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 backgroundColor: const Color(0xFF092620),
-                content: Text('Order commissioned for ${p.name}', style: const TextStyle(color: VaultTokens.champagneGold)),
+                content: Text(
+                  'Order commissioned for ${p.name}',
+                  style: const TextStyle(color: VaultTokens.champagneGold),
+                ),
               ),
             );
           }
         },
-
       );
     }
 
@@ -423,6 +531,7 @@ class _VaultWebShellState extends State<VaultWebShell> {
       case 1:
         return ProductsListScreen(
           apiService: widget.apiService,
+          initialCategory: _selectedCategoryFilter,
           onCreateNew: _openCreateNewWorkflow,
           onSelectProduct: _openProductDetail,
           onEditProduct: _openEditProduct,
@@ -445,7 +554,12 @@ class _VaultWebShellState extends State<VaultWebShell> {
         );
       case 4:
         return VaultCategoriesScreen(
-          onSelectCategory: (catName) => _navigateToPage(1),
+          onSelectCategory: (catName) {
+            setState(() {
+              _selectedCategoryFilter = catName;
+              _selectedPageIndex = 1;
+            });
+          },
         );
       case 5:
         return VaultInventoryScreen(

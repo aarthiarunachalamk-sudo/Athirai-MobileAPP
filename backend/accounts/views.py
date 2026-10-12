@@ -668,7 +668,7 @@ class JewelProductListCreateView(APIView):
         }, status=status.HTTP_200_OK)
 
     def post(self, request):
-        from .models import JewelProduct, JewelCategory
+        from .models import JewelProduct, JewelCategory, JewelCollection
         from .serializers import JewelProductSerializer
         data = request.data
 
@@ -685,17 +685,42 @@ class JewelProductListCreateView(APIView):
         # Auto-create category if it does not exist
         category, _ = JewelCategory.objects.get_or_create(name=category_name)
 
+        collection = None
+        collection_name = data.get('collection', '').strip()
+        if collection_name:
+            collection, _ = JewelCollection.objects.get_or_create(name=collection_name)
+
         product = JewelProduct.objects.create(
             name=name,
             category=category,
+            collection=collection,
+            sku=data.get('sku', '').strip(),
+            short_description=data.get('short_description', '').strip(),
             metal=data.get('metal', 'Gold'),
             purity=data.get('purity', '22K'),
             weight_grams=weight_grams,
             making_charge_percent=data.get('making_charge_percent', 12.00),
-            stone_price=int(data.get('stone_price', 0)),
-            description=data.get('description', ''),
-            image_url=data.get('image_url', ''),
+            stone_price=int(data.get('stone_price', 0) or 0),
+            gemstones=data.get('gemstones', '').strip(),
+            gemstone_type=data.get('gemstone_type', '').strip(),
+            gemstone_weight=data.get('gemstone_weight', '').strip(),
+            diamond_carat=data.get('diamond_carat', '').strip(),
+            certification=data.get('certification', 'BIS 916 Hallmarked').strip(),
+            hallmark=data.get('hallmark', 'BIS 916 Hallmark').strip(),
+            craftsmanship=data.get('craftsmanship', '').strip(),
+            origin=data.get('origin', '').strip(),
+            designer=data.get('designer', '').strip(),
+            crafting_time=data.get('crafting_time', '').strip(),
+            stock_quantity=int(data.get('stock_quantity', 10) or 10),
+            low_stock_threshold=int(data.get('low_stock_threshold', 2) or 2),
+            warehouse=data.get('warehouse', 'Chennai Flagship Jewel Vault').strip(),
+            status=data.get('status', 'Published'),
+            availability=data.get('availability', 'In Stock'),
+            description=data.get('description', '').strip(),
+            image_url=data.get('image_url', '').strip(),
+            lifestyle_image_url=data.get('lifestyle_image_url', '').strip(),
             is_featured=bool(data.get('is_featured', False)),
+            base_price_override=int(data['base_price_override']) if data.get('base_price_override') else None,
         )
 
         return Response({

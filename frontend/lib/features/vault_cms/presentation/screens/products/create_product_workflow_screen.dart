@@ -8,6 +8,7 @@ import 'package:athirai_mobile/features/vault_cms/core/widgets/luxury_glass_card
 import 'package:athirai_mobile/features/vault_cms/core/widgets/luxury_inputs.dart';
 import 'package:athirai_mobile/features/vault_cms/core/widgets/luxury_status_badge.dart';
 import 'package:athirai_mobile/features/vault_cms/core/widgets/luxury_step_indicator.dart';
+import 'package:athirai_mobile/features/shop/domain/shop_store.dart';
 
 
 class CreateProductWorkflowScreen extends StatefulWidget {
@@ -33,11 +34,32 @@ class _CreateProductWorkflowScreenState extends State<CreateProductWorkflowScree
   bool _isSaving = false;
 
   // Step 1: Basic Info
+  static const List<String> kAvailableCategories = [
+    'Necklaces',
+    'Bridal Chokers',
+    'Rings',
+    'Bangles',
+    'Earrings',
+    'Chains',
+    'Coins & Bars',
+    'Pendants',
+    'Mangalsutra',
+    'Temple',
+    'Daily Wear',
+    'Bridal Sets',
+    'Bracelets',
+    'Anklets',
+    'Wedding',
+    'Gifting',
+    'Gold Coins',
+    'Silver Coins',
+  ];
+
   late final TextEditingController _nameController;
   late final TextEditingController _skuController;
   late final TextEditingController _shortDescController;
   late final TextEditingController _descController;
-  String _selectedCategory = 'Necklace';
+  String _selectedCategory = 'Necklaces';
   String _selectedCollection = 'Chola Dynasty';
 
   // Step 2: Media
@@ -91,7 +113,8 @@ class _CreateProductWorkflowScreenState extends State<CreateProductWorkflowScree
     _skuController = TextEditingController(text: p?.sku ?? 'ATH-NECK-001');
     _shortDescController = TextEditingController(text: p?.shortDescription ?? 'Intricate temple necklace sculpted with divine floral motifs.');
     _descController = TextEditingController(text: p?.description ?? 'Handcrafted by 4th-generation Thanjavur goldsmiths, this museum-grade jewel features temple floral motifs set with natural Burmese rubies and uncut Polki diamonds.');
-    _selectedCategory = p?.category ?? 'Necklace';
+    final initialCat = p?.category ?? 'Necklaces';
+    _selectedCategory = initialCat.isNotEmpty ? initialCat : 'Necklaces';
     _selectedCollection = p?.collection.isNotEmpty == true ? p!.collection : 'Chola Dynasty';
 
     _heroImageController = TextEditingController(text: p?.imageUrl ?? 'assets/images/athirai_pedestal_necklace.jpg');
@@ -213,8 +236,46 @@ class _CreateProductWorkflowScreenState extends State<CreateProductWorkflowScree
       saved = await widget.apiService.createProduct(productToSave);
     }
 
+    try {
+      ShopStore.session.addJewel(
+        name: saved.name,
+        category: saved.category,
+        purity: saved.purity,
+        weightGrams: saved.weightGrams,
+        metal: saved.metal,
+        makingChargePercent: saved.makingChargePercent,
+        stonePrice: saved.stonePrice,
+        image: saved.imageUrl.isNotEmpty ? saved.imageUrl : saved.lifestyleImageUrl,
+        description: saved.description.isNotEmpty ? saved.description : saved.shortDescription,
+        collection: saved.collection.isNotEmpty ? saved.collection : 'Royal Heritage',
+        customPrice: saved.calculatedTotalPrice > 0 ? saved.calculatedTotalPrice : null,
+      );
+      ShopStore.session.loadFromBackend(notify: true);
+    } catch (_) {}
+
     if (mounted) {
       setState(() => _isSaving = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: const Color(0xFF092620),
+          duration: const Duration(seconds: 4),
+          content: Row(
+            children: [
+              const Icon(Icons.check_circle, color: Color(0xFF66BB6A), size: 20),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  '${saved.name} added to category "${saved.category}" & live in the client store!',
+                  style: const TextStyle(
+                    color: VaultTokens.champagneGold,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
       widget.onFinished(saved);
     }
   }
@@ -414,7 +475,10 @@ class _CreateProductWorkflowScreenState extends State<CreateProductWorkflowScree
               child: LuxuryDropdown<String>(
                 label: 'JEWELLERY CATEGORY',
                 value: _selectedCategory,
-                items: ['Necklace', 'Rings', 'Bangles', 'Earrings', 'Bridal Sets', 'Gold Coins']
+                items: {
+                  _selectedCategory,
+                  ...kAvailableCategories,
+                }
                     .map((c) => DropdownMenuItem(value: c, child: Text(c)))
                     .toList(),
                 onChanged: (val) {

@@ -13,6 +13,8 @@ import 'complete_profile_screen.dart';
 
 import 'register_screen.dart';
 import 'sso_email_screen.dart';
+import '../../../vault_cms/presentation/screens/auth/admin_login_screen.dart';
+import '../../../vault_cms/presentation/screens/shell/vault_app_root.dart';
 
 /// Screen-accurate luxury login screen matching Screen 2 of the Athirai reference:
 /// - Dark emerald temple courtyard architecture background with warm diya glow
@@ -164,6 +166,16 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
     if (!mounted) return;
 
     if (ok) {
+      if (id.toLowerCase() == 'admin@athirai.com') {
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(
+            builder: (_) => const VaultAppRoot(startInClientExperience: false),
+          ),
+          (route) => false,
+        );
+        return;
+      }
+
       // Customer login paninadhum avangalukku one credit reward earn aagum.
       final earnedReward = await ShopStore.session.claimDailyLoginReward();
       if (!mounted) return;
@@ -844,7 +856,49 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                             ),
                           ),
 
-                          const SizedBox(height: 22),
+                          const SizedBox(height: 14),
+
+                          // ── Dedicated Admin Portal Entry ────────────────────
+                          SizedBox(
+                            width: double.infinity,
+                            child: OutlinedButton.icon(
+                              onPressed: () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) => AdminLoginScreen(
+                                      onLoginSuccess: () {
+                                        Navigator.of(context).pushAndRemoveUntil(
+                                          MaterialPageRoute(
+                                            builder: (_) => const VaultAppRoot(startInClientExperience: false),
+                                          ),
+                                          (route) => false,
+                                        );
+                                      },
+                                      onReturnToStore: () => Navigator.of(context).pop(),
+                                    ),
+                                  ),
+                                );
+                              },
+                              icon: const Icon(Icons.admin_panel_settings_rounded, size: 16, color: Color(0xFFFFDF7A)),
+                              label: Text(
+                                'Admin Atelier & Management Portal Login',
+                                style: GoogleFonts.inter(
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.w700,
+                                  color: const Color(0xFFFFDF7A),
+                                  letterSpacing: 0.3,
+                                ),
+                              ),
+                              style: OutlinedButton.styleFrom(
+                                side: const BorderSide(color: Color(0x66D4AF37), width: 1.0),
+                                backgroundColor: const Color(0x220B382D),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                                padding: const EdgeInsets.symmetric(vertical: 11, horizontal: 16),
+                              ),
+                            ),
+                          ),
+
+                          const SizedBox(height: 20),
 
                           // ── Footer: Don't have an account? Register ─────────
                           Row(
